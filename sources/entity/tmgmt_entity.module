@@ -263,3 +263,22 @@ function tmgmt_entity_tmgmt_source_suggestions(array $items, TMGMTJob $job) {
   }
   return $suggestions;
 }
+
+/**
+ * Returns the original language of an entity.
+ *
+ * If the entity has translations, then it will return the original language.
+ * Otherwise, it will just call the entity_language().
+ *
+ * @param string $entity_type
+ *  The type of the entity. For example: 'node', 'user'.
+ *
+ * @param object $entity
+ *  The entity itself.
+ */
+function tmgmt_entity_get_original_language($entity_type, $entity) {
+  if (!empty($entity->translations->original)) {
+    return $entity->translations->original;
+  }
+  return entity_language($entity_type, $entity);
+}

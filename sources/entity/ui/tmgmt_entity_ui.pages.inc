@@ -28,7 +28,7 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
   $languages = language_list();
   // Check if there is a job / job item that references this translation.
   list($id, $vid, $bundle) = entity_extract_ids($form_state['entity_type'], $form_state['entity']);
-  $entity_language = entity_language($form_state['entity_type'], $form_state['entity']);
+  $entity_language = tmgmt_entity_get_original_language($form_state['entity_type'], $form_state['entity']);
   $items = tmgmt_job_item_load_latest('entity', $form_state['entity_type'], $id, $entity_language);
   foreach ($languages as $langcode => $language) {
     if ($langcode == LANGUAGE_NONE) {
@@ -111,7 +111,7 @@ function tmgmt_entity_ui_translate_form_submit($form, &$form_state) {
   $jobs = array();
   foreach (array_keys(array_filter($values['languages'])) as $langcode) {
     // Create the job object.
-    $job = tmgmt_job_create(entity_language($entity_type, $entity), $langcode, $GLOBALS['user']->uid);
+    $job = tmgmt_job_create(tmgmt_entity_get_original_language($entity_type, $entity), $langcode, $GLOBALS['user']->uid);
     try {
       // Add the job item.
       $job->addItem('entity', $entity_type, $id);
