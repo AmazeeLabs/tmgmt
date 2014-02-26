@@ -46,6 +46,18 @@ class TMGMTEntitySourcePluginController extends TMGMTDefaultSourcePluginControll
     $handler = entity_translation_get_handler($job_item->item_type, $entity);
     $handler->setFormLanguage($job_item->getJob()->target_language);
 
+    // If we have the title module enabled, make sure to synchronize the correct
+    // title first, before saving. When you are on a German page and want to
+    // save an English node, if we do not do this synchronization first (to have
+    // the correct title on the entity) then the entity will get the wrong one
+    // (the German version of the title field will be put in the title property
+    // of the entity).
+    if (module_exists('title')) {
+      // The title_entity_sync() uses a static cache, make sure we reset it, to
+      // avoid any issues.
+      drupal_static_reset('title_entity_sync');
+      title_entity_sync($job_item->item_type, $entity, $handler->getLanguage());
+    }
     entity_save($job_item->item_type, $entity);
 
     $translation = array(
