@@ -458,7 +458,7 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
 
   $form['translator_wrapper'] = array(
     '#type' => 'container',
-    '#prefix' => '<div class="tmgmt-ui-translator-wrapper">',
+    '#prefix' => '<div id="tmgmt-ui-translator-wrapper">',
     '#suffix' => '</div>',
     '#weight' => 20,
   );
