@@ -15,6 +15,19 @@ abstract class TMGMTDefaultSourcePluginController extends TMGMTPluginBase implem
   /**
    * {@inheritdoc}
    */
+  public function getExistingTranslationData(TMGMTJobItem $job_item) {
+    $data = array();
+    foreach (tmgmt_flatten_data($this->getData($job_item)) as $key => $value) {
+      if (isset($value['#translation']['#text'])) {
+        $data[$key]['#text'] = $value['#translation']['#text'];
+      }
+    }
+    return tmgmt_unflatten_data($data);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getLabel(TMGMTJobItem $job_item) {
     return t('@plugin item unavailable (@item)', array('@plugin' => $this->pluginInfo['label'], '@item' => $job_item->item_type . ':' . $job_item->item_id));
   }

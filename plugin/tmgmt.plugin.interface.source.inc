@@ -15,12 +15,24 @@ interface TMGMTSourcePluginControllerInterface extends TMGMTPluginBaseInterface 
   /**
    * Returns an array with the data structured for translation.
    *
+   * If there is an already existing (outdated) translation for this source, it
+   * should also be loaded.
+   *
    * @param TMGMTJobItem $job_item
    *   The job item entity.
    *
    * @see TMGMTJobItem::getData()
    */
   public function getData(TMGMTJobItem $job_item);
+
+  /**
+   * Returns data array with already existing (outdated) translations.
+   *
+   * @param TMGMTJobItem $job_item
+   *
+   * @return array
+   */
+  public function getExistingTranslationData(TMGMTJobItem $job_item);
 
   /**
    * Saves a translation.

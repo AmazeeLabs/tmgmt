@@ -24,6 +24,11 @@ class TMGMTI18nStringSourcePluginController extends TMGMTDefaultSourcePluginCont
           '#text' => $string->string,
           '#translate' => TRUE
         );
+        if ($target_language = $job_item->getJob()->target_language) {
+          if ($existing_translation = $string->get_translation($target_language)) {
+            $structure[$string_id]['#translation']['#text'] = $existing_translation;
+          }
+        }
       }
     }
     return $structure;

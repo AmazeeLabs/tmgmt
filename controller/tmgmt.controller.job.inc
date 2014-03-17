@@ -16,8 +16,28 @@ class TMGMTJobController extends EntityAPIController {
    * {@inheritdoc}
    */
   public function save($entity, DatabaseTransaction $transaction = NULL) {
+    /* @var $entity TMGMTJob */
+    /* @var $unchanged_entity TMGMTJob */
+    $unchanged_entity = entity_load_unchanged($entity->entityType(), $entity->identifier());
     $entity->changed = REQUEST_TIME;
-    return parent::save($entity, $transaction);
+    $return = parent::save($entity, $transaction);
+
+    // If the target language was changes, and the job was not processed yet:
+    // update all job items. The reason: there already could be existing
+    // (outdated) translations for the current source; they should be reloaded
+    // to match new target language.
+    if ($unchanged_entity && $entity->state == TMGMT_JOB_STATE_UNPROCESSED
+      && !empty($entity->target_language)
+      && $entity->target_language != $unchanged_entity->target_language) {
+      foreach ($entity->getItems() as $job_item) {
+        // Clear job data and call TMGMTJobItem::getData(). This will resave the
+        // job item.
+        $job_item->data = array();
+        $job_item->getData();
+      }
+    }
+
+    return $return;
   }
 
   /**

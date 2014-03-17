@@ -20,6 +20,8 @@
  *   The language associated with $items.
  * @param $items
  *   Array of values for this field.
+ * @param array $translated_items
+ *   An array of already translated (outdated) items.
  *
  * @return
  *   An array of translatable text elements, keyed by the schema name of the
@@ -29,7 +31,7 @@
  *
  * @ingroup tmgmt_source
  */
-function hook_tmgmt_source_translation_structure($entity_type, $entity, $field, $instance, $langcode, $items) {
+function hook_tmgmt_source_translation_structure($entity_type, $entity, $field, $instance, $langcode, $items, $translated_items) {
 
 }
 

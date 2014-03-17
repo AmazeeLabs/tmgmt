@@ -193,6 +193,7 @@ class TMGMTLocalTask extends Entity {
     $local_task = entity_create('tmgmt_local_task_item', array(
       'tltid' => $this->identifier(),
       'tjiid' => $job_item->identifier(),
+      'data' => $job_item->getSourceController()->getExistingTranslationData($job_item),
     ));
     $local_task->save();
     return $local_task;

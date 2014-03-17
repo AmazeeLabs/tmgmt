@@ -111,6 +111,17 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
       $locale_object->origin = 'target';
     }
 
+    // Load translated string.
+    if ($target_language = $job_item->getJob()->target_language) {
+      $query = db_select('locales_target', 'lt');
+      $query->join('locales_source', 'ls', 'ls.lid = lt.lid');
+      $query
+        ->fields('lt', array('translation'))
+        ->condition('lt.lid', $locale_lid)
+        ->condition('lt.language', $job_item->getJob()->target_language);
+      $locale_object->existing_translation = $query->execute()->fetchField();
+    }
+
     return $locale_object;
   }
 
@@ -165,6 +176,9 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
         '#translate' => TRUE,
         '#escape' => $escape,
       );
+      if ($locale_object->existing_translation !== FALSE) {
+        $structure['singular']['#translation']['#text'] = $locale_object->existing_translation;
+      }
       return $structure;
     }
   }
