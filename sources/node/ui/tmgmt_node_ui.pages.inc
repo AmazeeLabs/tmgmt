@@ -14,6 +14,11 @@ function tmgmt_node_ui_node_form($form, &$form_state, $node, $original) {
   // Store the node in the form state so we can easily create the job in the
   // submit handler.
   $form_state['node'] = $node;
+
+  $form['top_actions']['#type'] = 'actions';
+  $form['top_actions']['#weight'] = -10;
+  tmgmt_ui_add_cart_form($form['top_actions'], $form_state, 'node', 'node', $node->nid);
+
   // Inject our additional column into the header.
   array_splice($original['#header'], -1, 0, array(t('Pending Translations')));
   // Make this a tableselect form.
@@ -42,10 +47,17 @@ function tmgmt_node_ui_node_form($form, &$form_state, $node, $original) {
       );
     }
     elseif (isset($items[$langcode])) {
+      /** @var TMGMTJobItem $item */
       $item = $items[$langcode];
-      $uri = $item->uri();
-      $wrapper = entity_metadata_wrapper('tmgmt_job_item', $item);
-      $additional = l($wrapper->state->label(), $uri['path']);
+      if ($item->getJob()->isUnprocessed()) {
+        $uri = $item->getJob()->uri();
+        $additional = l(t('Unprocessed'), $uri['path']);
+      }
+      else {
+        $wrapper = entity_metadata_wrapper('tmgmt_job_item', $item);
+        $uri = $item->uri();
+        $additional = l($wrapper->state->label(), $uri['path']);
+      }
       // Disable the checkbox for this row since there is already a translation
       // in progress that has not yet been finished. This way we make sure that
       // we don't stack multiple active translations for the same item on top

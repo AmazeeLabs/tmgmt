@@ -136,9 +136,17 @@ class TMGMTJobItem extends Entity {
    */
   public function defaultLabel() {
     if ($controller = $this->getSourceController()) {
-      return $controller->getLabel($this);
+      $label = $controller->getLabel($this);
     }
-    return parent::defaultLabel();
+    else {
+      $label = parent::defaultLabel();
+    }
+
+    if (strlen($label) > TMGMT_JOB_LABEL_MAX_LENGTH) {
+      $label = truncate_utf8($label, TMGMT_JOB_LABEL_MAX_LENGTH, TRUE);
+    }
+
+    return $label;
   }
 
   /**
@@ -305,7 +313,7 @@ class TMGMTJobItem extends Entity {
    *   A structured data array.
    */
   public function getData(array $key = array(), $index = NULL) {
-    if (empty($this->data)) {
+    if (empty($this->data) && !empty($this->tjid)) {
       // Load the data from the source if it has not been set yet.
       $this->data = $this->getSourceData();
       $this->save();
@@ -550,16 +558,18 @@ class TMGMTJobItem extends Entity {
     if (isset($translation['#text'])) {
       $data = $this->getData(tmgmt_ensure_keys_array($key));
       if (empty($data['#status']) || $data['#status'] != TMGMT_DATA_ITEM_STATE_ACCEPTED) {
-        // If we already have a translation text and it hasn't changed, don't
-        // update anything.
-        if (!empty($data['#translation']['#text']) && $data['#translation']['#text'] == $translation['#text']) {
-          return;
-        }
 
         // In case the origin is not set consider it to be remote.
         if (!isset($translation['#origin'])) {
           $translation['#origin'] = 'remote';
         }
+
+        // If we already have a translation text and it hasn't changed, don't
+        // update anything unless the origin is remote.
+        if (!empty($data['#translation']['#text']) && $data['#translation']['#text'] == $translation['#text'] && $translation['#origin'] != 'remote') {
+          return;
+        }
+
         // In case the timestamp is not set consider it to be now.
         if (!isset($translation['#timestamp'])) {
           $translation['#timestamp'] = REQUEST_TIME;
@@ -691,6 +701,20 @@ class TMGMTJobItem extends Entity {
    * This function calls for TMGMTJobItem::addTranslatedDataRecursive() which
    * sets the status of each added data item to TMGMT_DATA_ITEM_STATE_TRANSLATED.
    *
+   * Following rules apply while adding translated data:
+   *
+   * 1) Updated are only items that are changed. In case there is local
+   * modification the translation is added as a revision with a message stating
+   * this fact.
+   *
+   * 2) Merging happens at the data items level, so updating only those that are
+   * changed. If a data item is in review/reject status and is being updated
+   * with translation originating from remote the status is updated to
+   * 'translated' no matter if it is changed or not.
+   *
+   * 3) Each time a data item is updated the previous translation becomes a
+   * revision.
+   *
    * If all data items are translated, the status of the job item is updated to
    * needs review.
    *
@@ -725,7 +749,6 @@ class TMGMTJobItem extends Entity {
       }
       if ($finished) {
         // There are no unfinished elements left.
-        $uri = $this->getSourceUri();
         if ($this->getJob()->getTranslator()->getSetting('auto_accept')) {
           // If the job item is going to be auto-accepted, set to review without
           // a message.
@@ -735,10 +758,11 @@ class TMGMTJobItem extends Entity {
           // Otherwise, create a message that contains source label, target
           // language and links to the review form.
           $uri = $this->uri();
+          $job_uri = $this->getJob()->uri();
           $variables = array(
             '!source' => l($this->getSourceLabel(), $uri['path']),
             '@language' => entity_metadata_wrapper('tmgmt_job', $this->getJob())->target_language->label(),
-            '!review_url' => url($uri['path'], array('query' => array('destination' => current_path()))),
+            '!review_url' => url($uri['path'], array('query' => array('destination' => $job_uri['path']))),
           );
           $this->needsReview('The translation of !source to @language is finished and can now be <a href="!review_url">reviewed</a>.', $variables);
         }
@@ -878,6 +902,26 @@ class TMGMTJobItem extends Entity {
     }
 
     return array();
+  }
+
+  /**
+   * Gets language code of the job item source.
+   *
+   * @return string
+   *   Language code.
+   */
+  public function getSourceLangCode() {
+    return $this->getSourceController()->getSourceLangCode($this);
+  }
+
+  /**
+   * Gets existing translation language codes of the job item source.
+   *
+   * @return array
+   *   Array of language codes.
+   */
+  public function getExistingLangCodes() {
+    return $this->getSourceController()->getExistingLangCodes($this);
   }
 
   /**

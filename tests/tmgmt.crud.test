@@ -85,7 +85,7 @@ class TMGMTCRUDTestCase extends TMGMTBaseTestCase {
     $this->assertEqual($item2->item_type, $items[$item2->tjiid]->item_type);
     $this->assertEqual($item2->item_id, $items[$item2->tjiid]->item_id);
 
-    // Delete the translator, make sure the translator is gone.
+    // Delete the job and make sure it is gone.
     $job->delete();
     $this->assertFalse(tmgmt_job_load($job->tjid));
   }
@@ -174,7 +174,7 @@ class TMGMTCRUDTestCase extends TMGMTBaseTestCase {
 
     // Add some test items.
     $item1 = $job->addItem('test_source', 'type', 5);
-    $item2 = $job->addItem('test_source', 'type', 4);
+    $item2 = $job->addItem('test_source', 'test_with_long_label', 4);
 
     // Test single load callback.
     $item = tmgmt_job_item_load($item1->tjiid);
@@ -193,6 +193,9 @@ class TMGMTCRUDTestCase extends TMGMTBaseTestCase {
     $this->assertEqual($item2->plugin, $items[$item2->tjiid]->plugin);
     $this->assertEqual($item2->item_type, $items[$item2->tjiid]->item_type);
     $this->assertEqual($item2->item_id, $items[$item2->tjiid]->item_id);
+    // Test the second item label length - it must not exceed the
+    // TMGMT_JOB_LABEL_MAX_LENGTH.
+    $this->assertTrue(TMGMT_JOB_LABEL_MAX_LENGTH >= strlen($items[$item2->tjiid]->label()));
   }
 
   /**
@@ -205,7 +208,10 @@ class TMGMTCRUDTestCase extends TMGMTBaseTestCase {
     $job->save();
 
     // Add some test items.
-    $item1 = $job->addItem('test_source', 'type', 5);
+    $item1 = $job->addItem('test_source', 'test_with_long_label', 5);
+    // Test the job label - it must not exceed the TMGMT_JOB_LABEL_MAX_LENGTH.
+    $this->assertTrue(TMGMT_JOB_LABEL_MAX_LENGTH >= strlen($job->label()));
+
     $key = array('dummy', 'deep_nesting');
 
     $translation['dummy']['deep_nesting']['#text'] = 'translated 1';
@@ -224,6 +230,14 @@ class TMGMTCRUDTestCase extends TMGMTBaseTestCase {
     $this->assertEqual($data['#translation']['#origin'], 'remote');
     $this->assertEqual($data['#translation']['#timestamp'], REQUEST_TIME);
 
+    // Set status back to pending as if the data item was rejected.
+    $item1->updateData(array('dummy', 'deep_nesting'), array('#status' => TMGMT_DATA_ITEM_STATE_PENDING));
+    // Add same translation text.
+    $translation['dummy']['deep_nesting']['#text'] = 'translated 1';
+    $item1->addTranslatedData($translation);
+    $data = $item1->getData($key);
+    // Check if the status has been updated back to translated.
+    $this->assertEqual($data['#status'], TMGMT_DATA_ITEM_STATE_TRANSLATED);
 
     // Add translation, however locally customized.
     $translation['dummy']['deep_nesting']['#text'] = 'translated 2';

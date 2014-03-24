@@ -46,16 +46,13 @@ define('TMGMT_JOB_STATE_REJECTED', 2);
 define('TMGMT_JOB_STATE_ACCEPTED', 3);
 
 /**
- * The translation job has been cancelled.
+ * The translation job has been aborted.
  *
- * A job can be cancelled at any time. If he is currently in the submitted state
- * the translator plugin is asked if this translation can be cancelled and needs
- * to confirm it by returning TRUE in cancelTranslation().
- *
- * @todo Rename constant to TMGMT_JOB_STATE_ABORTED in
- * https://drupal.org/node/2124825
+ * A job can be aborted at any time. If he is currently in the submitted state
+ * the translator plugin is asked if this translation can be aborted and needs
+ * to confirm it by returning TRUE in abortTranslation().
  */
-define('TMGMT_JOB_STATE_CANCELLED', 4);
+define('TMGMT_JOB_STATE_ABORTED', 4);
 
 /**
  * The translation job has been finished.
@@ -117,6 +114,10 @@ define('TMGMT_DATA_ITEM_STATE_TRANSLATED', 2);
  */
 define('TMGMT_DATA_ITEM_STATE_ACCEPTED', 3);
 
+/**
+ * Maximum length of a job or job item label.
+ */
+define('TMGMT_JOB_LABEL_MAX_LENGTH', 128);
 /**
  * @} End of "addtogroup tmgmt_job".
  */
@@ -363,7 +364,7 @@ function tmgmt_job_item_load_latest($plugin, $item_type, $item_id, $source_langu
   $query->innerJoin('tmgmt_job', 'tj', 'tj.tjid = tji.tjid');
   $result = $query->condition('tj.source_language', $source_language)
     // Only query for jobs that are currently active.
-    ->condition('tj.state', TMGMT_JOB_STATE_ACTIVE)
+    ->condition('tj.state', array(TMGMT_JOB_STATE_UNPROCESSED, TMGMT_JOB_STATE_ACTIVE))
     // And only query for job items that are not yet finished.
     ->condition('tji.state', TMGMT_JOB_ITEM_STATE_ACCEPTED, '<>')
     ->condition('tji.plugin', $plugin)
@@ -700,7 +701,7 @@ function tmgmt_job_states() {
     TMGMT_JOB_STATE_UNPROCESSED => t('Unprocessed'),
     TMGMT_JOB_STATE_ACTIVE => t('Active'),
     TMGMT_JOB_STATE_REJECTED => t('Rejected'),
-    TMGMT_JOB_STATE_CANCELLED => t('Aborted'),
+    TMGMT_JOB_STATE_ABORTED => t('Aborted'),
     TMGMT_JOB_STATE_FINISHED => t('Finished'),
   );
 }
@@ -742,7 +743,7 @@ function tmgmt_job_item_load($tjiid) {
  * @param $conditions
  *   An array of additional conditions.
  *
- * @return
+ * @return TMGMTJobItem[]
  *   An array of job item entities or an empty array if the query returned no
  *   results.
  */

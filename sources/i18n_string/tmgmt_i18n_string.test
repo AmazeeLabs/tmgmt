@@ -78,9 +78,13 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $this->assertEqual(t('Taxonomy term'), $item1->getSourceType());
     $job->requestTranslation();
 
+    /* @var $item TMGMTJobItem */
     foreach ($job->getItems() as $item) {
-      /* @var $item TMGMTJobItem */
+      // The source is available only in en.
+      $this->assertJobItemLangCodes($item, 'en', array('en'));
       $item->acceptTranslation();
+      // The source should be now available in de and en.
+      $this->assertJobItemLangCodes($item, 'en', array('de', 'en'));
     }
 
     // Check the structure of the imported data.
@@ -123,9 +127,11 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $item1 = $job->addItem('i18n_string', 'menu', $string_name);
     $this->assertEqual(t('Menu'), $item1->getSourceType());
     $job->requestTranslation();
+    /* @var $item TMGMTJobItem */
     foreach ($job->getItems() as $item) {
-      /* @var $item TMGMTJobItem */
+      $this->assertJobItemLangCodes($item, 'en', array('en'));
       $item->acceptTranslation();
+      $this->assertJobItemLangCodes($item, 'en', array('de', 'en'));
     }
 
     $data = $item1->getData();
@@ -160,9 +166,11 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $item1 = $job->addItem('i18n_string', 'menu_link', $string_name);
     $this->assertEqual(t('Menu link'), $item1->getSourceType());
     $job->requestTranslation();
+    /* @var $item TMGMTJobItem */
     foreach ($job->getItems() as $item) {
-      /* @var $item TMGMTJobItem */
+      $this->assertJobItemLangCodes($item, 'en', array('en'));
       $item->acceptTranslation();
+      $this->assertJobItemLangCodes($item, 'en', array('de', 'en'));
     }
 
     $data = $item1->getData();
@@ -174,6 +182,34 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     // Check string translation.
     $this->assertEqual(i18n_string_translate($string_name . ':title', $source_text, array('langcode' => $job->target_language)), $job->target_language . '_' . $source_text);
 
+  }
+
+  function testI18nStringSourceLangCodes() {
+    $config = array(
+      'name' => $this->randomName(),
+      'description' => 'description_' . $this->randomName(),
+      'machine_name' => 'test_vocab',
+      'i18n_mode' => I18N_MODE_LOCALIZE,
+    );
+    $vocabulary = entity_create('taxonomy_vocabulary', $config);
+    taxonomy_vocabulary_save($vocabulary);
+
+    $string_object_name = "taxonomy:vocabulary:" . $vocabulary->vid;
+
+    // Create the new job and job item.
+    $job = $this->createJob();
+    $job->translator = $this->translator->name;
+    $job->settings = array();
+    $job->save();
+
+    $item = $job->addItem('i18n_string', 'taxonomy_vocabulary', $string_object_name);
+    $this->assertJobItemLangCodes($item, 'en', array('en'));
+
+    i18n_string_translation_update($string_object_name . ':description', 'de_' . $config['description'], 'de');
+    $this->assertJobItemLangCodes($item, 'en', array('en'));
+
+    i18n_string_translation_update($string_object_name . ':name', 'de_' . $config['name'], 'de');
+    $this->assertJobItemLangCodes($item, 'en', array('en', 'de'));
   }
 
   function testI18nStringPluginUI() {
@@ -188,12 +224,18 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $term_data = array(
       'name' => $this->randomName(),
     );
+    $vocab_data_not_translated = array(
+      'name' => $this->randomName(),
+      'machine_name' => 'test_vocab3',
+      'i18n_mode' => I18N_MODE_LOCALIZE,
+    );
 
     // Configure taxonomy and create vocab + term.
     $this->drupalPost('admin/structure/taxonomy/add', $vocab_data, t('Save'));
     $this->drupalGet('admin/structure/taxonomy');
     $this->clickLink(t('add terms'));
     $this->drupalPost(NULL, $term_data, t('Save'));
+    $this->drupalPost('admin/structure/taxonomy/add', $vocab_data_not_translated, t('Save'));
 
     $this->drupalGet('admin/tmgmt/sources/i18n_string_taxonomy_vocabulary');
     $this->assertText($vocab_data['name']);
@@ -217,6 +259,50 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $this->clickLink(t('review'));
     $this->drupalPost(NULL, array(), t('Save as completed'));
     $this->assertText(t('The translation for @label has been accepted.', array('@label' => $job->label())));
+
+    // Test the missing translation filter.
+    $this->drupalGet('admin/tmgmt/sources/i18n_string_taxonomy_vocabulary');
+    // Check that the source language has been removed from the target language
+    // select box.
+    $elements = $this->xpath('//select[@name=:name]//option[@value=:option]', array(':name' => 'search[target_language]', ':option' => i18n_string_source_language()));
+    $this->assertTrue(empty($elements));
+    $edit = array(
+      'search[target_language]' => 'de',
+      'search[target_status]' => 'untranslated',
+    );
+    $this->drupalPost('admin/tmgmt/sources/i18n_string_taxonomy_vocabulary', $edit, t('Search'));
+    // The vocabulary name is translated to "de" therefore it must not show up
+    // in the list.
+    $this->assertNoText($vocab_data['name']);
+    $this->assertText($vocab_data_not_translated['name']);
+
+    $edit = array(
+      'search[target_language]' => 'de',
+      'search[target_status]' => 'untranslated',
+    );
+    $this->drupalPost(NULL, $edit, t('Search'));
+    $this->assertNoText($vocab_data['name']);
+    $this->assertText($vocab_data_not_translated['name']);
+
+    // Update the string status to I18N_STRING_STATUS_UPDATE.
+    $lid = db_select('locales_source', 's')->fields('s', array('lid'))->condition('source', $vocab_data['name'])->execute()->fetchField();
+    db_update('locales_target')->fields(array('i18n_status' => I18N_STRING_STATUS_UPDATE))->condition('lid', $lid)->execute();
+
+    $edit = array(
+      'search[target_language]' => 'de',
+      'search[target_status]' => 'outdated',
+    );
+    $this->drupalPost(NULL, $edit, t('Search'));
+    $this->assertText($vocab_data['name']);
+    $this->assertNoText($vocab_data_not_translated['name']);
+
+    $edit = array(
+      'search[target_language]' => 'de',
+      'search[target_status]' => 'untranslated_or_outdated',
+    );
+    $this->drupalPost(NULL, $edit, t('Search'));
+    $this->assertText($vocab_data['name']);
+    $this->assertText($vocab_data_not_translated['name']);
   }
 
   /**
@@ -314,5 +400,57 @@ class TMGMTI18nStringSourceTestCase extends TMGMTBaseTestCase {
     $this->assertRaw(t('Translation up to date'));
     $this->assertRaw(t('Active job item: Needs review'));
 
+  }
+
+  /**
+   * Test the i18n specific cart functionality.
+   */
+  function testCart() {
+    $vocabulary1 = entity_create('taxonomy_vocabulary', array(
+        'name' => $this->randomName(),
+        'description' => 'description_' . $this->randomName(),
+        'machine_name' => 'test_vocab1',
+        'i18n_mode' => I18N_MODE_LOCALIZE,
+    ));
+    taxonomy_vocabulary_save($vocabulary1);
+    $string1 = "taxonomy:vocabulary:" . $vocabulary1->vid;
+
+    $vocabulary2 = entity_create('taxonomy_vocabulary', array(
+        'name' => $this->randomName(),
+        'description' => 'description_' . $this->randomName(),
+        'machine_name' => 'test_vocab2',
+        'i18n_mode' => I18N_MODE_LOCALIZE,
+    ));
+    taxonomy_vocabulary_save($vocabulary2);
+    $string2 = "taxonomy:vocabulary:" . $vocabulary2->vid;
+
+    $vocabulary3 = entity_create('taxonomy_vocabulary', array(
+        'name' => $this->randomName(),
+        'description' => 'description_' . $this->randomName(),
+        'machine_name' => 'test_vocab3',
+        'i18n_mode' => I18N_MODE_LOCALIZE,
+    ));
+    taxonomy_vocabulary_save($vocabulary3);
+
+    $this->loginAsAdmin(array_merge($this->translator_permissions, array('translate interface', 'translate user-defined strings')));
+
+    // Test source overview.
+    $this->drupalPost('admin/tmgmt/sources/i18n_string_taxonomy_vocabulary', array(
+      'items[' . $string1 . ']' => TRUE,
+      'items[' . $string2 . ']' => TRUE,
+    ), t('Add to cart'));
+    $this->drupalGet('admin/tmgmt/cart');
+    $this->assertText($vocabulary1->name);
+    $this->assertText($vocabulary2->name);
+
+    // Test translate tab.
+    $this->drupalGet('admin/structure/taxonomy/test_vocab3/translate');
+    $this->assertRaw(t('There are @count items in the <a href="@url">translation cart</a>.',
+        array('@count' => 2, '@url' => url('admin/tmgmt/cart'))));
+
+    $this->drupalPost(NULL, array(), t('Add to cart'));
+    $this->assertRaw(t('@count content source was added into the <a href="@url">cart</a>.', array('@count' => 1, '@url' => url('admin/tmgmt/cart'))));
+    $this->assertRaw(t('There are @count items in the <a href="@url">translation cart</a> including the current item.',
+        array('@count' => 3, '@url' => url('admin/tmgmt/cart'))));
   }
 }

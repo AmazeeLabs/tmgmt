@@ -127,8 +127,18 @@ class TMGMTJob extends Entity {
     $items = $this->getItems();
     $count = count($items);
     if ($count > 0) {
-      $t_args = array('@title' => reset($items)->getSourceLabel(), '@more' => $count - 1);
-      return format_plural($count, '@title', '@title and @more more', $t_args);
+      $source_label = reset($items)->getSourceLabel();
+      $t_args = array('!title' => $source_label, '!more' => $count - 1);
+      $label = format_plural($count, '!title', '!title and !more more', $t_args);
+
+      // If the label length exceeds maximum allowed then cut off exceeding
+      // characters from the title and use it to recreate the label.
+      if (strlen($label) > TMGMT_JOB_LABEL_MAX_LENGTH) {
+        $max_length = strlen($source_label) - (strlen($label) - TMGMT_JOB_LABEL_MAX_LENGTH);
+        $source_label = truncate_utf8($source_label, $max_length, TRUE);
+        $t_args['!title'] = $source_label;
+        $label = format_plural($count, '!title', '!title and !more more', $t_args);
+      }
     }
     else {
       $wrapper = entity_metadata_wrapper($this->entityType, $this);
@@ -140,8 +150,10 @@ class TMGMTJob extends Entity {
       if (empty($target)) {
         $target = '?';
       }
-      return t('From @source to @target', array('@source' => $source, '@target' => $target));
+      $label = t('From !source to !target', array('!source' => $source, '!target' => $target));
     }
+
+    return $label;
   }
 
   /**
@@ -188,9 +200,6 @@ class TMGMTJob extends Entity {
     }
 
     $item = tmgmt_job_item_create($plugin, $item_type, $item_id, array('tjid' => $this->tjid));
-    // Initialize job item data variable needed to determine word count
-    // in job item getWordCount().
-    $item->getData();
     $item->save();
 
     if ($item->getWordCount() == 0) {
@@ -203,8 +212,8 @@ class TMGMTJob extends Entity {
         $this->tjid = NULL;
       }
 
-      throw new TMGMTException('Created job item with word count 0. Plugin: @plugin | Item type: @item_type | Item id: @item_id',
-        array('@plugin' => $plugin, '@item_type' => $item_type, '@item_id' => $item_id));
+      throw new TMGMTException('Job item @label (@type) has no translatable content.',
+        array('@label' => $item->label(), '@type' => $item->getSourceType()));
     }
 
     return $item;
@@ -255,7 +264,10 @@ class TMGMTJob extends Entity {
   /**
    * Returns all job items attached to this job.
    *
-   * @return array
+   * @param array $conditions
+   *   Additional conditions to pass into EFQ.
+   *
+   * @return TMGMTJobItem[]
    *   An array of translation job items.
    */
   public function getItems($conditions = array()) {
@@ -442,11 +454,9 @@ class TMGMTJob extends Entity {
    *
    * @return boolean
    *   TRUE if the state is 'aborted', FALSE otherwise.
-   *
-   * @todo Rename method to isAborted() in https://drupal.org/node/2124825
    */
-  public function isCancelled() {
-    return $this->isState(TMGMT_JOB_STATE_CANCELLED);
+  public function isAborted() {
+    return $this->isState(TMGMT_JOB_STATE_ABORTED);
   }
 
   /**
@@ -499,10 +509,8 @@ class TMGMTJob extends Entity {
    *
    * @return boolean
    *   TRUE if the job can be aborted, FALSE otherwise.
-   *
-   * @todo Rename method to isAbortable() in https://drupal.org/node/2124825
    */
-  public function isCancelable() {
+  public function isAbortable() {
     // Only non-submitted translation jobs can be aborted.
     return $this->isActive();
   }
@@ -568,23 +576,21 @@ class TMGMTJob extends Entity {
   }
 
   /**
-   * Sets the state of the job to 'cancelled'.
+   * Sets the state of the job to 'aborted'.
    *
    * @param $message
    *   The log message to be saved along with the state change.
    * @param $variables
    *   (Optional) An array of variables to replace in the message on display.
    *
-   * Use TMGMTJob::cancelTranslation() to cancel a translation.
+   * Use TMGMTJob::abortTranslation() to abort a translation.
    *
    * @return TMGMTJob
    *   The job entity.
    *
    * @see TMGMTJob::addMessage()
-   *
-   * @todo Rename method to aborted() in https://drupal.org/node/2124825
    */
-  public function cancelled($message = NULL, $variables = array(), $type = 'status') {
+  public function aborted($message = NULL, $variables = array(), $type = 'status') {
     if (!isset($message)) {
       $message = 'The translation job has been aborted.';
     }
@@ -592,7 +598,7 @@ class TMGMTJob extends Entity {
     foreach ($this->getItems() as $item) {
       $item->setState(TMGMT_JOB_ITEM_STATE_ABORTED);
     }
-    return $this->setState(TMGMT_JOB_STATE_CANCELLED, $message, $variables, $type);
+    return $this->setState(TMGMT_JOB_STATE_ABORTED, $message, $variables, $type);
   }
 
   /**
@@ -632,21 +638,26 @@ class TMGMTJob extends Entity {
   }
 
   /**
-   * Attempts to cancel the translation job. Already accepted jobs can not be
-   * cancelled, submitted jobs only if supported by the translator plugin.
-   * Always use this method if you want to cancel a translation job.
+   * Attempts to abort the translation job. Already accepted jobs can not be
+   * aborted, submitted jobs only if supported by the translator plugin.
+   * Always use this method if you want to abort a translation job.
    *
    * @return boolean
-   *   TRUE if the translation job was cancelled, FALSE otherwise.
+   *   TRUE if the translation job was aborted, FALSE otherwise.
    */
-  public function cancelTranslation() {
-    if (!$this->isCancelable() || !$controller = $this->getTranslatorController()) {
+  public function abortTranslation() {
+    if (!$this->isAbortable() || !$controller = $this->getTranslatorController()) {
       return FALSE;
     }
-    // We don't know if the translator plugin was able to cancel the translation
+    // We don't know if the translator plugin was able to abort the translation
     // job after this point. That means that the plugin has to set the
-    // 'cancelled' state on its own.
-    return $controller->cancelTranslation($this);
+    // 'aborted' state on its own.
+    if (method_exists($controller, 'cancelTranslation')) {
+      // We keep the compatibility with previous API method cancelTranslation().
+      // This compatibility check will be removed in 8.x-1.x.
+      return $controller->cancelTranslation($this);
+    }
+    return $controller->abortTranslation($this);
   }
 
   /**
