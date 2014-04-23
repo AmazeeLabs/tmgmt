@@ -62,7 +62,7 @@ function tmgmt_i18n_string_get_strings($type, $search_label = NULL, $target_lang
     }
   }
 
-  if (isset($info['string translation']['type'])) {
+  if (isset($info['string translation']['type']) && $info['string translation']['textgroup'] != 'views') {
     $select->condition('i18n_s.type', $info['string translation']['type']);
   }
   elseif ($type == 'field' || $type == 'field_instance') {
@@ -260,6 +260,13 @@ function tmgmt_i18n_string_get_wrapper($type, $i18n_string) {
       $type_key => $i18n_string->type,
       $objectid_key => $i18n_string->objectid
     ));
+    return $wrapper;
+  }
+  elseif ($type == 'views') {
+    // For views, we have to load the view and pass it as argument to
+    // i18n_get_object().
+    $view = views_get_view($i18n_string->type);
+    $wrapper = i18n_get_object($type, $i18n_string->objectid, $view);
     return $wrapper;
   }
   else {
