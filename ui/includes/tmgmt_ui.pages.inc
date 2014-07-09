@@ -832,3 +832,33 @@ function _tmgmt_ui_breadcrumb(TMGMTJobItem $item) {
   $breadcrumb[] = l($menu['title'], 'admin/tmgmt/jobs/' . $item->tjid);
   drupal_set_breadcrumb($breadcrumb);
 }
+
+/**
+ * Page callback for the job item preview.
+ *
+ * @see tmgmt_ui_source_overview_form()
+ */
+function tmgmt_ui_job_item_preview_page($js, $plugin, $item_type, $item_id) {
+  $item_id = rawurldecode($item_id);
+  $job_item = tmgmt_job_item_create($plugin, $item_type, $item_id);
+  $flatten_data = tmgmt_flatten_data($job_item->getSourceData());
+  $elements = array();
+  foreach (element_children($flatten_data) as $key) {
+    if (!empty($flatten_data[$key]['#translate'])) {
+      $elements[$key] = array(
+        '#type' => 'textarea',
+        '#title' => $flatten_data[$key]['#label'],
+        '#value' => $flatten_data[$key]['#text'],
+        '#rows' => substr_count($flatten_data[$key]['#text'], "\n") + 1,
+        '#resizable' => FALSE,
+      );
+    }
+  }
+  $content = drupal_render($elements);;
+  if ($js) {
+    ctools_include('modal');
+    ctools_include('ajax');
+    return ctools_modal_render(t('Preview job item'), $content);
+  }
+  return $content;
+}

@@ -53,6 +53,15 @@ function tmgmt_ui_menu() {
   foreach (tmgmt_source_ui_controller() as $controller) {
     $items += $controller->hook_menu();
   }
+  $items['tmgmt-ui/job-item-preview/%ctools_js/%/%/%'] = array(
+    'title' => 'Preview job item',
+    'page arguments' => array(2, 3, 4, 5),
+    'page callback' => 'tmgmt_ui_job_item_preview_page',
+    'access callback' => 'tmgmt_job_access',
+    'access arguments' => array('create'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'includes/tmgmt_ui.pages.inc',
+  );
   return $items;
 }
 
@@ -212,7 +221,23 @@ function tmgmt_ui_source_overview_form($form, &$form_state, $plugin, $item_type 
   $controller = tmgmt_source_ui_controller($plugin);
   $form_state['plugin'] = $plugin;
   $form_state['item_type'] = $item_type;
-  return $controller->overviewForm($form, $form_state, $item_type);
+  $form = $controller->overviewForm($form, $form_state, $item_type);
+
+  // Add the preview link to each row.
+  if (!empty($form['items']['#options']) && tmgmt_job_access('create')) {
+    ctools_include('ajax');
+    ctools_include('modal');
+    ctools_modal_add_js();
+    $info_sign = '&#9432;';
+    $link_title = t('Preview this item');
+    foreach ($form['items']['#options'] as $key => $option) {
+      $path = "tmgmt-ui/job-item-preview/nojs/$plugin/$item_type/" . rawurlencode($option['id']);
+      $link = ctools_modal_text_button($info_sign, $path, $link_title);
+      $form['items']['#options'][$key]['title'] .= ' <span class="tmgmt-job-item-preview">' . $link . '</span>';
+    }
+  }
+
+  return $form;
 }
 
 /**
