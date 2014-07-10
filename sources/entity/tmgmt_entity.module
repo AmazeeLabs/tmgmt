@@ -313,6 +313,9 @@ function tmgmt_entity_tmgmt_source_suggestions(array $items, TMGMTJob $job) {
                   'reason' => t('Field @label', array('@label' => $instance['label'])),
                   'from_item' => $item->tjiid,
                 );
+              }
+            }
+            break;
 
           case 'field_collection':
             if (isset($entity_types['field_collection_item']) && ($field_items = field_get_items($item->item_type, $entity, $field['field_name']))) {
