@@ -313,6 +313,24 @@ function tmgmt_entity_tmgmt_source_suggestions(array $items, TMGMTJob $job) {
                   'reason' => t('Field @label', array('@label' => $instance['label'])),
                   'from_item' => $item->tjiid,
                 );
+
+          case 'field_collection':
+            if (isset($entity_types['field_collection_item']) && ($field_items = field_get_items($item->item_type, $entity, $field['field_name']))) {
+              foreach($field_items as $field_item) {
+                $field_collection_entity = entity_load_single('field_collection_item', $field_item['value']);
+
+                // Check if there is already a translation
+                $handler = entity_translation_get_handler('field_collection_item', $field_collection_entity);
+                if ($handler instanceof EntityTranslationHandlerInterface) {
+                  $translations = $handler->getTranslations();
+                  if (!isset($translations->data[$job->target_language])) {
+                    $suggestions[] = array(
+                      'job_item' => tmgmt_job_item_create('entity', 'field_collection_item', $field_collection_entity->item_id),
+                      'reason' => t('Field @label', array('@label' => $instance['label'])),
+                      'from_item' => $item->tjiid,
+                    );
+                  }
+                }
               }
             }
             break;
