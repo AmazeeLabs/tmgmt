@@ -14,7 +14,10 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
       'name' => 'Entity Suggestions tests',
       'description' => 'Tests suggestion implementation for the entity source plugin',
       'group' => 'Translation Management',
-      'dependencies' => array('file_entity'),
+      'dependencies' => array(
+        'file_entity',
+        'entityreference',
+      ),
     );
   }
 
