@@ -11,6 +11,7 @@ dependencies[] = entity_translation
 test_dependencies[] = pathauto
 test_dependencies[] = file_entity
 test_dependencies[] = entityreference
+test_dependencies[] = field_collection
 
 files[] = tmgmt_entity.source.test
 files[] = tmgmt_entity.pathauto.test

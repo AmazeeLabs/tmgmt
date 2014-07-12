@@ -17,12 +17,19 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
       'dependencies' => array(
         'file_entity',
         'entityreference',
+        'field_collection',
       ),
     );
   }
 
   public function setUp() {
-    parent::setUp(array('file_entity', 'tmgmt_entity', 'tmgmt_ui', 'entityreference'));
+    parent::setUp(array(
+      'file_entity',
+      'tmgmt_entity',
+      'tmgmt_ui',
+      'entityreference',
+      'field_collection',
+    ));
     $this->loginAsAdmin(array('administer entity translation'));
 
     $this->setEnvironment('de');
@@ -73,6 +80,36 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
         ),
       ),
     ));
+    $field4 = field_create_field(array(
+      'field_name' => 'field4',
+      'type' => 'field_collection',
+      'cardinality' => -1,
+    ));
+
+    // Create a translatable text field, and attach it to the
+    // field_collection_item.
+    field_create_field(array(
+      'field_name' => 'field_text',
+      'type' => 'text',
+      'cardinality' => 1,
+      'translatable' => TRUE,
+    ));
+    $fc_text_field = field_create_instance(array(
+      'entity_type' => 'field_collection_item',
+      'field_name' => 'field_text',
+      'bundle' => $field4['field_name'],
+      'label' => 'Text field for field_collection',
+      'widget' => array(
+        'type' => 'text_textfield',
+      ),
+    ));
+
+    // The field_collection_item entity appears in the list only after at least
+    // one field_collection field is attached to any entity. That's why it's not
+    // possible to enable translation for the field_collection_item entities in
+    // the setUp() method.
+    $edit['entity_translation_entity_types[field_collection_item]'] = 1;
+    $this->drupalPost('admin/config/regional/entity_translation', $edit, t('Save configuration'));
 
     // Create field instances on the content type.
     field_create_instance(array(
@@ -98,6 +135,18 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
       'label' => 'Field 3',
       'settings' => array(),
       'widget' => array('type' => 'entityreference_autocomplete_tags'),
+    ));
+    field_create_instance(array(
+      'field_name' => $field4['field_name'],
+      'entity_type' => 'node',
+      'bundle' => $type->type,
+      'label' => 'Field 4',
+      'settings' => array(),
+      'widget' => array(
+        'type' => 'hidden',
+        'label' => 'Field 4',
+        'settings' => array(),
+      ),
     ));
 
     // Make the body field translatable from node.
@@ -187,6 +236,19 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
         array('target_id' => $referenced_node->nid),
       )),
     ));
+
+    // Create a field_collection_item containing the field_text field filled
+    // with 5 words, and attach it to the node.
+    $fc_item = entity_create('field_collection_item', array(
+      'field_name' => $field4['field_name'],
+    ));
+    $fc_item->setHostEntity('node', $node);
+    $five_words_string = implode(' ', array_map(array($this, 'randomName'), array_fill(0, 5, 10)));
+    $fc_item->{$fc_text_field['field_name']}['en'][0]['value'] = $five_words_string;
+    $fc_item->save();
+    // Reload node so the field_collection field is filled.
+    $node = node_load($node->nid);
+
     return $node;
   }
 
@@ -203,8 +265,8 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
     $suggestions = $job->getSuggestions();
     $job->cleanSuggestionsList($suggestions);
 
-    // Check for one suggestion.
-    $this->assertEqual(count($suggestions), 3, 'Found three suggestions.');
+    // Check for four suggestions.
+    $this->assertEqual(count($suggestions), 4, 'Found four suggestions.');
 
     // Check for valid attributes on the suggestions.
     $suggestion = array_shift($suggestions);
@@ -231,6 +293,15 @@ class TMGMTSuggestionsTestCase extends TMGMTBaseTestCase {
     $this->assertEqual($suggestion['job_item']->item_type, 'node', 'Got a node in the suggestion.');
     $this->assertEqual($suggestion['job_item']->item_id, $node->field3[LANGUAGE_NONE][0]['target_id'], 'File id match between node and suggestion.');
     $this->assertEqual($suggestion['reason'], 'Field Field 3');
+    $this->assertEqual($suggestion['from_item'], $item->tjiid);
+    $job->addExistingItem($suggestion['job_item']);
+
+    $suggestion = array_shift($suggestions);
+    $this->assertEqual($suggestion['job_item']->getWordCount(), 5, 'Five translatable words in the suggestion');
+    $this->assertEqual($suggestion['job_item']->plugin, 'entity', 'Got an entity as plugin in the suggestion.');
+    $this->assertEqual($suggestion['job_item']->item_type, 'field_collection_item', 'Got a field_collection_item in the suggestion.');
+    $this->assertEqual($suggestion['job_item']->item_id, $node->field4[LANGUAGE_NONE][0]['value'], 'Field collection ID match between node and suggestion.');
+    $this->assertEqual($suggestion['reason'], 'Field Field 4');
     $this->assertEqual($suggestion['from_item'], $item->tjiid);
     $job->addExistingItem($suggestion['job_item']);
 
