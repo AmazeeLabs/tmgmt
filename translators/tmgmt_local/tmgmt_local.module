@@ -358,6 +358,34 @@ function tmgmt_local_task_item_load_multiple(array $tltiids = array(), $conditio
 }
 
 /**
+ * Loads the next translation task item for a translation task.
+ *
+ * @param int $tltid
+ *  The translation task id.
+ *
+ * @param int $tltiid
+ *  Optional, a translation task item id. The returned translation task item
+ *  will be the first item that has a bigger id that $tltiid (and matches the
+ *  status condition). Defaults to 0.
+ *
+ * @param int $status
+ *  Optional, the status which the loaded task item should have. By default, it
+ *  is ignored.
+ */
+function tmgmt_local_task_item_load_next($tltid, $tltiid = 0, $status = NULL) {
+  $query = db_select('tmgmt_local_task_item', 'tlti')->fields('tlti', array('tltiid'));
+  $query->condition('tlti.tltid', $tltid)->condition('tlti.tltiid', $tltiid, '>');
+  if (!is_null($status)) {
+    $query->condition('tlti.status', $status);
+  }
+  $result = $query->execute()->fetch();
+  if (!empty($result)) {
+    return tmgmt_local_task_item_load($result->tltiid);
+  }
+  return FALSE;
+}
+
+/**
  * Creates a translation task entity.
  *
  * @param $values
