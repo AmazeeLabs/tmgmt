@@ -200,6 +200,7 @@ abstract class TMGMTEntityDefaultSourceUIController extends TMGMTDefaultSourceUI
         'untranslated_or_outdated' => t('Untranslated or outdated'),
         'untranslated' => t('Untranslated'),
         'outdated' => t('Outdated'),
+        'translated' => t('Translated'),
       ),
       '#default_value' => isset($_GET['target_status']) ? $_GET['target_status'] : NULL,
       '#states' => array(

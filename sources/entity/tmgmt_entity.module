@@ -154,6 +154,9 @@ function tmgmt_entity_get_translatable_entities($entity_type, $property_conditio
     elseif ($property_conditions['target_status'] == 'untranslated') {
       $query->isNull("$translation_table_alias.language");
     }
+    elseif ($property_conditions['target_status'] == 'translated') {
+      $query->isNotNull("$translation_table_alias.language");
+    }
   }
 
   // Remove the condition so we do not try to add it again below.
