@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Installation hooks for the i18n String Source module.
+ */
+
+/**
+ * Update data keys in i18n_string job items.
+ */
+function tmgmt_i18n_string_update_7000() {
+  $job_item_ids = db_select('tmgmt_job_item', 'ji')
+    ->fields('ji', array('tjiid'))
+    ->condition('ji.plugin', 'i18n_string')
+    ->execute()
+    ->fetchCol();
+  $job_items = entity_load('tmgmt_job_item', $job_item_ids);
+  /** @var TMGMTJobItem $job_item */
+  foreach ($job_items as $job_item) {
+    $data = $job_item->getData();
+    foreach (element_children($data) as $key) {
+      /** @see TMGMTI18nStringSourcePluginController::getData() */
+      $data[md5($key)] = $data[$key] + array('#i18n_string_id' => $key);
+      unset($data[$key]);
+    }
+    $job_item->data = $data;
+    $job_item->save();
+  }
+}

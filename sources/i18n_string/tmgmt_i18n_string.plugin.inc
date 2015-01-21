@@ -19,7 +19,16 @@ class TMGMTI18nStringSourcePluginController extends TMGMTDefaultSourcePluginCont
     if ($i18n_object instanceof i18n_string_object_wrapper) {
       $i18n_strings = $i18n_object->get_strings();
       foreach ($i18n_strings as $string_id => $string) {
-        $structure[$string_id] = array(
+        // 1. The i18n string IDs (names) could contain spaces.
+        // 2. PHP does not allow spaces and some other characters in the form
+        //    input element names (http://stackoverflow.com/a/283781/580371).
+        // 3. Data array keys are used as form input element names.
+        // Considering the above rules, we can't use string IDs as data array
+        // keys. Solution: use hashes for data array keys, and save the original
+        // string IDs in the "#i18n_string_id" parameter.
+        $hash = md5($string_id);
+        $structure[$hash] = array(
+          '#i18n_string_id' => $string_id,
           '#label' => $string->title,
           '#text' => $string->string,
           '#translate' => TRUE
@@ -40,9 +49,9 @@ class TMGMTI18nStringSourcePluginController extends TMGMTDefaultSourcePluginCont
   public function saveTranslation(TMGMTJobItem $job_item) {
     $job = tmgmt_job_load($job_item->tjid);
     $data = array_filter(tmgmt_flatten_data($job_item->getData()), '_tmgmt_filter_data');
-    foreach ($data as $i18n_string => $item) {
+    foreach ($data as $item) {
       if (isset($item['#translation']['#text'])) {
-        i18n_string_translation_update($i18n_string, $item['#translation']['#text'], $job->target_language);
+        i18n_string_translation_update($item['#i18n_string_id'], $item['#translation']['#text'], $job->target_language);
       }
     }
 
