@@ -543,6 +543,19 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
     '#type' => 'submit',
     '#value' => t('Save job'),
   );
+  $needs_review_count = 0;
+  foreach ($job->getItems() as $job_item) {
+    if ($job_item->isNeedsReview()) {
+      $needs_review_count++;
+    }
+  }
+  if ($needs_review_count > 0) {
+    $form['actions']['accept_all'] = array(
+      '#type' => 'submit',
+      '#value' => t('Accept all job items'),
+      '#submit' => array('tmgmt_job_form_submit_accept_all'),
+    );
+  }
   if (entity_access('submit', 'tmgmt_job', $job)) {
     $form['actions']['checkout'] = array(
       '#type' => 'submit',
@@ -587,6 +600,16 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
 
   $form['#attached']['css'][] = drupal_get_path('module', 'tmgmt_ui') . '/css/tmgmt_ui.admin.css';
   return $form;
+}
+
+/**
+ * Submit callback for the "Accept all job items" button.
+ */
+function tmgmt_job_form_submit_accept_all($form, &$form_state) {
+  /* @var $job TMGMTJob */
+  $job = $form_state['tmgmt_job'];
+  $job->acceptTranslation();
+  drupal_set_message(t('All acceptable Job Items have been accepted.'));
 }
 
 /**
