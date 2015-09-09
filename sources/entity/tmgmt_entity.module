@@ -157,9 +157,15 @@ function tmgmt_entity_get_translatable_entities($entity_type, $property_conditio
     }
   }
 
+  // Searching for the source language.
+  if (!empty($property_conditions['language'])) {
+    $query->condition("$source_table_alias.language", $property_conditions['language']);
+  }
+
   // Remove the condition so we do not try to add it again below.
   unset($property_conditions['target_language']);
   unset($property_conditions['target_status']);
+  unset($property_conditions['language']);
 
   // Searching for the source label.
   if (!empty($label_key) && isset($property_conditions[$label_key])) {
