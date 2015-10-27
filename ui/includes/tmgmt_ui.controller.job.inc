@@ -58,6 +58,16 @@ class TMGMTJobUIController extends EntityDefaultUIController {
       'access arguments' => array('resubmit', $this->entityType, $id_count),
       'type' => MENU_CALLBACK,
     );
+    $items[$this->path . '/' . $wildcard . '/accept-all'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tmgmt_job_accept_all_form', $id_count),
+      'load arguments' => array($this->entityType),
+      'access callback' => 'entity_access',
+      'access arguments' => array('accept', $this->entityType, $id_count),
+      'type' => MENU_CALLBACK,
+      'file' => $this->entityInfo['admin ui']['file'],
+      'file path' => $this->entityInfo['admin ui']['file path'],
+    );
     return $items;
   }
 

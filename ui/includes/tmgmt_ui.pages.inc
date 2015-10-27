@@ -549,13 +549,13 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
       $needs_review_count++;
     }
   }
-  if ($needs_review_count > 0) {
-    $form['actions']['accept_all'] = array(
-      '#type' => 'submit',
-      '#value' => t('Accept all job items'),
-      '#submit' => array('tmgmt_job_form_submit_accept_all'),
-    );
-  }
+  $form['actions']['accept_all'] = array(
+    '#type' => 'submit',
+    '#value' => t('Accept all job items'),
+    '#submit' => array('tmgmt_ui_submit_redirect'),
+    '#redirect' => 'admin/tmgmt/jobs/' . $job->tjid . '/accept-all',
+    '#access' => ($needs_review_count > 0),
+  );
   if (entity_access('submit', 'tmgmt_job', $job)) {
     $form['actions']['checkout'] = array(
       '#type' => 'submit',
@@ -603,13 +603,96 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
 }
 
 /**
- * Submit callback for the "Accept all job items" button.
+ * Form callback for the "Accept all job items" action.
  */
-function tmgmt_job_form_submit_accept_all($form, &$form_state) {
+function tmgmt_job_accept_all_form($form, $form_state, TMGMTJob $job) {
+  $form['job'] = array(
+    '#type' => 'value',
+    '#value' => $job,
+  );
+  $question = t('Are you sure you want to accept all job items in %job?', array('%job' => $job->label));
+  return confirm_form($form, $question, 'admin/tmgmt/jobs/' . $job->tjid);
+}
+
+/**
+ * Form submit callback for the "Accept all job items" action.
+ */
+function tmgmt_job_accept_all_form_submit($form, $form_state) {
   /* @var $job TMGMTJob */
-  $job = $form_state['tmgmt_job'];
-  $job->acceptTranslation();
-  drupal_set_message(t('All acceptable Job Items have been accepted.'));
+  $job = $form['job']['#value'];
+  $job_item_ids = array();
+  foreach ($job->getItems() as $item) {
+    $job_item_ids[] = $item->tjiid;
+  }
+  $operations = array();
+  while ($job_item_ids) {
+    $item_ids = array_splice($job_item_ids, 0, 10);
+    $operations[] = array('tmgmt_job_accept_all_batch_operation', array($item_ids));
+  }
+  $batch = array(
+    'title' => t('Accepting job items'),
+    'operations' => $operations,
+    'finished' => 'tmgmt_job_accept_all_batch_finished',
+    'file' => drupal_get_path('module', 'tmgmt_ui') . '/includes/tmgmt_ui.pages.inc',
+  );
+  batch_set($batch);
+  batch_process('admin/tmgmt/jobs/' . $job->tjid);
+}
+
+/**
+ * Implements callback_batch_operation().
+ */
+function tmgmt_job_accept_all_batch_operation($job_item_ids, &$context) {
+  if (empty($context['results'])) {
+    $context['results']['accepted_count'] = 0;
+    $context['results']['skipped_count'] = 0;
+    $context['results']['failed_count'] = 0;
+  }
+  foreach (tmgmt_job_item_load_multiple($job_item_ids) as $job_item) {
+    try {
+      $result = $job_item->acceptTranslation();
+      if ($result === FALSE) {
+        $context['results']['skipped_count']++;
+      }
+      else {
+        $context['results']['accepted_count']++;
+      }
+    }
+    catch (Exception $e) {
+      $context['results']['failed_count']++;
+      watchdog_exception('tmgmt', $e, 'An exception was caught during the "Accept all job items" operation.
+<br />Translation job ID: @job_id
+<br />Job item ID: @job_item_id
+<br />Job item URL: @job_item_url
+<br />%type: !message in %function (line %line of %file).', array(
+        '@job_id' => $job_item->tjid,
+        '@job_item_id' => $job_item->tjiid,
+        '@job_item_url' => url('admin/tmgmt/items/' . $job_item->tjiid, array('absolute' => TRUE)),
+      ));
+    }
+  }
+
+}
+
+/**
+ * Implements callback_batch_finished().
+ */
+function tmgmt_job_accept_all_batch_finished($success, $results, $operations) {
+  if ($results['accepted_count'] > 0) {
+    $singular = '1 job item has been accepted.';
+    $plural = '@count job items have been accepted.';
+    drupal_set_message(format_plural($results['accepted_count'], $singular, $plural));
+  }
+  if ($results['skipped_count'] > 0) {
+    $singular = '1 job item has been skipped.';
+    $plural = '@count job items have been skipped.';
+    drupal_set_message(format_plural($results['skipped_count'], $singular, $plural));
+  }
+  if ($results['failed_count'] > 0) {
+    $singular = '1 job item has not been accepted because of error. Check the "tmgmt" messages in Drupal log for more details.';
+    $plural = '@count job items have not been accepted because of errors. Check the "tmgmt" messages in Drupal log for more details.';
+    drupal_set_message(format_plural($results['failed_count'], $singular, $plural), 'warning');
+  }
 }
 
 /**
