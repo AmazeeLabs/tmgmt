@@ -335,7 +335,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // is.
     if (!$job->getSetting('xliff_processing')) {
       // HTML entities were encoded on export. Decode them back.
-      return decode_entities($translation);
+      return decode_entities(strip_tags($translation));
     }
 
     $reader = new XMLReader();
