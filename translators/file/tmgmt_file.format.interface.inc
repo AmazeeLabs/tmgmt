@@ -10,11 +10,13 @@ interface TMGMTFileFormatInterface {
    *
    * @param $job
    *   The translation job object to be exported.
+   * @param array $conditions
+   *   (optional) An array containing list of conditions.
    *
    * @return
    *   String with the file content.
    */
-  function export(TMGMTJob $job);
+  function export(TMGMTJob $job, $conditions = array());
 
   /**
    * Validates that the given file is valid and can be imported.

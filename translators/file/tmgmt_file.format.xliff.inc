@@ -127,7 +127,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
   /**
    * {@inheritdoc}
    */
-  public function export(TMGMTJob $job) {
+  public function export(TMGMTJob $job, $conditions = array()) {
 
     $this->job = $job;
 
@@ -170,7 +170,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
 
     $this->startElement('body');
 
-    foreach ($job->getItems() as $item) {
+    foreach ($job->getItems($conditions) as $item) {
       $this->addItem($item);
     }
 
