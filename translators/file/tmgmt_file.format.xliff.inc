@@ -97,7 +97,10 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     $this->startElement('source');
     $this->writeAttribute('xml:lang', $this->job->getTranslator()->mapToRemoteLanguage($this->job->source_language));
 
-    if ($job->getSetting('xliff_processing')) {
+    if ($job->getSetting('xliff_cdata')) {
+      $this->writeCdata(trim($element['#text']));
+    }
+    elseif ($job->getSetting('xliff_processing')) {
       $this->writeRaw($this->processForExport($element['#text'], $key_array));
     }
     else {
@@ -331,6 +334,11 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     if (empty($this->importedTransUnits)) {
       $reader = new XMLReader();
       foreach ($this->importedXML->xpath('//xliff:trans-unit') as $unit) {
+        if ($job->getSetting('xliff_cdata')) {
+          $this->importedTransUnits[(string) $unit['id']]['#text'] = (string) $unit->target;
+          continue;
+        }
+
         $reader->XML($unit->target->asXML());
         $reader->read();
         $this->importedTransUnits[(string) $unit['id']]['#text'] =
