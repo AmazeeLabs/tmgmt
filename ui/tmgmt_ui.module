@@ -251,10 +251,10 @@ function tmgmt_ui_source_overview_form_defaults($form, &$form_state, $plugin, $i
     '#attributes' => array('class' => array('tmgmt-source-operations-wrapper'))
   );
   tmgmt_ui_add_cart_form($form['actions'], $form_state, $plugin, $item_type);
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Request translation'),
-  );
+//  $form['actions']['submit'] = array(
+//    '#type' => 'submit',
+//    '#value' => t('Request translation'),
+//  );
   return $form;
 }
 

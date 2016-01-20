@@ -77,12 +77,12 @@ function tmgmt_node_ui_node_form($form, &$form_state, $node, $original) {
     $form['languages']['#options'][$langcode] = $option;
   }
   $form['actions']['#type'] = 'actions';
-  $form['actions']['request'] = array(
-    '#type' => 'submit',
-    '#value' => t('Request translation'),
-    '#submit' => array('tmgmt_node_ui_translate_form_submit'),
-    '#validate' => array('tmgmt_node_ui_translate_form_validate'),
-  );
+//  $form['actions']['request'] = array(
+//    '#type' => 'submit',
+//    '#value' => t('Request translation'),
+//    '#submit' => array('tmgmt_node_ui_translate_form_submit'),
+//    '#validate' => array('tmgmt_node_ui_translate_form_validate'),
+//  );
   return $form;
 }
 

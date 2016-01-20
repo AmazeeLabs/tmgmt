@@ -148,12 +148,12 @@ function tmgmt_i18n_string_form_i18n_string_translate_page_overview_form_alter(&
 
   unset($form['languages']['#rows'], $form['languages']['#theme']);
 
-  $form['actions']['request_translation'] = array(
-    '#type' => 'submit',
-    '#value' => t('Request translation'),
-    '#submit' => array('tmgmt_i18n_string_translate_form_submit'),
-    '#validate' => array('tmgmt_i18n_string_translate_form_validate'),
-  );
+//  $form['actions']['request_translation'] = array(
+//    '#type' => 'submit',
+//    '#value' => t('Request translation'),
+//    '#submit' => array('tmgmt_i18n_string_translate_form_submit'),
+//    '#validate' => array('tmgmt_i18n_string_translate_form_validate'),
+//  );
 }
 
 /**

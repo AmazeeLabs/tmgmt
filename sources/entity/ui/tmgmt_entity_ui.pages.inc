@@ -86,12 +86,12 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
     }
   }
   $form['actions']['#type'] = 'actions';
-  $form['actions']['request'] = array(
-    '#type' => 'submit',
-    '#value' => t('Request translation'),
-    '#submit' => array('tmgmt_entity_ui_translate_form_submit'),
-    '#validate' => array('tmgmt_entity_ui_translate_form_validate'),
-  );
+//  $form['actions']['request'] = array(
+//    '#type' => 'submit',
+//    '#value' => t('Request translation'),
+//    '#submit' => array('tmgmt_entity_ui_translate_form_submit'),
+//    '#validate' => array('tmgmt_entity_ui_translate_form_validate'),
+//  );
   return $form;
 }
 

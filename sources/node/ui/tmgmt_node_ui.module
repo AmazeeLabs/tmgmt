@@ -31,12 +31,12 @@ function tmgmt_node_ui_page_alter(&$page) {
  */
 function tmgmt_node_ui_action_info() {
   return array(
-    'tmgmt_node_ui_checkout_multiple_action' => array(
-      'type' => 'node',
-      'label' => t('Request translations'),
-      'configurable' => false,
-      'aggregate' => true
-    )
+//    'tmgmt_node_ui_checkout_multiple_action' => array(
+//      'type' => 'node',
+//      'label' => t('Request translations'),
+//      'configurable' => false,
+//      'aggregate' => true
+//    )
   );
 }
 
