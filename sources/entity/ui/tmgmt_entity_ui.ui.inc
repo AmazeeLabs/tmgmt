@@ -67,6 +67,15 @@ class TMGMTEntitySourceUIController extends TMGMTEntityDefaultSourceUIController
       );
     }
 
+    // UBX-927 We only want query entities having English source.
+    $source_language = NULL;
+    if (!empty($data['translation_statuses'])) {
+      $source_language = array_search('original', $data['translation_statuses']);
+    }
+    if (!in_array($source_language, array('en', 'en-US'))) {
+      $row['#disabled'] = TRUE;
+    }
+
     return $row;
   }
 
@@ -82,6 +91,7 @@ class TMGMTEntitySourceUIController extends TMGMTEntityDefaultSourceUIController
       '#header' => $this->overviewFormHeader($type),
       '#empty' => t('No entities matching given criteria have been found.'),
       '#attributes' => array('id' => 'tmgmt-entities-list'),
+      '#process' => array('form_process_tableselect', '_tmgmt_entity_ui_process_tableselect'),
     );
 
     // Load search property params which will be passed into

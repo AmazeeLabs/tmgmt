@@ -40,3 +40,15 @@ function tmgmt_entity_ui_tmgmt_source_plugin_info_alter(&$info) {
   $info['entity']['file path'] = drupal_get_path('module', 'tmgmt_entity_ui');
 }
 
+/**
+ * Additional form process handler for the "#type => tableselect" element.
+ */
+function _tmgmt_entity_ui_process_tableselect($tableselect) {
+
+  // Pass #disabled property to the checkbox.
+  foreach ($tableselect['#options'] as $key => $option) {
+    $tableselect[$key]['#disabled'] = !empty($option['#disabled']);
+  }
+
+  return $tableselect;
+}
