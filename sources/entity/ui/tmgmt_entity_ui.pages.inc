@@ -84,6 +84,15 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
       // Append the current option array to the form.
       $form['languages']['#options'][$langcode] = $option;
     }
+
+    // Check all available checkboxes by default.
+    if (empty($form['languages'][$langcode]['#disabled'])) {
+      $form['languages']['#options'][$langcode]['#attributes']['class'][] = 'selected';
+      $form['languages'][$langcode] = array(
+        '#type' => 'checkbox',
+        '#default_value' => 1,
+      );
+    }
   }
   $form['actions']['#type'] = 'actions';
 //  $form['actions']['request'] = array(
