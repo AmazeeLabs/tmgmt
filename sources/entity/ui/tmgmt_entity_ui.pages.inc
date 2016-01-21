@@ -30,6 +30,7 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
     '#type' => 'tableselect',
     '#header' => $overview['#header'],
     '#options' => array(),
+    '#process' => array('form_process_tableselect', '_tmgmt_entity_ui_process_tableselect'),
   );
   $languages = language_list();
   // Check if there is a job / job item that references this translation.
@@ -89,11 +90,7 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
     if (empty($form['languages'][$langcode]['#disabled'])) {
       // Only do that for English-source entities.
       if (in_array($entity_language, array('en', 'en-US'))) {
-        $form['languages']['#options'][$langcode]['#attributes']['class'][] = 'selected';
-        $form['languages'][$langcode] = array(
-          '#type' => 'checkbox',
-          '#default_value' => 1,
-        );
+        $form['languages']['#options'][$langcode]['#checked'] = TRUE;
       }
     }
   }

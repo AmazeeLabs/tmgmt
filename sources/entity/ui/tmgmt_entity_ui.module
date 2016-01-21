@@ -45,10 +45,17 @@ function tmgmt_entity_ui_tmgmt_source_plugin_info_alter(&$info) {
  */
 function _tmgmt_entity_ui_process_tableselect($tableselect) {
 
-  // Pass #disabled property to the checkbox.
-  foreach ($tableselect['#options'] as $key => $option) {
-    $tableselect[$key]['#disabled'] = !empty($option['#disabled']);
+  // Pass #disabled and #checked properties to the checkbox.
+  foreach ($tableselect['#options'] as $key => &$option) {
+    if (!empty($option['#disabled'])) {
+      $tableselect[$key]['#disabled'] = TRUE;
+    }
+    if (!empty($option['#checked'])) {
+      $tableselect[$key]['#default_value'] = $tableselect[$key]['#return_value'];
+      $option['#attributes']['class'][] = 'selected';
+    }
   }
+  unset($option);
 
   return $tableselect;
 }
