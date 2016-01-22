@@ -5,6 +5,10 @@
  * Common Translation managment UI.
  */
 
+// An array key defining the "All not translated languages" option. Has to be
+// some string that can't be a langcode.
+define('TMGMT_ALL_NOT_TRANSLATED_LANGUAGES', '');
+
 /**
  * Implements hook_entity_info().
  */
@@ -346,6 +350,15 @@ function tmgmt_ui_add_cart_form(&$form, &$form_state, $plugin, $item_type, $item
 
   if (empty($item_id)) {
     $form['add_to_cart']['#validate'] = array('tmgmt_ui_cart_source_overview_validate');
+    $form['add_to_cart_target_languages'] = array(
+      '#type' => 'select',
+      '#title' => t('Target languages'),
+      '#multiple' => TRUE,
+      '#options' => array(
+          TMGMT_ALL_NOT_TRANSLATED_LANGUAGES => t('All not translated languages'),
+      ) + tmgmt_available_languages(array('en', 'en-US')),
+      '#default_value' => array(TMGMT_ALL_NOT_TRANSLATED_LANGUAGES),
+    );
   }
   else {
 
@@ -365,7 +378,6 @@ function tmgmt_ui_add_cart_form(&$form, &$form_state, $plugin, $item_type, $item
     // Compose the cart info message for the translate tab.
     $count = tmgmt_ui_cart_get()->count();
     if (tmgmt_ui_cart_get()->isSourceItemAdded($plugin, $item_type, $item_id)) {
-      $form['add_to_cart']['#disabled'] = TRUE;
       $message = format_plural($count, 'There is @count item in the <a href="@url">translation cart</a> including the current item.',
         'There are @count items in the <a href="@url">translation cart</a> including the current item.', array('@url' => url('admin/tmgmt/cart')));
     }
@@ -391,12 +403,27 @@ function tmgmt_ui_source_add_to_cart_submit($form, &$form_state) {
 
   $cart_info = $form_state['tmgmt_cart'];
   if (!empty($cart_info['plugin']) && !empty($cart_info['item_type']) && !empty($form_state['values']['items'])) {
-    $source_items = array_filter($form_state['values']['items']);
+    $all_target_langcodes = array_keys(tmgmt_available_languages(array('en', 'en-US')));
     $item_type = $cart_info['item_type'];
     $plugin = $cart_info['plugin'];
+    $source_items = array_fill_keys(array_filter($form_state['values']['items']), array());
+    foreach ($source_items as $source_id => &$target_langcodes) {
+      if (isset($form_state['values']['add_to_cart_target_languages'][TMGMT_ALL_NOT_TRANSLATED_LANGUAGES])) {
+        $fake_job_item = new TMGMTJobItem(array(
+          'item_type' => $item_type,
+          'item_id' => $source_id,
+        ));
+        $translated_langcodes = tmgmt_source_plugin_controller($plugin)->getExistingLangCodes($fake_job_item);
+        $target_langcodes = array_diff($all_target_langcodes, $translated_langcodes);
+      }
+      else {
+        $target_langcodes = $form_state['values']['add_to_cart_target_languages'];
+      }
+    }
+    unset($target_langcodes);
   }
-  elseif (!empty($cart_info['plugin']) && !empty($cart_info['item_type']) && !empty($cart_info['item_id'])) {
-    $source_items = array($cart_info['item_id']);
+  elseif (!empty($cart_info['plugin']) && !empty($cart_info['item_type']) && !empty($cart_info['item_id']) && !empty($form_state['input']['languages'])) {
+    $source_items = array($cart_info['item_id'] => $form_state['input']['languages']);
     $item_type = $cart_info['item_type'];
     $plugin = $cart_info['plugin'];
   }
@@ -406,8 +433,8 @@ function tmgmt_ui_source_add_to_cart_submit($form, &$form_state) {
   }
 
   $i = 0;
-  foreach ($source_items as $source_id) {
-    if (tmgmt_ui_cart_get()->addJobItem($plugin, $item_type, $source_id)) {
+  foreach ($source_items as $source_id => $target_langcodes) {
+    if (tmgmt_ui_cart_get()->addJobItem($plugin, $item_type, $source_id, $target_langcodes)) {
       $i++;
     }
   }
@@ -423,6 +450,10 @@ function tmgmt_ui_cart_source_overview_validate($form, &$form_state) {
   $items = array_filter($form_state['values']['items']);
   if (empty($items)) {
     form_set_error('items', t('No job items were selected.'));
+  }
+
+  if (empty($form_state['values']['add_to_cart_target_languages'])) {
+    form_set_error('add_to_cart_target_languages', t('Please select target languages.'));
   }
 }
 

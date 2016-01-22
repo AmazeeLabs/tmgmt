@@ -27,6 +27,8 @@ class TMGMTJobItemUICart {
   /**
    * An array to hold and manipulate the contents of the job item cart.
    *
+   * Keys are translation job item IDs, values are arrays of target langcodes.
+   *
    * @var array
    */
   protected $cart;
@@ -58,20 +60,6 @@ class TMGMTJobItemUICart {
   }
 
   /**
-   * Adds existing job items into the cart.
-   *
-   * @param TMGMTJobItem[] $items
-   *   Job items to be added.
-   */
-  public function addExistingJobItems(array $items) {
-    foreach ($items as $item) {
-      if (!$this->isSourceItemAdded($item->plugin, $item->item_type, $item->item_id)) {
-        $this->cart[] = $item->tjiid;
-      }
-    }
-  }
-
-  /**
    * Creates a job item and adds it into the cart.
    *
    * @param string $plugin
@@ -80,18 +68,22 @@ class TMGMTJobItemUICart {
    *   The source item type.
    * @param $item_id
    *   The source item id.
+   * @param array $target_langcodes
+   *   An array of target langcodes.
    *
-   * @return TMGMTJobItem|null
-   *   Added job item. If the item exists NULL is returned.
+   * @return \TMGMTJobItem Added job item.
+   * Added job item.
    */
-  public function addJobItem($plugin, $item_type, $item_id) {
-    if ($this->isSourceItemAdded($plugin, $item_type, $item_id)) {
-      return NULL;
+  public function addJobItem($plugin, $item_type, $item_id, $target_langcodes) {
+    if ($tjiid = $this->isSourceItemAdded($plugin, $item_type, $item_id)) {
+      // Update target languages in this case.
+      $this->cart[$tjiid] = $target_langcodes;
+      return tmgmt_job_item_load($tjiid);
     }
 
     $job_item = tmgmt_job_item_create($plugin, $item_type, $item_id);
     $job_item->save();
-    $this->cart[] = $job_item->tjiid;
+    $this->cart[$job_item->tjiid] = $target_langcodes;
     return $job_item;
   }
 
@@ -105,13 +97,13 @@ class TMGMTJobItemUICart {
    * @param int $source_id
    *   The source id.
    *
-   * @return bool
-   *   If the source item is in the cart.
+   * @return bool|int
+   *   Job item ID, if the source item is in the cart. FALSE otherwise.
    */
   public function isSourceItemAdded($plugin, $item_type, $source_id) {
     foreach ($this->getJobItemsFromCart() as $job_item) {
       if ($job_item->item_id == $source_id && $job_item->item_type == $item_type && $job_item->plugin == $plugin) {
-        return TRUE;
+        return $job_item->identifier();
       }
     }
     return FALSE;
@@ -124,7 +116,7 @@ class TMGMTJobItemUICart {
    *   Job items to be removed.
    */
   public function removeJobItems(array $job_item_ids) {
-    $this->cart = array_diff($this->cart, $job_item_ids);
+    $this->cart = array_diff_key($this->cart, array_flip($job_item_ids));
   }
 
   /**
@@ -134,7 +126,20 @@ class TMGMTJobItemUICart {
    *   Job items in the cart.
    */
   public function getJobItemsFromCart() {
-    return entity_load('tmgmt_job_item', $this->cart);
+    return entity_load('tmgmt_job_item', array_keys($this->cart));
+  }
+
+  /**
+   * Returns array of target langcodes for a cart item.
+   *
+   * @param int $tjiid
+   *   TMGMT job item ID.
+   *
+   * @return array
+   *   An array of target langcodes.
+   */
+  public function getJobItemTargetLanguagesFromCart($tjiid) {
+    return isset($this->cart[$tjiid]) ? $this->cart[$tjiid] : array();
   }
 
   /**

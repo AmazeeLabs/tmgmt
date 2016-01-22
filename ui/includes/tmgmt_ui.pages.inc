@@ -978,16 +978,18 @@ function tmgmt_ui_cart_content($form, &$form_state) {
   $options = array();
   foreach (tmgmt_ui_cart_get()->getJobItemsFromCart() as $item) {
     $uri = $item->getSourceUri();
+    $target_langcodes = tmgmt_ui_cart_get()->getJobItemTargetLanguagesFromCart($item->tjiid);
     $options[$item->tjiid] = array(
         $item->getSourceType(),
         (!empty($uri['path']) ? l($item->label(), $uri['path']) : $item->label()),
         isset($languages[$item->getSourceLangCode()]) ? $languages[$item->getSourceLangCode()] : t('Unknown'),
+        implode(' / ', array_map('check_plain', array_intersect_key($languages, array_flip($target_langcodes)))),
     );
   }
 
   $form['items'] = array(
     '#type' => 'tableselect',
-    '#header' => array(t('Type'), t('Content'), t('Language')),
+    '#header' => array(t('Type'), t('Content'), t('Language'), t('Target languages')),
     '#empty' => t('There are no items in your cart.'),
     '#options' => $options,
   );
