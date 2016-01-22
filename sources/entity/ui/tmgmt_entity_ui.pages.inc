@@ -97,7 +97,7 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
     // Check all available checkboxes by default.
     if (empty($form['languages'][$langcode]['#disabled'])) {
       // Only do that for English-source entities.
-      if (in_array($entity_language, array('en', 'en-US'))) {
+      if (in_array($entity_language, array('en-US'))) {
         $form['languages']['#options'][$langcode]['#checked'] = TRUE;
       }
     }

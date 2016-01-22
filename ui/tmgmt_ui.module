@@ -355,7 +355,7 @@ function tmgmt_ui_add_cart_form(&$form, &$form_state, $plugin, $item_type, $item
       'item_id' => $item_id,
     ));
     $source_langcode = tmgmt_source_plugin_controller($plugin)->getSourceLangCode($fake_job_item);
-    if (!in_array($source_langcode, array('en', 'en-US'))) {
+    if (!in_array($source_langcode, array('en-US'))) {
       $form['add_to_cart']['#access'] = FALSE;
       drupal_set_message(t('The "Add to cart" operation is not possible for items having non English source language.'), 'warning', FALSE);
     }

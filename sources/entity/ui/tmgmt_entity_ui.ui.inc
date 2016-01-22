@@ -72,7 +72,7 @@ class TMGMTEntitySourceUIController extends TMGMTEntityDefaultSourceUIController
     if (!empty($data['translation_statuses'])) {
       $source_language = array_search('original', $data['translation_statuses']);
     }
-    if (!in_array($source_language, array('en', 'en-US'))) {
+    if (!in_array($source_language, array('en-US'))) {
       $row['#disabled'] = TRUE;
     }
 
