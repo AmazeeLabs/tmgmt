@@ -978,7 +978,7 @@ function tmgmt_ui_cart_content($form, &$form_state) {
   $options = array();
   foreach (tmgmt_ui_cart_get()->getJobItemsFromCart() as $item) {
     $uri = $item->getSourceUri();
-    $target_langcodes = tmgmt_ui_cart_get()->getJobItemTargetLanguagesFromCart($item->tjiid);
+    $target_langcodes = tmgmt_ui_cart_get()->getJobItemTargetLangcodesFromCart($item->tjiid);
     $options[$item->tjiid] = array(
         $item->getSourceType(),
         (!empty($uri['path']) ? l($item->label(), $uri['path']) : $item->label()),
@@ -1012,19 +1012,10 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     ),
   );
 
-  $form['target_language'] = array(
-    '#type' => 'select',
-    '#title' => t('Request translation into language/s'),
-    '#multiple' => TRUE,
-    '#options' => $languages,
-    '#description' => t('If the item\'s source language will be the same as the target language the item will be ignored.'),
-  );
-
   $form['request_translation'] = array(
     '#type' => 'submit',
-    '#value' => t('Request translation'),
+    '#value' => t('Request translation for all items'),
     '#submit' => array('tmgmt_ui_cart_request_translation_form_submit'),
-    '#validate' => array('tmgmt_ui_cart_source_overview_validate'),
   );
 
   $form['remove_selected'] = array(
@@ -1069,7 +1060,7 @@ function tmgmt_ui_cart_empty_cart_form_submit($form, &$form_state) {
 function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
   global $user;
 
-  $target_languages = array_filter($form_state['values']['target_language']);
+  $target_languages = tmgmt_ui_cart_get()->getTargetLangcodesFromCart();
   $enforced_source_language = NULL;
   if ($form_state['values']['enforced_source_language']) {
     $enforced_source_language = $form_state['values']['source_language'];
@@ -1078,7 +1069,7 @@ function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
   $skipped_count = 0;
   $job_items_by_source_language = array();
   // Group the selected items by source language.
-  foreach (tmgmt_job_item_load_multiple(array_filter($form_state['values']['items'])) as $job_item) {
+  foreach (tmgmt_ui_cart_get()->getJobItemsFromCart() as $job_item) {
     $source_language = $enforced_source_language ? $enforced_source_language : $job_item->getSourceLangCode();
     if (in_array($source_language, $job_item->getExistingLangCodes())) {
       $job_items_by_source_language[$source_language][$job_item->tjiid] = $job_item;
@@ -1104,6 +1095,11 @@ function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
       $job_empty = TRUE;
       /** @var TMGMTJobItem $job_item */
       foreach ($job_items as $id => $job_item) {
+        // Only process requested target languages.
+        if (!in_array($target_language, tmgmt_ui_cart_get()->getJobItemTargetLangcodesFromCart($job_item->tjiid))) {
+          continue;
+        }
+
         try {
           // As the same item might be added to multiple jobs, we need to
           // re-create them and delete the old ones, after removing them from

@@ -138,8 +138,22 @@ class TMGMTJobItemUICart {
    * @return array
    *   An array of target langcodes.
    */
-  public function getJobItemTargetLanguagesFromCart($tjiid) {
+  public function getJobItemTargetLangcodesFromCart($tjiid) {
     return isset($this->cart[$tjiid]) ? $this->cart[$tjiid] : array();
+  }
+
+  /**
+   * Returns united array of target langcodes for all cart items.
+   *
+   * @return array
+   *   An array of target langcodes.
+   */
+  public function getTargetLangcodesFromCart() {
+    $langcodes = array();
+    foreach ($this->cart as $target_langcodes) {
+      $langcodes = array_unique(array_merge($langcodes, $target_langcodes));
+    }
+    return array_values($langcodes);
   }
 
   /**
