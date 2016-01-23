@@ -32,16 +32,17 @@ class TMGMTI18nStringSourcePluginController extends TMGMTDefaultSourcePluginCont
             throw new TMGMTException(t('Unable to load %language translation for the string %title',
               array('%language' => $languages[$source_language]->name, '%title' => $string->title)));
           }
-
+          // If '#label' is empty theme_tmgmt_ui_translator_review_form() fails.
           $structure[$string_id] = array(
-            '#label' => $string->title,
+            '#label' => !empty($string->title) ? $string->title : $string->property,
             '#text' => $translation,
             '#translate' => TRUE
           );
         }
         else {
+          // If '#label' is empty theme_tmgmt_ui_translator_review_form() fails.
           $structure[$string_id] = array(
-            '#label' => $string->title,
+            '#label' => !empty($string->title) ? $string->title : $string->property,
             '#text' => $string->string,
             '#translate' => TRUE
           );

@@ -235,6 +235,45 @@ function tmgmt_i18n_string_i18n_object_info_alter(&$info) {
  */
 function tmgmt_i18n_string_get_wrapper($type, $i18n_string) {
   $object_key = i18n_object_info($type, 'key');
+
+  // Special handling for i18nviews.
+  if ($type == 'views') {
+    // The construct method needs the full view object.
+    $view = views_get_view($i18n_string->objectid);
+    $wrapper = i18n_get_object($type, $i18n_string->objectid, $view);
+    return $wrapper;
+  }
+
+  // Special handling for i18n_panels.
+  $panels_objects = array(
+    'pane_configuration' => 'panels_pane',
+    'display_configuration' => 'panels_display',
+  );
+  if (in_array($type, array_keys($panels_objects))) {
+    ctools_include('export');
+    $wrapper = FALSE;
+    switch ($type) {
+      case 'display_configuration':
+        $object_array = ctools_export_load_object($panels_objects[$type], 'conditions', array('uuid' => $i18n_string->objectid));
+        $wrapper = i18n_get_object($type, $i18n_string->objectid, $object_array[$i18n_string->objectid]);
+        break;
+
+      case 'pane_configuration':
+        $obj = db_query("SELECT * FROM {panels_pane} WHERE uuid = :uuid", array(':uuid' => $i18n_string->objectid))->fetchObject();
+        if ($obj) {
+          $pane = ctools_export_unpack_object($panels_objects[$type], $obj);
+          $translation = i18n_panels_get_i18n_translation_object($pane);
+          $translation->uuid = $pane->uuid;
+          $wrapper = i18n_get_object($type, $i18n_string->objectid, $translation);
+        }
+        break;
+
+      default:
+        break;
+    }
+    return $wrapper;
+  }
+
   // Special handling if the object has two keys. Assume that they
   // mean type and object id.
    if ($type == 'field') {
