@@ -244,7 +244,9 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
 
     $row = array(
       'id' => $data['id'],
-      'source' => check_plain($source->source),
+      'source' => l($source->source, 'admin/config/regional/translate/edit/' . $source->lid, array(
+        'query' => drupal_get_destination(),
+      )),
     );
 
     foreach (language_list() as $langcode => $language) {
