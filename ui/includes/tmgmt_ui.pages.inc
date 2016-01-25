@@ -995,7 +995,8 @@ function tmgmt_ui_cart_content($form, &$form_state) {
   );
 
   $form['enforced_source_language'] = array(
-    '#type' => 'checkbox',
+    '#type' => 'value',
+    '#value' => FALSE,
     '#title' => t('Enforce source language'),
     '#description' => t('The source language is by default determined from the items source language. Check to enforce a different language as source.')
   );
