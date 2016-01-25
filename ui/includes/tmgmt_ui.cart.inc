@@ -75,6 +75,11 @@ class TMGMTJobItemUICart {
    * Added job item.
    */
   public function addJobItem($plugin, $item_type, $item_id, $target_langcodes) {
+    foreach ($target_langcodes as $key => $langcode) {
+      if ($langcode === NULL) {
+        unset($target_langcodes[$key]);
+      }
+    }
     if ($tjiid = $this->isSourceItemAdded($plugin, $item_type, $item_id)) {
       // Update target languages in this case.
       $this->cart[$tjiid] = $target_langcodes;
