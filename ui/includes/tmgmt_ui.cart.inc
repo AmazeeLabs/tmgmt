@@ -40,7 +40,11 @@ class TMGMTJobItemUICart {
    * been stored yet.
    */
   protected function __construct() {
-    if (!isset($_SESSION[$this->session_key])) {
+    if (
+      !isset($_SESSION[$this->session_key])
+      || !is_array($_SESSION[$this->session_key])
+      || !is_array(reset($_SESSION[$this->session_key])) // Detects old format.
+    ) {
       $_SESSION[$this->session_key] = array();
     }
     $this->cart = &$_SESSION[$this->session_key];
