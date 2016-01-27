@@ -1051,6 +1051,9 @@ function tmgmt_ui_cart_remove_selected_form_submit($form, &$form_state) {
  * Custom form submit callback for tmgmt_ui_cart_cart_form().
  */
 function tmgmt_ui_cart_empty_cart_form_submit($form, &$form_state) {
+  if (!tmgmt_ui_cart_get()->count()) {
+    return;
+  }
   entity_delete_multiple('tmgmt_job_item', array_keys(tmgmt_ui_cart_get()->getJobItemsFromCart()));
   tmgmt_ui_cart_get()->emptyCart();
   drupal_set_message(t('All job items were removed from the cart.'));
