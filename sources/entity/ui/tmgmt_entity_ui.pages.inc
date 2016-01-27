@@ -36,6 +36,9 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
   // Check if there is a job / job item that references this translation.
   $entity_language = entity_language($form_state['entity_type'], $form_state['entity']);
   $items = tmgmt_job_item_load_latest('entity', $form_state['entity_type'], $id, $entity_language);
+  // Fetch existing translations.
+  $handler = entity_translation_get_handler($form_state['entity_type'], $form_state['entity']);
+  $translations = $handler->getTranslations();
   foreach ($languages as $langcode => $language) {
     if ($langcode == LANGUAGE_NONE) {
       // Never show language neutral on the overview.
@@ -98,7 +101,10 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
     if (empty($form['languages'][$langcode]['#disabled'])) {
       // Only do that for English-source entities.
       if (in_array($entity_language, array('en-US'))) {
-        $form['languages']['#options'][$langcode]['#checked'] = TRUE;
+        // Only do that for untranslated languages.
+        if (empty($translations->data[$langcode])) {
+          $form['languages']['#options'][$langcode]['#checked'] = TRUE;
+        }
       }
     }
   }
