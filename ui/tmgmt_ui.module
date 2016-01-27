@@ -452,7 +452,7 @@ function tmgmt_ui_cart_source_overview_validate($form, &$form_state) {
     form_set_error('items', t('No job items were selected.'));
   }
 
-  if (empty($form_state['values']['add_to_cart_target_languages'])) {
+  if (empty($form_state['values']['add_to_cart_target_languages']) && $form_state['triggering_element']['#value'] != t('Remove selected')) {
     form_set_error('add_to_cart_target_languages', t('Please select target languages.'));
   }
 }
