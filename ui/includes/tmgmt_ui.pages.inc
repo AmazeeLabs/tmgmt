@@ -1011,6 +1011,7 @@ function tmgmt_ui_cart_content($form, &$form_state) {
         ':input[name="enforced_source_language"]' => array('checked' => TRUE),
       ),
     ),
+    '#access' => FALSE, // Since enforced_source_language is disabled.
   );
 
   $form['request_translation'] = array(
