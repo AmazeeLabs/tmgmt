@@ -58,6 +58,16 @@ class TMGMTJobUIController extends EntityDefaultUIController {
       'access arguments' => array('resubmit', $this->entityType, $id_count),
       'type' => MENU_CALLBACK,
     );
+    $items[$this->path . '/' . $wildcard . '/clone'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $id_count + 1),
+      'load arguments' => array($this->entityType),
+      'access callback' => 'entity_access',
+      // Cloning jobs is the same action as creating them, so basically we use
+      // the same permission.
+      'access arguments' => array('create', $this->entityType, $id_count),
+      'type' => MENU_CALLBACK,
+    );
     return $items;
   }
 
@@ -73,6 +83,14 @@ class TMGMTJobUIController extends EntityDefaultUIController {
         return confirm_form($form, t('Abort this job?'), 'admin/tmgmt/jobs/' . $entity->tjid,
           t('This will send a request to the translator to abort the job. After the action the job translation process will be aborted and only remaining action will be resubmitting it.'));
       case 'resubmit':
+        return confirm_form($form, t('Resubmit as a new job?'), 'admin/tmgmt/jobs/' . $entity->tjid,
+          t('This creates a new job with the same items which can then be submitted again. In case the sources meanwhile changed, the new job will reflect the update.'));
+      case 'clone':
+        $form['new_target_language'] = array(
+          '#type' => 'select',
+          '#title' => t('Target language'),
+          '#options' => tmgmt_available_languages(),
+        );
         return confirm_form($form, t('Resubmit as a new job?'), 'admin/tmgmt/jobs/' . $entity->tjid,
           t('This creates a new job with the same items which can then be submitted again. In case the sources meanwhile changed, the new job will reflect the update.'));
     }
@@ -107,14 +125,7 @@ class TMGMTJobUIController extends EntityDefaultUIController {
         }
         break;
       case 'resubmit':
-        $this->jobToResubmit = $entity->cloneAsUnprocessed();
-        $this->jobToResubmit->uid = $GLOBALS['user']->uid;
-        $this->jobToResubmit->save();
-        /** @var TMGMTJobItem $item */
-        foreach ($entity->getItems() as $item) {
-          $item_to_resubmit = $item->cloneAsActive();
-          $this->jobToResubmit->addExistingItem($item_to_resubmit);
-        }
+        $this->cloneJob($entity);
 
         $entity->addMessage('Job has been duplicated as a new job <a href="@url">#@id</a>.',
           array('@url' => url('admin/tmgmt/jobs/' . $this->jobToResubmit->tjid), '@id' => $this->jobToResubmit->tjid));
@@ -122,6 +133,21 @@ class TMGMTJobUIController extends EntityDefaultUIController {
           array('@url' => url('admin/tmgmt/jobs/' . $entity->tjid), '@id' => $entity->tjid));
 
         return t('The aborted job has been duplicated. You can resubmit it now.');
+
+      case 'clone':
+        $overwrite_values = array();
+        // Check if we need to have a new language for the clone.
+        if (!empty($entity->new_target_language)) {
+          $overwrite_values['target_language'] = $entity->new_target_language;
+        }
+        $this->cloneJob($entity, $overwrite_values);
+
+        $entity->addMessage('Job has been cloned into a new job <a href="@url">#@id</a>.',
+          array('@url' => url('admin/tmgmt/jobs/' . $this->jobToResubmit->tjid), '@id' => $this->jobToResubmit->tjid));
+        $this->jobToResubmit->addMessage('This job is a clone of <a href="@url">#@id</a>',
+          array('@url' => url('admin/tmgmt/jobs/' . $entity->tjid), '@id' => $entity->tjid));
+
+        return t('The job has been cloned.');
     }
     return FALSE;
   }
@@ -130,9 +156,41 @@ class TMGMTJobUIController extends EntityDefaultUIController {
    * Operation form submit callback.
    */
   public function operationFormSubmit($form, &$form_state) {
+    // When we clone a job we can also choose a different target language. So
+    // in this case we will add this information to the tmgmt job object so that
+    // it can be used in the ::applyOperation() method above.
+    if ($form_state['op'] == 'clone') {
+      $form_state['tmgmt_job']->new_target_language = $form_state['values']['new_target_language'];
+    }
     parent::operationFormSubmit($form, $form_state);
     if ($form_state['op'] == 'resubmit') {
       $form_state['redirect'] = $this->path . '/' . $this->jobToResubmit->tjid;
+    }
+  }
+
+  /**
+   * Helper to clone a job. This will also update the $jobToResubmit member of
+   * this class.
+   *
+   * @param TMGMTJob $entity
+   *  The job item to clone.
+   *
+   * @param array $overwrite_values
+   *  An array with value to overwrite in the new clone.
+   */
+  protected function cloneJob($entity, $overwrite_values = array()) {
+    $this->jobToResubmit = $entity->cloneAsUnprocessed();
+    $this->jobToResubmit->uid = $GLOBALS['user']->uid;
+    if (!empty($overwrite_values)) {
+      foreach ($overwrite_values as $key => $value) {
+        $this->jobToResubmit->{$key} = $value;
+      }
+    }
+    $this->jobToResubmit->save();
+    /** @var TMGMTJobItem $item */
+    foreach ($entity->getItems() as $item) {
+      $item_to_resubmit = $item->cloneAsActive();
+      $this->jobToResubmit->addExistingItem($item_to_resubmit);
     }
   }
 

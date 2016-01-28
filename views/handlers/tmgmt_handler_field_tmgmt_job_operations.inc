@@ -28,6 +28,14 @@ class tmgmt_handler_field_tmgmt_job_operations extends views_handler_field_entit
         'title' => t('manage'),
       );
     }
+    // @todo: is there any case when a job should not be clonable?
+    if (entity_access('create', 'tmgmt_job')) {
+      $element['#links']['clone'] = array(
+        'href' => 'admin/tmgmt/jobs/' . $job->tjid . '/clone',
+        'query' => array('destination' => current_path()),
+        'title' => t('clone'),
+      );
+    }
     if ($job->isAbortable() && entity_access('submit', 'tmgmt_job', $job)) {
       $element['#links']['cancel'] = array(
         'href' => 'admin/tmgmt/jobs/' . $job->tjid . '/abort',
