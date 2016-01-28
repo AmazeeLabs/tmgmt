@@ -91,8 +91,8 @@ class TMGMTJobUIController extends EntityDefaultUIController {
           '#title' => t('Target language'),
           '#options' => tmgmt_available_languages(),
         );
-        return confirm_form($form, t('Resubmit as a new job?'), 'admin/tmgmt/jobs/' . $entity->tjid,
-          t('This creates a new job with the same items which can then be submitted again. In case the sources meanwhile changed, the new job will reflect the update.'));
+        return confirm_form($form, t('Clone job?'), 'admin/tmgmt/jobs/' . $entity->tjid,
+          t('This creates a new job as a clone of the selected one.'));
     }
     drupal_not_found();
     exit;
