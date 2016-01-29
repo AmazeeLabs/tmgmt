@@ -225,6 +225,32 @@ function tmgmt_ui_embed_view($view, $display_id = NULL, array $args = array()) {
 }
 
 /**
+ * Implements hook_views_bulk_operations_form_alter().
+ */
+function tmgmt_ui_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+  // When we have the "add to the job" or the "add to the job and return" rule
+  // as vbo action, we have to check first if we have a valid job id in the
+  // session.
+  if (!empty($form['select']) && (isset($form['select']['rules_component::tmgmt_node_ui_tmgmt_nodes_add_items_to_job']) || isset($form['select']['rules_component::tmgmt_node_ui_tmgmt_nodes_add_return_items_to_job']))) {
+    $edited_job_valid = FALSE;
+    if (!empty($_SESSION['tmgmt_edit_job_id'])) {
+      $job = tmgmt_job_load($_SESSION['tmgmt_edit_job_id']);
+      if (!empty($job) && $job->isSubmittable()) {
+        $edited_job_valid = TRUE;
+      }
+      else {
+        // Cleanup the session if the job id is not valid anymore.
+        unset($_SESSION['tmgmt_edit_job_id']);
+      }
+    }
+    if (!$edited_job_valid) {
+      $form['select']['rules_component::tmgmt_node_ui_tmgmt_nodes_add_items_to_job']['#access'] = FALSE;
+      $form['select']['rules_component::tmgmt_node_ui_tmgmt_nodes_add_return_items_to_job']['#access'] = FALSE;
+    }
+  }
+}
+
+/**
  * Form callback for the source overview form.
  */
 function tmgmt_ui_source_overview_form($form, &$form_state, $plugin, $item_type = NULL) {
@@ -251,6 +277,7 @@ function tmgmt_ui_source_overview_form_defaults($form, &$form_state, $plugin, $i
     '#attributes' => array('class' => array('tmgmt-source-operations-wrapper'))
   );
   tmgmt_ui_add_cart_form($form['actions'], $form_state, $plugin, $item_type);
+  tmgmt_ui_add_to_job_form($form['actions'], $form_state);
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Request translation'),
@@ -283,6 +310,132 @@ function tmgmt_ui_source_overview_form_submit($form, &$form_state) {
   // Execute the submit method on the source plugin controller.
   $controller = tmgmt_source_ui_controller($plugin);
   $controller->overviewFormSubmit($form, $form_state, $item_type);
+}
+
+/**
+ * Adds the add to job form elements.
+ *
+ * This form will create a button that will add, in the submit handler, the
+ * selected items to the job stored in the session.
+ * @see tmgmt_ui_add_job_item_submit().
+ */
+function tmgmt_ui_add_to_job_form(&$form, &$form_state) {
+  // @todo: should we have a different check here?
+  if (isset($_SESSION['tmgmt_edit_job_id'])) {
+    $job = tmgmt_job_load($_SESSION['tmgmt_edit_job_id']);
+    if (empty($job) || !$job->isSubmittable()) {
+      unset($_SESSION['tmgmt_edit_job_id']);
+      return;
+    }
+    $form['add_to_job'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add to job'),
+      '#submit' => array('tmgmt_ui_add_to_job_form_submit'),
+      '#validate' => array('tmgmt_ui_add_to_job_form_validate'),
+      '#attributes' => array('title' => t('Add marked items to the current job.')),
+    );
+    $form['add_and_return_to_job'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add and return to job'),
+      '#submit' => array('tmgmt_ui_add_to_job_form_submit', 'tmgmt_ui_return_to_job_form_submit'),
+      '#validate' => array('tmgmt_ui_add_to_job_form_validate'),
+      '#attributes' => array('title' => t('Add marked items to the current job and return to it.')),
+    );
+  }
+}
+
+/**
+ * Validation handler for the add to job form.
+ */
+function tmgmt_ui_add_to_job_form_validate(&$form, &$form_state) {
+  // Make sure the job in the session is valid. If not, we will just unset it
+  // from the session. This is also done in tmgmt_ui_add_to_job_form(), but we
+  // do this here again in case the job has been deleted in the meantime.
+  $job = tmgmt_job_load($_SESSION['tmgmt_edit_job_id']);
+  if (empty($job) || !$job->isSubmittable()) {
+    unset($_SESSION['tmgmt_edit_job_id']);
+    drupal_set_message(t('The job id in the session is not valid anymore (maybe it was deleted or submitted in the meantime). Please go to the <a href=@url>jobs page</a> and select another one to edit.', array('@url' => url('admin/tmgmt'))), 'warning');
+    $form_state['rebuild'] = TRUE;
+  }
+}
+
+/**
+ * Submit handler for the add to job form.
+ */
+function tmgmt_ui_add_to_job_form_submit($form, &$form_state) {
+  $item_ids = array_filter($form_state['values']['items']);
+  $return = tmgmt_ui_add_items_to_job($_SESSION['tmgmt_edit_job_id'], $form_state['plugin'], $form_state['item_type'], $item_ids);
+  // Show any messages we might have.
+  if (!empty($return['messages'])) {
+    foreach ($return['messages'] as $message) {
+      drupal_set_message($message['message'], $message['type']);
+    }
+  }
+
+  drupal_set_message(t('The items have been added to the job.'));
+}
+
+/**
+ * Submit handler for the add to job button that will return the user to the
+ * job page.
+ */
+function tmgmt_ui_return_to_job_form_submit(&$form, &$form_state) {
+  $form_state['redirect'] = 'admin/tmgmt/jobs/' . $_SESSION['tmgmt_edit_job_id'];
+  // When we return to the job, we also unset the edit job id from the session.
+  unset($_SESSION['tmgmt_edit_job_id']);
+}
+
+/**
+ * Adds a set of items to a job. All the items have to have the same plugin and
+ * item type.
+ *
+ * @param int $job_id
+ *  The job id.
+ *
+ * @param string $plugin
+ *  The plugin of the items.
+ *
+ * @param $item_type
+ *  The type of the items.
+ *
+ * @param array $item_ids
+ *  An array with item ids to be added to the job.
+ */
+function tmgmt_ui_add_items_to_job($job_id, $plugin, $item_type, $item_ids) {
+  $return = array();
+  /* @var TMGMTJob $job */
+  $job = tmgmt_job_load($job_id);
+  if (!empty($job)) {
+    $current_items = $job->getItems();
+    foreach ($item_ids as $item_id) {
+      /* @var TMGMTJobItem $current_item */
+      foreach($current_items as $current_item) {
+        // Check if we already have the same item in the job.
+        if ($current_item->plugin == $plugin && $current_item->item_type == $item_type && $current_item->item_id == $item_id) {
+          $return['messages'][] = array(
+            'type' => 'warning',
+            'key' => 'item_exists',
+            'message' => t('"%item_label" is already part of the job and will not be added again.', array('%item_label' => $current_item->label())),
+          );
+          continue 2;
+        }
+      }
+      // Add the item to the job.
+      $job->addItem($plugin, $item_type, $item_id);
+    }
+    $return['status'] = 'success';
+    // @todo: should we also update the label of the job in case it is not already
+    // defined by the user?
+  }
+  else {
+    $return['status'] = 'failed';
+    $return['messages'][] = array(
+      'type' => 'error',
+      'key' => 'job_not_found',
+      'message' => t('The job could not be found.'),
+    );
+  }
+  return $return;
 }
 
 /**

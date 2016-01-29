@@ -391,6 +391,15 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
       '#suffix' => '</div>',
     );
 
+    if ($job->isSubmittable()) {
+      $form['job_items_wrapper']['add_job_item'] = array(
+        '#type' => 'submit',
+        '#value' => t('Add job item'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array('tmgmt_ui_add_job_item_submit'),
+      );
+    }
+
     // A Wrapper for a button and a table with all suggestions.
     $form['job_items_wrapper']['suggestions'] = array(
       '#type' => 'container',
@@ -693,6 +702,24 @@ function _tmgmt_ui_add_suggestion_item(array $result) {
     }
   }
   return $option;
+}
+
+/**
+ * Submit callback for the add job item button.
+ */
+function tmgmt_ui_add_job_item_submit($form, &$form_state) {
+  // When we want to add an item to a job, we will just store the job id in the
+  // session and redirect to the sources page. On that page, we will check if
+  // there is a value for the job id in the session and will create a button to
+  // add the items to the job.
+  if (!empty($form_state['tmgmt_job']->tjid)) {
+    $_SESSION['tmgmt_edit_job_id'] = $form_state['tmgmt_job']->tjid;
+    $form_state['redirect'] = array('admin/tmgmt/sources');
+    unset($_GET['destination']);
+  }
+  else {
+    drupal_set_message(t('There is no available job to edit. Try to save the job first and retry.'), 'warning');
+  }
 }
 
 /**

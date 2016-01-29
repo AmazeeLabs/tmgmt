@@ -71,6 +71,18 @@ $handler->display->display_options['fields']['views_bulk_operations']['vbo_opera
     'override_label' => 0,
     'label' => '',
   ),
+  'rules_component::tmgmt_node_ui_tmgmt_nodes_add_items_to_job' => array(
+    'selected' => 1,
+    'skip_confirmation' => 1,
+    'override_label' => 0,
+    'label' => '',
+  ),
+  'rules_component::tmgmt_node_ui_tmgmt_nodes_add_return_items_to_job' => array(
+    'selected' => 1,
+    'skip_confirmation' => 1,
+    'override_label' => 0,
+    'label' => '',
+  ),
   'action::node_assign_owner_action' => array(
     'selected' => 0,
     'postpone_processing' => 0,
