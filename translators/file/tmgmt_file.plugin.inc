@@ -54,7 +54,7 @@ class TMGMTFileTranslatorPluginController extends TMGMTDefaultTranslatorPluginCo
       // need to make it FALSE due to backwards compatibility.
       'xliff_processing' => FALSE,
       'email' => array(
-        'receiving_enabled' => 1,
+        'receiving_enabled' => 0,
         'receiving' => array(
           'imap_path' => '',
           'imap_username' => '',
