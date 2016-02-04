@@ -5,6 +5,9 @@
  * Module file of the translation management test module.
  */
 
+// A directory to save received email attachments.
+define('TMGMT_FILE_EMAIL_ATTACHMENTS_DIR', 'private://tmgmt_file_email_attachments');
+
 /**
  * Implements hook_tmgmt_translator_plugin_info().
  */
@@ -20,6 +23,14 @@ function tmgmt_file_tmgmt_translator_plugin_info() {
 }
 
 /**
+ * Implements hook_cron().
+ */
+function tmgmt_file_cron() {
+  module_load_include('cron.inc', 'tmgmt_file');
+  _tmgmt_file_check_mailboxes();
+}
+
+/**
  * Implements hook_theme().
  */
 function tmgmt_file_theme() {
@@ -29,6 +40,18 @@ function tmgmt_file_theme() {
       'template' => 'tmgmt_file_html_template',
     ),
   );
+}
+
+/**
+ * Implements hook_mail().
+ */
+function tmgmt_file_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'email_receiving':
+      $message['subject'] = $params['subject'];
+      $message['body'] = $params['body'];
+      break;
+  }
 }
 
 /**
@@ -192,4 +215,61 @@ function tmgmt_file_file_download($uri) {
 
   // Returning nothing means access denied unless another module specifically
   // grants access.
+}
+
+/**
+ * Returns a mailbox object. Already connected.
+ *
+ * @param $imap_path
+ *   The $mailbox parameter pf the imap_open() function.
+ * @param $imap_username
+ * @param $imap_password
+ *
+ * @return \PhpImap\Mailbox
+ *
+ * @throws \Exception
+ *
+ * @see imap_open()
+ */
+function tmgmt_file_mailbox($imap_path, $imap_username, $imap_password) {
+  if (!extension_loaded('imap')) {
+    throw new Exception('The IMAP PHP extension is not installed.');
+  }
+  if (!class_exists('\PhpImap\Mailbox')) {
+    throw new Exception('The php-imap/php-imap composer library is not installed.');
+  }
+  $mailbox = new \PhpImap\Mailbox($imap_path, $imap_username, $imap_password, drupal_realpath(file_directory_temp()));
+  $mailbox->setConnectionArgs(0, 1, array());
+  $mailbox->getImapStream();
+  return $mailbox;
+}
+
+/**
+ * Validation handler for the "email" element.
+ *
+ * @see \TMGMTFileTranslatorUIController::pluginSettingsForm()
+ */
+function _tmgmt_file_validate_email_settings_element(&$element) {
+  if ($element['receiving_enabled']['#value']) {
+    try {
+      tmgmt_file_mailbox($element['receiving']['imap_path']['#value'], $element['receiving']['imap_username']['#value'], $element['receiving']['imap_password']['#value']);
+    }
+    catch (Exception $e) {
+      form_error($element, t('Cannot connect to mailbox: @error', array('@error' => $e->getMessage())));
+    }
+  }
+}
+
+/**
+ * Captures new error messages.
+ *
+ * @return array
+ *   An array of new error messages since the last function call.
+ */
+function _tmgmt_file_get_new_error_messages() {
+  static $past_error_messages = array();
+  $error_messages = isset($_SESSION['messages']['error']) ? $_SESSION['messages']['error'] : array();
+  $ret = array_diff_key($error_messages, $past_error_messages);
+  $past_error_messages = $error_messages;
+  return $ret;
 }

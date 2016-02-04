@@ -51,6 +51,79 @@ class TMGMTFileTranslatorUIController extends TMGMTDefaultTranslatorUIController
       );
     }
 
+    $email_settings = $translator->getSetting('email');
+    $form['email'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('E-mail automation'),
+      '#element_validate' => array('_tmgmt_file_validate_email_settings_element'),
+    );
+
+    $imap_ready = extension_loaded('imap') && class_exists('\PhpImap\Mailbox');
+    $form['email']['receiving_enabled'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable email receiving'),
+      '#default_value' => $imap_ready && $email_settings['receiving_enabled'],
+      '#disabled' => !$imap_ready,
+      '#description' => $imap_ready ? '' : t('This feature requires both the PHP IMAP extension and the php-imap/php-imap composer library.'),
+    );
+    $form['email']['receiving'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('E-mail receiving'),
+      '#states' => array(
+        'visible' => array(
+          'input[name="settings[email][receiving_enabled]"]' => array('checked' => TRUE),
+        ),
+      ),
+      '#description' => t('During the cron run, TMGMT will:
+<ul>
+  <li>check the configured mailbox folder,</li>
+  <li>grab all unread emails,</li>
+  <li>mark them as read,</li>
+  <li>fetch all attached files,</li>
+  <li>filter out all files with inappropriate extensions,</li>
+  <li>try to import files with appropriate extensions into corresponding TMGMT jobs (file name does not matter, the job ID is stored in the file contents),</li>
+  <li>log the result for each file (and optionally send an email).</li>
+</ul>'),
+    );
+    $form['email']['receiving']['imap_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Mailbox IMAP path'),
+      '#default_value' => $email_settings['receiving']['imap_path'],
+      '#description' => t('The IMAP path as specified in the <a href="!url" target="_blank">"mailbox" parameter documentation of the imap_open() PHP function</a>. Examples:
+<dl>
+  <dt>To check Gmail Inbox:</dt>
+    <dd>{imap.gmail.com:993/imap/ssl}INBOX</dd>
+  <dt>To check the "translations" label of the Gmail:</dt>
+    <dd>{imap.gmail.com:993/imap/ssl}translations</dd>
+</dl>
+Gmail tip: use a filter that assigns a label to specific emails and uses the "Never send it to Spam" option, because it is not possible to disable the spam filtering for the whole Gmail inbox.', array(
+        '!url' => 'http://php.net/manual/en/function.imap-open.php#refsect1-function.imap-open-parameters',
+      )),
+    );
+    $form['email']['receiving']['imap_username'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Mailbox username'),
+      '#default_value' => $email_settings['receiving']['imap_username'],
+    );
+    $form['email']['receiving']['imap_password'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Mailbox password'),
+      '#default_value' => $email_settings['receiving']['imap_password'],
+      '#description' => t('Gmail tip: if two-factor authentication is used, an "app password" should be used here. With normal authentication, the "allow insecure apps" setting should be enabled in the Google account.'),
+    );
+    $form['email']['receiving']['email_on_success'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Send an email on a successful file import to'),
+      '#description' => t('Comma-separated list of email addresses. Leave empty to not send emails. System log records will be created anyway.'),
+      '#default_value' => $email_settings['receiving']['email_on_success'],
+    );
+    $form['email']['receiving']['email_on_failure'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Send an email on an unsuccessful file import to'),
+      '#description' => t('Comma-separated list of email addresses. Leave empty to not send emails. System log records will be created anyway.'),
+      '#default_value' => $email_settings['receiving']['email_on_failure'],
+    );
+
     return parent::pluginSettingsForm($form, $form_state, $translator);
   }
 

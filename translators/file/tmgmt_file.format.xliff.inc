@@ -203,6 +203,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // - Target ans source languages
     // - Content integrity.
 
+    $this->importedXML = NULL;
     $xml = $this->getImportedXML($imported_file);
     // Check if our phase information is there.
     $phase = $xml->xpath("//xliff:phase[@phase-name='extraction']");
@@ -294,7 +295,11 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
       // url encoded due to the temporary://. This is a PHP bug, see
       // https://bugs.php.net/bug.php?id=61469
       $xml_string = file_get_contents($imported_file);
-      $this->importedXML = simplexml_load_string($xml_string);
+      $this->importedXML = @simplexml_load_string($xml_string);
+      if ($this->importedXML === FALSE) {
+        // To not break the processes, just create an empty xml element.
+        $this->importedXML = new SimpleXMLElement('<empty/>');
+      }
       // Register the XLIFF namespace, required for xpath.
       $this->importedXML->registerXPathNamespace('xliff', 'urn:oasis:names:tc:xliff:document:1.2');
     }
