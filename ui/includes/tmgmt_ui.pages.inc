@@ -552,6 +552,19 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
     '#type' => 'submit',
     '#value' => t('Save job'),
   );
+  $needs_review_count = 0;
+  foreach ($job->getItems() as $job_item) {
+    if ($job_item->isNeedsReview()) {
+      $needs_review_count++;
+    }
+  }
+  $form['actions']['accept_all'] = array(
+    '#type' => 'submit',
+    '#value' => t('Accept all job items'),
+    '#submit' => array('tmgmt_ui_submit_redirect'),
+    '#redirect' => 'admin/tmgmt/jobs/' . $job->tjid . '/accept-all',
+    '#access' => ($needs_review_count > 0),
+  );
   if (entity_access('submit', 'tmgmt_job', $job)) {
     $form['actions']['checkout'] = array(
       '#type' => 'submit',
@@ -596,6 +609,99 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
 
   $form['#attached']['css'][] = drupal_get_path('module', 'tmgmt_ui') . '/css/tmgmt_ui.admin.css';
   return $form;
+}
+
+/**
+ * Form callback for the "Accept all job items" action.
+ */
+function tmgmt_job_accept_all_form($form, $form_state, TMGMTJob $job) {
+  $form['job'] = array(
+    '#type' => 'value',
+    '#value' => $job,
+  );
+  $question = t('Are you sure you want to accept all job items in %job?', array('%job' => $job->label));
+  return confirm_form($form, $question, 'admin/tmgmt/jobs/' . $job->tjid);
+}
+
+/**
+ * Form submit callback for the "Accept all job items" action.
+ */
+function tmgmt_job_accept_all_form_submit($form, $form_state) {
+  /* @var $job TMGMTJob */
+  $job = $form['job']['#value'];
+  $job_item_ids = array();
+  foreach ($job->getItems() as $item) {
+    $job_item_ids[] = $item->tjiid;
+  }
+  $operations = array();
+  while ($job_item_ids) {
+    $item_ids = array_splice($job_item_ids, 0, 10);
+    $operations[] = array('tmgmt_job_accept_all_batch_operation', array($item_ids));
+  }
+  $batch = array(
+    'title' => t('Accepting job items'),
+    'operations' => $operations,
+    'finished' => 'tmgmt_job_accept_all_batch_finished',
+    'file' => drupal_get_path('module', 'tmgmt_ui') . '/includes/tmgmt_ui.pages.inc',
+  );
+  batch_set($batch);
+  batch_process('admin/tmgmt/jobs/' . $job->tjid);
+}
+
+/**
+ * Implements callback_batch_operation().
+ */
+function tmgmt_job_accept_all_batch_operation($job_item_ids, &$context) {
+  if (empty($context['results'])) {
+    $context['results']['accepted_count'] = 0;
+    $context['results']['skipped_count'] = 0;
+    $context['results']['failed_count'] = 0;
+  }
+  foreach (tmgmt_job_item_load_multiple($job_item_ids) as $job_item) {
+    try {
+      $result = $job_item->acceptTranslation();
+      if ($result === FALSE) {
+        $context['results']['skipped_count']++;
+      }
+      else {
+        $context['results']['accepted_count']++;
+      }
+    }
+    catch (Exception $e) {
+      $context['results']['failed_count']++;
+      watchdog_exception('tmgmt', $e, 'An exception was caught during the "Accept all job items" operation.
+<br />Translation job ID: @job_id
+<br />Job item ID: @job_item_id
+<br />Job item URL: @job_item_url
+<br />%type: !message in %function (line %line of %file).', array(
+        '@job_id' => $job_item->tjid,
+        '@job_item_id' => $job_item->tjiid,
+        '@job_item_url' => url('admin/tmgmt/items/' . $job_item->tjiid, array('absolute' => TRUE)),
+      ));
+    }
+  }
+
+}
+
+/**
+ * Implements callback_batch_finished().
+ */
+function tmgmt_job_accept_all_batch_finished($success, $results, $operations) {
+  if ($results['accepted_count'] > 0) {
+    $singular = '1 job item has been accepted.';
+    $plural = '@count job items have been accepted.';
+    drupal_set_message(format_plural($results['accepted_count'], $singular, $plural));
+  }
+  if ($results['skipped_count'] > 0) {
+    $singular = '1 job item has been skipped.';
+    $plural = '@count job items have been skipped.';
+    drupal_set_message(format_plural($results['skipped_count'], $singular, $plural));
+  }
+  if ($results['failed_count'] > 0) {
+    $singular = '1 job item has not been accepted because of error. Check the "tmgmt" messages in Drupal log for more details.';
+    $plural = '@count job items have not been accepted because of errors. Check the "tmgmt" messages in Drupal log for more details.';
+    drupal_set_message(format_plural($results['failed_count'], $singular, $plural), 'warning');
+  }
 }
 
 /**
@@ -913,6 +1019,24 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#options' => $options,
   );
 
+  $form['enforced_source_language'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enforce source language'),
+    '#description' => t('The source language is by default determined from the items source language. Check to enforce a different language as source.')
+  );
+
+  $form['source_language'] = array(
+    '#type' => 'select',
+    '#title' => t('Source language'),
+    '#description' => t('If the enforced source language does not match the item source language then its translation will be used. This could result in loss of quality.'),
+    '#options' => $languages,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="enforced_source_language"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
   $form['target_language'] = array(
     '#type' => 'select',
     '#title' => t('Request translation into language/s'),
@@ -921,10 +1045,11 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#description' => t('If the item\'s source language will be the same as the target language the item will be ignored.'),
   );
 
-  $form['empty_cart'] = array(
+  $form['request_translation'] = array(
     '#type' => 'submit',
-    '#value' => t('Empty cart'),
-    '#submit' => array('tmgmt_ui_cart_empty_cart_form_submit'),
+    '#value' => t('Request translation'),
+    '#submit' => array('tmgmt_ui_cart_request_translation_form_submit'),
+    '#validate' => array('tmgmt_ui_cart_source_overview_validate'),
   );
 
   $form['remove_selected'] = array(
@@ -934,11 +1059,10 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#validate' => array('tmgmt_ui_cart_source_overview_validate'),
   );
 
-  $form['request_translation'] = array(
+  $form['empty_cart'] = array(
     '#type' => 'submit',
-    '#value' => t('Request translation'),
-    '#submit' => array('tmgmt_ui_cart_request_translation_form_submit'),
-    '#validate' => array('tmgmt_ui_cart_source_overview_validate'),
+    '#value' => t('Empty cart'),
+    '#submit' => array('tmgmt_ui_cart_empty_cart_form_submit'),
   );
 
   return $form;
@@ -971,11 +1095,22 @@ function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
   global $user;
 
   $target_languages = array_filter($form_state['values']['target_language']);
+  $enforced_source_language = NULL;
+  if ($form_state['values']['enforced_source_language']) {
+    $enforced_source_language = $form_state['values']['source_language'];
+  }
 
+  $skipped_count = 0;
   $job_items_by_source_language = array();
   // Group the selected items by source language.
   foreach (tmgmt_job_item_load_multiple(array_filter($form_state['values']['items'])) as $job_item) {
-    $job_items_by_source_language[$job_item->getSourceLangCode()][$job_item->tjiid] = $job_item;
+    $source_language = $enforced_source_language ? $enforced_source_language : $job_item->getSourceLangCode();
+    if (in_array($source_language, $job_item->getExistingLangCodes())) {
+      $job_items_by_source_language[$source_language][$job_item->tjiid] = $job_item;
+    }
+    else {
+      $skipped_count++;
+    }
   }
 
   $jobs = array();
@@ -1024,7 +1159,18 @@ function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
 
   // Start the checkout process if any jobs were created.
   if ($jobs) {
+    if ($enforced_source_language) {
+      if ($skipped_count) {
+        $languages = language_list();
+        drupal_set_message(format_plural($skipped_count, 'One item skipped. @language translation unavailable.',
+          '@count items skipped. @language translation unavailable.', array('@language' => $languages[$enforced_source_language]->name)), 'warning');
+      }
+    }
+
     tmgmt_ui_job_checkout_and_redirect($form_state, $jobs);
+  }
+  else {
+    drupal_set_message(t('It is not possible to create a translation job from the selection you made.'), 'error');
   }
 }
 
