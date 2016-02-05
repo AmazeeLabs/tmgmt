@@ -46,11 +46,10 @@ function tmgmt_file_theme() {
  * Implements hook_mail().
  */
 function tmgmt_file_mail($key, &$message, $params) {
-  switch ($key) {
-    case 'email_receiving':
-      $message['subject'] = $params['subject'];
-      $message['body'] = $params['body'];
-      break;
+  $message['subject'] = $params['subject'];
+  $message['body'] = $params['body'];
+  if (isset($params['attachments'])) {
+    $message['params']['attachments'] = $params['attachments'];
   }
 }
 
