@@ -58,6 +58,53 @@ class TMGMTFileTranslatorUIController extends TMGMTDefaultTranslatorUIController
       '#element_validate' => array('_tmgmt_file_validate_email_settings_element'),
     );
 
+    $mail_system = variable_get('mail_system', array());
+    $mimemail_ready = module_exists('mimemail') && isset($mail_system['default-system']) && $mail_system['default-system'] == 'MimeMailSystem';
+    $form['email']['sending_enabled'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable email sending'),
+      '#default_value' => $mimemail_ready && $email_settings['sending_enabled'],
+      '#disabled' => !$mimemail_ready,
+      '#description' => $mimemail_ready ? '' : t('This feature requires mimemail module. The "Site-wide default MailSystemInterface class" should be set to "MimeMailSystem" at the admin/config/system/mailsystem page.'),
+    );
+    $form['email']['sending'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('E-mail sending'),
+      '#states' => array(
+        'visible' => array(
+          'input[name="settings[email][sending_enabled]"]' => array('checked' => TRUE),
+        ),
+      ),
+      '#description' => t('When TMGMT job is submitted to translator, TMGMT will immediately send an email with the exported file attached to an email address defined in the Mapping. If there is no Mapping for the target language, no email will be sent.'),
+    );
+    $form['email']['sending']['mapping'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Mapping'),
+      '#description' => t('This describes which target languages will be sent to which email addresses.
+<br>Please use the following format: "{langcode}: {email-address}". Examples:
+<pre>
+fr: french-translator@example.com
+de-CH: swiss-german-translator@example.com
+</pre>'),
+      '#default_value' => $email_settings['sending']['mapping'],
+    );
+    $form['email']['sending']['subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Email subject'),
+      '#default_value' => $email_settings['sending']['subject'],
+    );
+    $form['email']['sending']['message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Email message'),
+      '#default_value' => $email_settings['sending']['message'],
+    );
+    $form['email']['sending']['forward_copy'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Forward a copy to'),
+      '#description' => t('Comma-separated list of email addresses. Can be used for testing purposes. Leave empty to not forward a copy.'),
+      '#default_value' => $email_settings['sending']['forward_copy'],
+    );
+
     $imap_ready = extension_loaded('imap') && class_exists('\PhpImap\Mailbox');
     $form['email']['receiving_enabled'] = array(
       '#type' => 'checkbox',

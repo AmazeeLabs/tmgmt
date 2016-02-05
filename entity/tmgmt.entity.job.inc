@@ -40,7 +40,7 @@ class TMGMTJob extends Entity {
   /**
    * Language into which the data needs to be translated.
    *
-   * @var varchar
+   * @var string
    */
   public $target_language;
 

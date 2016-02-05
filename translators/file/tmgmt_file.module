@@ -249,12 +249,25 @@ function tmgmt_file_mailbox($imap_path, $imap_username, $imap_password) {
  * @see \TMGMTFileTranslatorUIController::pluginSettingsForm()
  */
 function _tmgmt_file_validate_email_settings_element(&$element) {
+  if ($element['sending_enabled']['#value']) {
+    $mapping = array();
+    try {
+      $mapping = _tmgmt_file_email_sending_parse_mapping($element['sending']['mapping']['#value']);
+    }
+    catch (Exception $e) {
+      form_error($element['sending']['mapping'], t('Mapping: @error', array('@error' => $e->getMessage())));
+    }
+    if (empty($mapping)) {
+      form_error($element['sending']['mapping'], t('!name field is required', array('!name' => $element['sending']['mapping']['#title'])));
+    }
+  }
+
   if ($element['receiving_enabled']['#value']) {
     try {
       tmgmt_file_mailbox($element['receiving']['imap_path']['#value'], $element['receiving']['imap_username']['#value'], $element['receiving']['imap_password']['#value']);
     }
     catch (Exception $e) {
-      form_error($element, t('Cannot connect to mailbox: @error', array('@error' => $e->getMessage())));
+      form_error($element['receiving'], t('Cannot connect to mailbox: @error', array('@error' => $e->getMessage())));
     }
   }
 }
@@ -270,5 +283,35 @@ function _tmgmt_file_get_new_error_messages() {
   $error_messages = isset($_SESSION['messages']['error']) ? $_SESSION['messages']['error'] : array();
   $ret = array_diff_key($error_messages, $past_error_messages);
   $past_error_messages = $error_messages;
+  return $ret;
+}
+
+/**
+ * Parses Email sending mapping.
+ *
+ * @param string $mapping
+ *
+ * @return array
+ *   Keys are target langcodes, values are email addresses.
+ *
+ * @throws \Exception
+ *
+ * @see \TMGMTFileTranslatorUIController::pluginSettingsForm()
+ */
+function _tmgmt_file_email_sending_parse_mapping($mapping) {
+  $langcodes = array_keys(language_list());
+  $ret = array();
+  foreach (explode("\n", $mapping) as $string) {
+    if (trim($string) !== '') {
+      @list($target_langcode, $email_address) = array_map('trim', explode(':', $string, 2));
+      if (!in_array($target_langcode, $langcodes)) {
+        throw new Exception(t('"@langcode" langcode is unknown.', array('@langcode' => $target_langcode)));
+      }
+      if (!valid_email_address($email_address)) {
+        throw new Exception(t('"@email" email address is not valid.', array('@email' => $email_address)));
+      }
+      $ret[$target_langcode] = $email_address;
+    }
+  }
   return $ret;
 }

@@ -32,6 +32,25 @@ class TMGMTFileTranslatorPluginController extends TMGMTDefaultTranslatorPluginCo
       $file = file_save_data($export->export($job), $path);
       file_usage_add($file, 'tmgmt_file', 'tmgmt_job', $job->tjid);
       $job->submitted('Exported file can be downloaded <a href="!link">here</a>.', array('!link' => file_create_url($path)));
+
+      $email_settings = $job->getTranslator()->getSetting('email');
+      if (!empty($email_settings['sending_enabled'])) {
+        $mapping = @_tmgmt_file_email_sending_parse_mapping($email_settings['sending']['mapping']);
+        if (isset($mapping[$job->target_language])) {
+          drupal_mail('tmgmt_file', 'email_sending', $mapping[$job->target_language], language_default(), array(
+            'subject' => $email_settings['sending']['subject'],
+            'body' => array($email_settings['sending']['message']),
+            'attachments' => array($file),
+          ));
+          if ($email_settings['sending']['forward_copy']) {
+            drupal_mail('tmgmt_file', 'email_sending', $email_settings['sending']['forward_copy'], language_default(), array(
+              'subject' => 'Forwarded copy: ' . $email_settings['sending']['subject'],
+              'body' => array('This email was originally sent to ' . $mapping[$job->target_language], $email_settings['sending']['message']),
+              'attachments' => array($file),
+            ));
+          }
+        }
+      }
     }
   }
 
@@ -54,6 +73,13 @@ class TMGMTFileTranslatorPluginController extends TMGMTDefaultTranslatorPluginCo
       // need to make it FALSE due to backwards compatibility.
       'xliff_processing' => FALSE,
       'email' => array(
+        'sending_enabled' => 0,
+        'sending' => array(
+          'mapping' => '',
+          'subject' => '',
+          'message' => '',
+          'forward_copy' => '',
+        ),
         'receiving_enabled' => 0,
         'receiving' => array(
           'imap_path' => '',
