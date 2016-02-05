@@ -25,12 +25,14 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
    * @return array
    *   List of i18n strings data.
    */
-  function getStrings($textgroup, $search_label = NULL, $missing_target_language = NULL) {
+  function getStrings($textgroup = NULL, $search_label = NULL, $missing_target_language = NULL, $use_pager = FALSE) {
     $languages = drupal_map_assoc(array_keys(language_list()));
     $select = db_select('locales_source', 'ls')
       ->fields('ls', array('lid', 'source'));
 
-    $select->condition('ls.textgroup', $textgroup);
+    if (!empty($textgroup)) {
+      $select->condition('ls.textgroup', $textgroup);
+    }
     if (!empty($search_label)) {
       $select->condition('ls.source', "%$search_label%", 'LIKE');
     }
@@ -49,7 +51,9 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       $langcode_to_filed_alias_map[$langcode] = $select->addField($table_alias, 'language');
     }
 
-    $select = $select->extend('PagerDefault')->limit(variable_get('tmgmt_source_list_limit', 20));
+    if ($use_pager) {
+      $select = $select->extend('PagerDefault')->limit(variable_get('tmgmt_source_list_limit', 20));
+    }
     $rows = $select->execute()->fetchAll();
     foreach ($rows as $row) {
       foreach ($langcode_to_filed_alias_map as $langcode => $field_alias) {
@@ -92,6 +96,23 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       '#type' => 'tableselect',
       '#header' => $this->overviewFormHeader($type),
       '#empty' => t('No strings matching given criteria have been found.')
+    );
+    $langs = array();
+    foreach (language_list() as $langcode => $language) {
+      $langs[$langcode] = $language->name;
+    }
+    $form['actions']['from_translated_language'] = array(
+      '#type' => 'select',
+      '#title' => t('Generate from language'),
+      '#options' => $langs,
+    );
+    $form['actions']['generate_from_translated'] = array(
+      '#type' => 'submit',
+      '#value' => t('Generate'),
+    );
+    $form['actions']['generate_description'] = array(
+      '#type' => 'item',
+      '#markup' => t('You can choose to create a job with all the items that are already translated into a certain language. All the items in the locales table will be used, not only the ones which are part of the default group (the ones you see on this page), so for example the taxonomy labels, panels configuration, views configuration, field labels, etc., will be added to the job.'),
     );
 
     $search_data = $this->getSearchFormSubmittedParams();
@@ -141,7 +162,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
         if ($langcode == $source_language) {
           $translation_status = 'original';
         }
-        elseif ($string->{$langcode} === NULL) {
+        elseif ($string->{'lt_' . str_replace('-', '', $langcode) . '_language'} === NULL) {
           $translation_status = 'missing';
         }
 
@@ -263,10 +284,25 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
   public function overviewFormSubmit($form, &$form_state, $type) {
     // Handle search redirect.
     $this->overviewSearchFormRedirect($form, $form_state, $type);
-    $items = array_filter($form_state['values']['items']);
-    $type = $form_state['item_type'];
+    // If we want to generate the job from an already translated language, we
+    // will have to ignore any items which are selected in the form and just
+    // search for all the items which are already translated for that language.
+    if ($form_state['triggering_element']['#value'] == $form['actions']['generate_from_translated']['#value']) {
+      $strings = $this->getStrings(NULL, NULL, NULL, FALSE);
+      $from_lang = 'lt_' . str_replace('-', '', $form_state['values']['from_translated_language']) . '_language';
+      foreach ($strings as $item) {
+        if (!empty($item->{$from_lang})) {
+          $items[$item->lid] = $item->lid;
+        }
+      }
+    }
+    else {
+      $items = array_filter($form_state['values']['items']);
+    }
 
     $source_lang = 'en';
+
+    $type = $form_state['item_type'];
 
     // Create only single job for all items as the source language is just
     // the same for all.
@@ -274,7 +310,18 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
 
     // Loop through entities and create individual jobs for each source language.
     foreach ($items as $item) {
-      $job->addItem('locale', $type, $item);
+      // Not all the items will be able to be translated. For example, if there
+      // is a php script, then the tmgmt_word_count() will remove the tags
+      // (if set like that), which will generate a TMGMTException exception.
+      // We have to catch it and log it at least.
+      try {
+        $job->addItem('locale', $type, $item);
+      }
+      catch (TMGMTException $e) {
+        watchdog_exception('tmgmt', $e);
+        drupal_set_message(t('Unable to add job item of type %type with id %id. Make sure the source content is not empty. For example, if it is a php code to be evaluated and the tags are excluded because of the %var variable, then this might be the issue.',
+          array('%type' => $type, '%id' => $item, '%var' => 'tmgmt_word_count_exclude_tags')), 'error');
+      }
     }
 
     $form_state['redirect'] = array('admin/tmgmt/jobs/' . $job->tjid,
