@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @file
+ * Install and update functions.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function tmgmt_ui_schema() {
+  $schema['tmgmt_ui_cart'] = array(
+    'description' => 'TMGMT Cart storage.',
+    'fields' => array(
+      'tjiid' => array(
+        'description' => 'The identifier of the translation job item.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'target_langcode' => array(
+        'description' => 'Target language code.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('tjiid', 'target_langcode'),
+    'indexes' => array(
+      'tjiid' => array('tjiid'),
+      'target_langcode' => array('target_langcode'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Create {tmgmt_ui_cart) table.
+ */
+function tmgmt_ui_update_7100() {
+  $tmgmt_ui_cart = array(
+    'description' => 'TMGMT Cart storage.',
+    'fields' => array(
+      'tjiid' => array(
+        'description' => 'The identifier of the translation job item.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'target_langcode' => array(
+        'description' => 'Target language code.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('tjiid', 'target_langcode'),
+    'indexes' => array(
+      'tjiid' => array('tjiid'),
+      'target_langcode' => array('target_langcode'),
+    ),
+  );
+  db_create_table('tmgmt_ui_cart', $tmgmt_ui_cart);
+}

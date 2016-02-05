@@ -18,39 +18,6 @@ class TMGMTJobItemUICart {
   protected static $instance;
 
   /**
-   * Array key to store the contents of $this->cart into the $_SESSION variable.
-   *
-   * @var string
-   */
-  protected $session_key = 'tmgmt_cart';
-
-  /**
-   * An array to hold and manipulate the contents of the job item cart.
-   *
-   * Keys are translation job item IDs, values are arrays of target langcodes.
-   *
-   * @var array
-   */
-  protected $cart;
-
-  /**
-   * Set up a new TMGMTJobItemUICart instance.
-   *
-   * Will load the cart from the session or initialize a new one if nothing has
-   * been stored yet.
-   */
-  protected function __construct() {
-    if (
-      !isset($_SESSION[$this->session_key])
-      || !is_array($_SESSION[$this->session_key])
-      || !is_array(reset($_SESSION[$this->session_key])) // Detects old format.
-    ) {
-      $_SESSION[$this->session_key] = array();
-    }
-    $this->cart = &$_SESSION[$this->session_key];
-  }
-
-  /**
    * Returns the singleton cart.
    *
    * @return TMGMTJobItemUICart
@@ -86,13 +53,22 @@ class TMGMTJobItemUICart {
     }
     if ($tjiid = $this->isSourceItemAdded($plugin, $item_type, $item_id)) {
       // Update target languages in this case.
-      $this->cart[$tjiid] = $target_langcodes;
-      return tmgmt_job_item_load($tjiid);
+      $job_item = tmgmt_job_item_load($tjiid);
     }
-
-    $job_item = tmgmt_job_item_create($plugin, $item_type, $item_id);
-    $job_item->save();
-    $this->cart[$job_item->tjiid] = $target_langcodes;
+    else {
+      $job_item = tmgmt_job_item_create($plugin, $item_type, $item_id);
+      $job_item->save();
+    }
+    db_transaction();
+    db_delete('tmgmt_ui_cart')
+      ->condition('tjiid', $job_item->tjiid)
+      ->execute();
+    $query = db_insert('tmgmt_ui_cart')
+      ->fields(array('tjiid', 'target_langcode'));
+    foreach ($target_langcodes as $target_langcode) {
+      $query->values(array('tjiid' => $job_item->tjiid, 'target_langcode' => $target_langcode));
+    }
+    $query->execute();
     return $job_item;
   }
 
@@ -125,7 +101,9 @@ class TMGMTJobItemUICart {
    *   Job items to be removed.
    */
   public function removeJobItems(array $job_item_ids) {
-    $this->cart = array_diff_key($this->cart, array_flip($job_item_ids));
+    db_delete('tmgmt_ui_cart')
+      ->condition('tjiid', $job_item_ids, 'IN')
+      ->execute();
   }
 
   /**
@@ -135,7 +113,12 @@ class TMGMTJobItemUICart {
    *   Job items in the cart.
    */
   public function getJobItemsFromCart() {
-    return entity_load('tmgmt_job_item', array_keys($this->cart));
+    $ids = db_select('tmgmt_ui_cart', 'c')
+      ->fields('c', array('tjiid'))
+      ->distinct()
+      ->execute()
+      ->fetchCol();
+    return entity_load('tmgmt_job_item', $ids);
   }
 
   /**
@@ -148,7 +131,11 @@ class TMGMTJobItemUICart {
    *   An array of target langcodes.
    */
   public function getJobItemTargetLangcodesFromCart($tjiid) {
-    return isset($this->cart[$tjiid]) ? $this->cart[$tjiid] : array();
+    return db_select('tmgmt_ui_cart', 'c')
+      ->fields('c', array('target_langcode'))
+      ->condition('tjiid', $tjiid)
+      ->execute()
+      ->fetchCol();
   }
 
   /**
@@ -158,11 +145,11 @@ class TMGMTJobItemUICart {
    *   An array of target langcodes.
    */
   public function getTargetLangcodesFromCart() {
-    $langcodes = array();
-    foreach ($this->cart as $target_langcodes) {
-      $langcodes = array_unique(array_merge($langcodes, $target_langcodes));
-    }
-    return array_values($langcodes);
+    return db_select('tmgmt_ui_cart', 'c')
+      ->fields('c', array('target_langcode'))
+      ->distinct()
+      ->execute()
+      ->fetchCol();
   }
 
   /**
@@ -172,13 +159,18 @@ class TMGMTJobItemUICart {
    *   Number of items in the cart.
    */
   public function count() {
-    return count($this->cart);
+    return db_select('tmgmt_ui_cart', 'c')
+      ->fields('c', array('tjiid'))
+      ->distinct()
+      ->countQuery()
+      ->execute()
+      ->fetchField();
   }
 
   /**
    * Remove all contents from the cart.
    */
   public function emptyCart() {
-    $this->cart = array();
+    db_truncate('tmgmt_ui_cart')->execute();
   }
 }
