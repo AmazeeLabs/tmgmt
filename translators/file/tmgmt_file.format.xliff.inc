@@ -56,6 +56,14 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
   protected $importedTransUnits;
 
   /**
+   * Contains tag stripped from the translation. Keys are tag names, values are
+   * amount of stripped tags.
+   *
+   * @var array
+   */
+  protected $strippedTags = array();
+
+  /**
    * Adds a job item to the xml export.
    *
    * @param $item
@@ -190,7 +198,9 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     $phase = $this->importedXML->xpath("//xliff:phase[@phase-name='extraction']");
     $phase = reset($phase);
     $job = tmgmt_job_load((string) $phase['job-id']);
-    return tmgmt_unflatten_data($this->getImportedTargets($job));
+    $ret = tmgmt_unflatten_data($this->getImportedTargets($job));
+    $this->logStrippedTags($job);
+    return $ret;
   }
 
   /**
@@ -308,6 +318,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     }
 
     if (empty($this->importedTransUnits)) {
+      $this->strippedTags = array();
       $reader = new XMLReader();
       foreach ($this->importedXML->xpath('//xliff:trans-unit') as $unit) {
         $reader->XML($unit->target->asXML());
@@ -334,6 +345,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // In case we do not want to do xliff processing return the translation as
     // is.
     if (!$job->getSetting('xliff_processing')) {
+      $translation = $this->stripTags($translation);
       // HTML entities were encoded on export. Decode them back.
       return decode_entities($translation);
     }
@@ -602,6 +614,68 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
    */
   protected function toEntities($string) {
     return str_replace(array('&', '>', '<'), array('&amp;', '&gt;', '&lt;'), $string);
+  }
+
+  /**
+   * Strips any tags from the translation string.
+   *
+   * @param string $translation
+   *
+   * @return string
+   */
+  protected function stripTags($translation) {
+    return preg_replace_callback('#<\s*/?\s*(\w+).*?>#', array($this, '_stripTags'), $translation);
+  }
+
+  /**
+   * Regex replace callback.
+   */
+  public function _stripTags($matches) {
+    $tag_name = $matches[1];
+    if (!isset($this->strippedTags[$tag_name])) {
+      $this->strippedTags[$tag_name] = 0;
+    }
+    $this->strippedTags[$tag_name]++;
+    return '';
+  }
+
+  /**
+   * Logs stripped tags information and shows it as a message.
+   *
+   * @param TMGMTJob $job
+   */
+  protected function logStrippedTags(TMGMTJob $job) {
+    static $allowed_tags = array('g', 'x', 'bx', 'ex', 'bpt', 'ept', 'ph', 'it', 'mrk');
+    $stripped_tags = $this->strippedTags;
+    $this->strippedTags = array();
+    if (empty($stripped_tags)) {
+      return;
+    }
+    $stripped_tags = array(
+      'allowed' => $stripped_tags,
+      'other' => array(),
+    );
+    foreach ($stripped_tags['allowed'] as $tag => $count) {
+      if (!in_array($tag, $allowed_tags)) {
+        $stripped_tags['other'][$tag] = $count;
+        unset($stripped_tags['allowed'][$tag]);
+      }
+    }
+    foreach ($stripped_tags as $key => $tags) {
+      asort($tags);
+      $stripped_tags[$key] = empty($tags) ? '  (none)' : implode("\n", array_slice(explode("\n", var_export($tags, TRUE)), 1, -1));
+    }
+    $message = 'Stripped tags from the XLIFF File translations (job ID: !job_link)<br>
+Tags that are not according specification:
+<pre>@other_tags</pre>
+Tags allowed by specification: <pre>@allowed_tags</pre>';
+    $args = array(
+      '!job_link' => l($job->tjid, 'admin/tmgmt/jobs/' . $job->tjid, array('absolute' => TRUE)),
+      '@other_tags' => $stripped_tags['other'],
+      '@allowed_tags' => $stripped_tags['allowed'],
+    );
+    drupal_set_message(t($message, $args), ($stripped_tags['other'] ? 'warning' : 'status'));
+    watchdog('tmgmt_file', $message, $args, ($stripped_tags['other'] ? WATCHDOG_WARNING : WATCHDOG_INFO));
   }
 
 }
