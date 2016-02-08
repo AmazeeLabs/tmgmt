@@ -420,8 +420,18 @@ function tmgmt_ui_add_items_to_job($job_id, $plugin, $item_type, $item_ids) {
           continue 2;
         }
       }
-      // Add the item to the job.
-      $job->addItem($plugin, $item_type, $item_id);
+      try {
+        // Add the item to the job.
+        $job->addItem($plugin, $item_type, $item_id);
+      }
+      catch (TMGMTException $e) {
+        $return['status'] = 'failed';
+        $return['messages'][] = array(
+          'type' => 'error',
+          'key' => 'item_add_error',
+          'message' => t('The item could not be added to the job because of an error: @error.', array('@error' => $e->getMessage())),
+        );
+      }
     }
     $return['status'] = 'success';
     // @todo: should we also update the label of the job in case it is not already
