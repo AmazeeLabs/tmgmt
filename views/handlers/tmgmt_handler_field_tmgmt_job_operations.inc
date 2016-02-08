@@ -19,7 +19,7 @@ class tmgmt_handler_field_tmgmt_job_operations extends views_handler_field_entit
       $element['#links']['submit'] = array(
         'href' => $uri['path'],
         'query' => array('destination' => current_path()),
-        'title' => t('submit'),
+        'title' => t('edit'),
       );
     }
     else {
