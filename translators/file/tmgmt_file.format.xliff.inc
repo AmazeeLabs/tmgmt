@@ -310,7 +310,17 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     if (empty($this->importedTransUnits)) {
       $reader = new XMLReader();
       foreach ($this->importedXML->xpath('//xliff:trans-unit') as $unit) {
-        $reader->XML($unit->target->asXML());
+        // Some old translation workflows will just replace the content from the
+        // 'source' tag with the translation. We handle them here too. The
+        // setting is saved on the job itself when the file is uploaded, because
+        // it is hard to inject this directly in the controller, where it should
+        // be. @see tmgmt_file_import_form_submit().
+        $target_string = (string) $unit->target;
+        $target_element = 'target';
+        if (empty($target_string) && !empty($job->settings['use_source_tag'])) {
+          $target_element = 'source';
+        }
+        $reader->XML($unit->{$target_element}->asXML());
         $reader->read();
         $this->importedTransUnits[(string) $unit['id']]['#text'] =
             $this->processForImport($reader->readInnerXML(), $job);

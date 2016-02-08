@@ -90,6 +90,19 @@ class TMGMTFileTranslatorUIController extends TMGMTDefaultTranslatorUIController
       '#size' => 50,
       '#description' => t('Supported formats: @formats.', array('@formats' => implode(', ', $supported_formats))),
     );
+
+    // For xliff files, there are some (old) translation workflows that will
+    // just replace the text in the source element instead of adding the
+    // translation in the target element. So we provide a setting when the user
+    // uploads a file, if he wants to use the content from the 'source' tag when
+    // there is no content in the 'target' tag.
+    if ($job->settings['export_format'] == 'xlf') {
+      $form['use_source_tag'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Read from <em>source</em> tag if <em>target</em> tag is empty.'),
+        '#description' => t('Use this setting for translation workflows that just replace the contents in the xliff file rather than translating into the <target> tag.'),
+      );
+    }
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Import'),
