@@ -60,14 +60,14 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
       $uri = $item->uri();
       $wrapper = entity_metadata_wrapper('tmgmt_job_item', $item);
       $additional = l($wrapper->state->label(), $uri['path'], array('query' => array('destination' => current_path())));
-      // Disable the checkbox for this row since there is already a translation
-      // in progress that has not yet been finished. This way we make sure that
-      // we don't stack multiple active translations for the same item on top
-      // of each other.
-      $form['languages'][$langcode] = array(
-        '#type' => 'checkbox',
-        '#disabled' => TRUE,
-      );
+//      // Disable the checkbox for this row since there is already a translation
+//      // in progress that has not yet been finished. This way we make sure that
+//      // we don't stack multiple active translations for the same item on top
+//      // of each other.
+//      $form['languages'][$langcode] = array(
+//        '#type' => 'checkbox',
+//        '#disabled' => TRUE,
+//      );
     }
     else {
       // There is no translation job / job item for this target language.
