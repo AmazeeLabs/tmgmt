@@ -542,6 +542,9 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save job'),
+    '#attributes' => array(
+      'id' => 'edit-save-job',
+    ),
   );
   $needs_review_count = 0;
   foreach ($job->getItems() as $job_item) {
@@ -562,6 +565,9 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
       '#value' => tmgmt_ui_redirect_queue_count() == 0 ? t('Submit to translator') : t('Submit to translator and continue'),
       '#access' => $job->isSubmittable(),
       '#disabled' => empty($job->translator),
+      '#attributes' => array(
+        'id' => 'edit-submit',
+      ),
     );
     $form['actions']['resubmit_job'] = array(
       '#type' => 'submit',
@@ -994,6 +1000,8 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#options' => $options,
   );
 
+  $form['wrapper_start']['#markup'] = '<div class="form-actions">';
+
   $form['enforced_source_language'] = array(
     '#type' => 'value',
     '#value' => FALSE,
@@ -1018,6 +1026,9 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#type' => 'submit',
     '#value' => t('Request translation for all items'),
     '#submit' => array('tmgmt_ui_cart_request_translation_form_submit'),
+    '#attributes' => array(
+      'id' => 'edit-submit',
+    ),
   );
 
   $form['remove_selected'] = array(
@@ -1032,6 +1043,8 @@ function tmgmt_ui_cart_content($form, &$form_state) {
     '#value' => t('Empty cart'),
     '#submit' => array('tmgmt_ui_cart_empty_cart_form_submit'),
   );
+
+  $form['wrapper_end']['#markup'] = '</div>';
 
   return $form;
 
