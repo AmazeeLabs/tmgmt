@@ -13,6 +13,7 @@ test_dependencies[] = file_entity
 test_dependencies[] = entityreference
 
 files[] = tmgmt_entity.source.test
+files[] = tmgmt_entity.source.none.test
 files[] = tmgmt_entity.pathauto.test
 files[] = tmgmt_entity.suggestions.test
 files[] = tmgmt_entity.plugin.inc
