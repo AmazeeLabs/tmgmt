@@ -312,3 +312,31 @@ function tmgmt_i18n_string_get_wrapper($type, $i18n_string) {
   }
 }
 
+/**
+ * Implements hook_tmgmt_source_suggestions()
+ */
+function tmgmt_i18n_string_tmgmt_source_suggestions(array $items, TMGMTJob $job) {
+  $suggestions = array();
+
+  foreach ($items as $item) {
+    if (($item instanceof TMGMTJobItem) && ($item->item_type == 'node')) {
+      // Load translatable menu items related to this node.
+      $query = db_select('menu_links', 'ml')
+        ->condition('ml.link_path', 'node/' . $item->item_id)
+        ->fields('ml', array('mlid'));
+      $query->join('menu_custom', 'mc', 'ml.menu_name = mc.menu_name AND mc.i18n_mode = ' . I18N_MODE_MULTIPLE);
+      $results = $query->execute()->fetchAllAssoc('mlid');
+      foreach ($results as $result) {
+        $menu_link = menu_link_load($result->mlid);
+        // Add suggestion.
+        $suggestions[] = array(
+          'job_item' => tmgmt_job_item_create('i18n_string', 'menu_link', "menu:item:{$result->mlid}"),
+          'reason' => t('Menu link @title', array('@title' => $menu_link['link_title'])),
+          'from_item' => $item->tjiid,
+        );
+      }
+    }
+  }
+
+  return $suggestions;
+}
