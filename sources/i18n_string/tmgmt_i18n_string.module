@@ -313,6 +313,24 @@ function tmgmt_i18n_string_get_wrapper($type, $i18n_string) {
 }
 
 /**
+ * Returns textgroups that are handled by the module.
+ *
+ * Used by other modules.
+ *
+ * @return array
+ *   An array of locale textgroups.
+ */
+function tmgmt_i18n_string_handled_textgroups() {
+  $textgroups = array();
+  foreach (i18n_object_info() as $info) {
+    if (isset($info['string translation']['textgroup'])) {
+      $textgroups[] = $info['string translation']['textgroup'];
+    }
+  }
+  return array_values(array_unique($textgroups));
+}
+
+/**
  * Implements hook_tmgmt_source_suggestions()
  */
 function tmgmt_i18n_string_tmgmt_source_suggestions(array $items, TMGMTJob $job) {

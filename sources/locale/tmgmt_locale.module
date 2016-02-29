@@ -21,5 +21,33 @@ function tmgmt_locale_tmgmt_source_plugin_info() {
     ),
   );
 
+  // Add all textgroups that are not processed by the tmgmt_i18n_string.
+  $all_textgroups = module_invoke_all('locale', 'groups');
+  foreach ($all_textgroups as $textgroup => $name) {
+    // Handle rare case when name is an array.
+    if (is_array($name)) {
+      $all_textgroups[$textgroup] = array_shift($name);
+    }
+  }
+  $i18n_textgroups = module_invoke('tmgmt_i18n_string', 'handled_textgroups');
+  $i18n_textgroups = $i18n_textgroups ? $i18n_textgroups : array();
+  $info['locale']['item types'] += array_diff_key($all_textgroups, array_flip($i18n_textgroups));
+
   return $info;
+}
+
+/**
+ * Returns source langcode for a textgroup.
+ *
+ * @param string $textgroup
+ *
+ * @return string
+ */
+function _tmgmt_locale_get_source_langcode($textgroup) {
+  if ($textgroup != 'default' && function_exists('i18n_string_source_language')) {
+    // Non default text groups come from i18n_string module. Their source
+    // language can differ from the default English.
+    return i18n_string_source_language();
+  }
+  return 'en';
 }

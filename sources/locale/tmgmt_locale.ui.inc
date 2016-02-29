@@ -124,8 +124,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
    */
   protected function getTranslationData($strings, $type) {
     $objects = array();
-    // Source language of locale strings is always english.
-    $source_language = 'en';
+    $source_language = _tmgmt_locale_get_source_langcode($type);
 
     foreach ($strings as $string) {
       $id = $string->lid;
@@ -193,8 +192,8 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       '#default_value' => isset($default_values['label']) ? $default_values['label'] : NULL,
     );
 
-    // Unset English as it is the source language for all locale strings.
-    unset($options['en']);
+    // Unset the source language.
+    unset($options[_tmgmt_locale_get_source_langcode($type)]);
 
     $form['search_wrapper']['search']['missing_target_language'] = array(
       '#type' => 'select',
@@ -270,7 +269,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     $items = array_filter($form_state['values']['items']);
     $type = $form_state['item_type'];
 
-    $source_lang = 'en';
+    $source_lang = _tmgmt_locale_get_source_langcode($type);
 
     // Create only single job for all items as the source language is just
     // the same for all.

@@ -92,7 +92,7 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
       $source_language = $job_item->getSourceLangCode();
     }
 
-    if ($source_language == 'en') {
+    if ($source_language == _tmgmt_locale_get_source_langcode($job_item->item_type)) {
       $query = db_select('locales_source', 'ls');
       $query
         ->fields('ls')
@@ -101,7 +101,7 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
         ->execute()
         ->fetchObject();
 
-      $locale_object->language = 'en';
+      $locale_object->language = $source_language;
 
       if (empty($locale_object)) {
         return null;
@@ -223,7 +223,7 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
    */
   public function getSourceLangCode(TMGMTJobItem $job_item) {
     // For the locale source English is always the source language.
-    return 'en';
+    return _tmgmt_locale_get_source_langcode($job_item->item_type);
   }
 
   /**
@@ -234,7 +234,7 @@ class TMGMTLocaleSourcePluginController extends TMGMTDefaultSourcePluginControll
     $query->fields('lt', array('language'));
     $query->condition('lt.lid', $job_item->item_id);
 
-    $existing_lang_codes = array('en');
+    $existing_lang_codes = array(_tmgmt_locale_get_source_langcode($job_item->item_type));
     foreach ($query->execute() as $language) {
       $existing_lang_codes[] = $language->language;
     }
