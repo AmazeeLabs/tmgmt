@@ -287,7 +287,8 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     // If we want to generate the job from an already translated language, we
     // will have to ignore any items which are selected in the form and just
     // search for all the items which are already translated for that language.
-    if ($form_state['triggering_element']['#value'] == $form['actions']['generate_from_translated']['#value']) {
+    $generate_from_language = $form_state['triggering_element']['#value'] == $form['actions']['generate_from_translated']['#value'];
+    if ($generate_from_language) {
       $strings = $this->getStrings(NULL, NULL, NULL, FALSE);
       $from_lang = 'lt_' . str_replace('-', '', $form_state['values']['from_translated_language']) . '_language';
       foreach ($strings as $item) {
@@ -315,7 +316,15 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       // (if set like that), which will generate a TMGMTException exception.
       // We have to catch it and log it at least.
       try {
-        $job->addItem('locale', $type, $item);
+        // If we generate the strings from a language, then we just add them to
+        // the cart so that the user will be able to make some adjustments
+        // before submitting the job.
+        if ($generate_from_language) {
+          tmgmt_ui_cart_get()->addJobItem('locale', $type, $item);
+        }
+        else {
+          $job->addItem('locale', $type, $item);
+        }
       }
       catch (TMGMTException $e) {
         watchdog_exception('tmgmt', $e);
@@ -324,9 +333,14 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       }
     }
 
-    $form_state['redirect'] = array('admin/tmgmt/jobs/' . $job->tjid,
-      array('query' => array('destination' => current_path())));
-    drupal_set_message(t('One job needs to be checked out.'));
+    if ($generate_from_language) {
+      $form_state['redirect'] = 'admin/tmgmt/cart';
+      drupal_set_message(t('The items have been added to the cart. You can review them and request a translation afterwards.'));
+    }
+    else {
+      $form_state['redirect'] = array('admin/tmgmt/jobs/' . $job->tjid, array('query' => array('destination' => current_path())));
+      drupal_set_message(t('One job needs to be checked out.'));
+    }
   }
 
   /**
