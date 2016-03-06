@@ -57,7 +57,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     if ($use_pager) {
       $select = $select->extend('PagerDefault')->limit(variable_get('tmgmt_source_list_limit', 20));
     }
-    $rows = $select->execute()->fetchAll();
+    $rows = $select->execute()->fetchAllAssoc('lid');
     foreach ($rows as $row) {
       foreach ($langcode_to_filed_alias_map as $langcode => $field_alias) {
         $row->{$langcode} = $row->{$field_alias};
