@@ -25,7 +25,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
    * @return array
    *   List of i18n strings data.
    */
-  function getStrings($textgroup = NULL, $search_label = NULL, $missing_target_language = NULL, $use_pager = FALSE) {
+  function getStrings($textgroup = NULL, $search_label = NULL, $missing_target_language = NULL, $location = NULL, $use_pager = FALSE) {
     $languages = drupal_map_assoc(array_keys(language_list()));
     $select = db_select('locales_source', 'ls')
       ->fields('ls', array('lid', 'source'));
@@ -35,6 +35,9 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     }
     if (!empty($search_label)) {
       $select->condition('ls.source', "%$search_label%", 'LIKE');
+    }
+    if (!empty($location)) {
+      $select->condition('ls.location', "%$location%", 'LIKE');
     }
     if (!empty($missing_target_language) && in_array($missing_target_language, $languages)) {
       $select->isNull("lt_$missing_target_language.language");
@@ -117,7 +120,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
 
     $search_data = $this->getSearchFormSubmittedParams();
 
-    $strings = $this->getStrings($type, $search_data['label'], $search_data['missing_target_language']);
+    $strings = $this->getStrings($type, $search_data['label'], $search_data['missing_target_language'], $search_data['location']);
 
     foreach ($this->getTranslationData($strings, $type) as $id => $data) {
       $form['items']['#options'][$id] = $this->overviewRow($type, $data);
@@ -209,6 +212,12 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       '#title' => t('Source text'),
       '#default_value' => isset($default_values['label']) ? $default_values['label'] : NULL,
     );
+    $form['search_wrapper']['search']['location'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Location'),
+      '#default_value' => isset($default_values['location']) ? $default_values['location'] : NULL,
+      '#description' => t('Enter the location (context) of the label, for example: <em>/admin/config/regional/language</em> or <em>node:type:page:name</em>')
+    );
 
     // Unset English as it is the source language for all locale strings.
     unset($options['en']);
@@ -237,10 +246,14 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     $params = array(
       'label' => NULL,
       'missing_target_language' => NULL,
+      'location' => NULL,
     );
 
     if (isset($_GET['label'])) {
       $params['label'] = $_GET['label'];
+    }
+    if (isset($_GET['location'])) {
+      $params['location'] = $_GET['location'];
     }
     if (isset($_GET['missing_target_language'])) {
       $params['missing_target_language'] = $_GET['missing_target_language'];
@@ -289,7 +302,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     // search for all the items which are already translated for that language.
     $generate_from_language = $form_state['triggering_element']['#value'] == $form['actions']['generate_from_translated']['#value'];
     if ($generate_from_language) {
-      $strings = $this->getStrings(NULL, NULL, NULL, FALSE);
+      $strings = $this->getStrings(NULL, NULL, NULL, NULL, FALSE);
       $from_lang = 'lt_' . str_replace('-', '', $form_state['values']['from_translated_language']) . '_language';
       foreach ($strings as $item) {
         if (!empty($item->{$from_lang})) {
