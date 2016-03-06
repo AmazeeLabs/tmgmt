@@ -100,23 +100,25 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       '#header' => $this->overviewFormHeader($type),
       '#empty' => t('No strings matching given criteria have been found.')
     );
-    $langs = array();
-    foreach (language_list() as $langcode => $language) {
-      $langs[$langcode] = $language->name;
+    if ($form_state['item_type'] == 'default') {
+      $langs = array();
+      foreach (language_list() as $langcode => $language) {
+        $langs[$langcode] = $language->name;
+      }
+      $form['actions']['from_translated_language'] = array(
+        '#type' => 'select',
+        '#title' => t('Generate from language'),
+        '#options' => $langs,
+      );
+      $form['actions']['generate_from_translated'] = array(
+        '#type' => 'submit',
+        '#value' => t('Generate'),
+      );
+      $form['actions']['generate_description'] = array(
+        '#type' => 'item',
+        '#markup' => t('You can choose to create a job with all the items that are already translated into a certain language. All the items in the locales table will be used, not only the ones which are part of the default group (the ones you see on this page), so for example the taxonomy labels, panels configuration, views configuration, field labels, etc., will be added to the job.'),
+      );
     }
-    $form['actions']['from_translated_language'] = array(
-      '#type' => 'select',
-      '#title' => t('Generate from language'),
-      '#options' => $langs,
-    );
-    $form['actions']['generate_from_translated'] = array(
-      '#type' => 'submit',
-      '#value' => t('Generate'),
-    );
-    $form['actions']['generate_description'] = array(
-      '#type' => 'item',
-      '#markup' => t('You can choose to create a job with all the items that are already translated into a certain language. All the items in the locales table will be used, not only the ones which are part of the default group (the ones you see on this page), so for example the taxonomy labels, panels configuration, views configuration, field labels, etc., will be added to the job.'),
-    );
 
     $search_data = $this->getSearchFormSubmittedParams();
 
