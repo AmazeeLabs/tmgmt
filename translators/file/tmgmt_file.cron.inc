@@ -122,7 +122,7 @@ function _tmgmt_file_email_receive_log(array $message, $type, TMGMTTranslator $t
     $message[] = "Job link: " . url('admin/tmgmt/jobs/' . $job->tjid, array('absolute' => TRUE));
   }
   $message[] = '';
-  $message[] = "Translator link: " . url('admin/config/regional/tmgmt_translator/manage/file/' . $translator->name, array('absolute' => TRUE));
+  $message[] = "Translator link: " . url('admin/config/regional/tmgmt_translator/manage/' . $translator->name, array('absolute' => TRUE));
 
   watchdog('tmgmt_file', implode("\n<br>", $message), array(), ($type == 'success' ? WATCHDOG_INFO : WATCHDOG_ERROR));
   $email_settings = $translator->getSetting('email');
