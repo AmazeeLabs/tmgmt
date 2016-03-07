@@ -132,10 +132,18 @@ function _tmgmt_file_email_receive_log(array $message, $type, TMGMTTranslator $t
       'body' => $message,
     ));
   }
-  elseif ($type == 'failure' && $email_settings['receiving']['email_on_failure']) {
-    drupal_mail('tmgmt_file', 'email_receiving', $email_settings['receiving']['email_on_failure'], language_default(), array(
-      'subject' => 'Failed TMGMT email attachment import on ' . check_plain($GLOBALS["base_url"]),
-      'body' => $message,
-    ));
+  elseif ($type == 'failure') {
+    if ($email_settings['receiving']['email_on_failure']) {
+      drupal_mail('tmgmt_file', 'email_receiving', $email_settings['receiving']['email_on_failure'], language_default(), array(
+        'subject' => 'Failed TMGMT email attachment import on ' . check_plain($GLOBALS["base_url"]),
+        'body' => $message,
+      ));
+    }
+    if ($email_settings['receiving']['email_to_sender_on_failure']) {
+      drupal_mail('tmgmt_file', 'email_receiving', $mail->fromAddress, language_default(), array(
+        'subject' => 'Failed translation import on ' . check_plain($GLOBALS["base_url"]),
+        'body' => $message,
+      ));
+    }
   }
 }

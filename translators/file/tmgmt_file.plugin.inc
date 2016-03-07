@@ -87,6 +87,7 @@ class TMGMTFileTranslatorPluginController extends TMGMTDefaultTranslatorPluginCo
           'imap_password' => '',
           'email_on_success' => '',
           'email_on_failure' => '',
+          'email_to_sender_on_failure' => FALSE,
         ),
       ),
     );

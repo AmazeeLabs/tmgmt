@@ -170,6 +170,12 @@ Gmail tip: use a filter that assigns a label to specific emails and uses the "Ne
       '#description' => t('Comma-separated list of email addresses. Leave empty to not send emails. System log records will be created anyway.'),
       '#default_value' => $email_settings['receiving']['email_on_failure'],
     );
+    $form['email']['receiving']['email_to_sender_on_failure'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Send an email on an unsuccessful file import to sender'),
+      '#description' => t('If checked, sender will get failure report.'),
+      '#default_value' => $email_settings['receiving']['email_to_sender_on_failure'],
+    );
 
     return parent::pluginSettingsForm($form, $form_state, $translator);
   }
