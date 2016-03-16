@@ -80,22 +80,6 @@ class TMGMTNodeSourcePluginController extends TMGMTDefaultSourcePluginController
       tmgmt_field_populate_entity('node', $tnode, $job->target_language, $data, FALSE);
       // Reset translation field, which determines outdated status.
       $tnode->translation['status'] = 0;
-      // We do not want to automatically publish the translations. If we have
-      // the workbench moderation enabled for this content type, then we set the
-      // 'draft' value for workbench_moderation_state_new so that the module can
-      // do its job in the presave and update hooks(), just like the node would
-      // be submitted from the add/edit form.
-      if (module_exists('workbench_moderation') && workbench_moderation_node_type_moderated($tnode->type)) {
-        $tnode->workbench_moderation_state_new = workbench_moderation_state_none();
-        $tnode->revision = 1;
-      }
-      else {
-        // For the same reason as above, we do not want to automatically publish
-        // the new translation nodes (only the new ones!).
-        if (empty($tnode->nid)) {
-          $tnode->status = 0;
-        }
-      }
       node_save($tnode);
 
       // We just saved the translation, set the sate of the job item to
