@@ -379,6 +379,64 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
   }
 
   /**
+   * Recursively process a DOM element for the xliff export.
+   *
+   * This is used by the processForExport() method of this class.
+   *
+   * @param DOMElement $element
+   *  The source element to process.
+   *
+   * @param XMLWriter $writer
+   *  The xml writer used to output the resulted html.
+   *
+   * @param int $tjiid
+   *  The job item id.
+   *
+   * @param string $key_string
+   *  The key string used to store the xliff validation counts.
+   *
+   * @param array $xliff_validation
+   *  An array with the xliff validation counts.
+   */
+  protected function processRecursiveForExport($element, $writer, $tjiid, $key_string, &$xliff_validation) {
+    $non_pair_tags = array('br', 'img');
+    if ($element->nodeType === XML_ELEMENT_NODE) {
+      // Increment the elements count and compose element id.
+      if (!isset($xliff_validation[$key_string])) {
+        $xliff_validation[$key_string] = 0;
+      }
+      $xliff_validation[$key_string]++;
+      $id = 'tjiid' . $tjiid . '-' . $xliff_validation[$key_string];
+
+      $is_pair_tag = !in_array($element->nodeName, $non_pair_tags);
+
+      if ($is_pair_tag) {
+        $this->writeBPT($writer, $element, $id);
+      }
+      elseif ($element->nodeName == 'img') {
+        $this->writeIMG($writer, $element, $id);
+      }
+      elseif ($element->nodeName == 'br') {
+        $this->writeBR($writer, $element, $id);
+      }
+
+      /** @var DOMElement $node */
+      foreach ($element->childNodes as $node) {
+        $this->processRecursiveForExport($node, $writer, $tjiid, $key_string, $xliff_validation);
+      }
+
+      if ($is_pair_tag) {
+        // For pair tags, close and count for the closing elements.
+        $xliff_validation[$key_string]++;
+        $this->writeEPT($writer, $element->nodeName, $id);
+      }
+    }
+    elseif ($element->nodeName == '#text') {
+      $writer->writeCdata($this->toEntities($element->nodeValue));
+    }
+  }
+
+  /**
    * Helper function to process the source text.
    *
    * @param string $source
@@ -398,83 +456,18 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // are read correctly.
     $dom->loadHTML("<html><head><meta http-equiv='Content-type' content='text/html; charset=UTF-8' /></head><body>" . $source . '</body></html>');
 
-    $iterator = new RecursiveIteratorIterator(
-      new RecursiveDOMIterator($dom),
-      RecursiveIteratorIterator::SELF_FIRST);
-
     $writer = new XMLWriter();
     $writer->openMemory();
     $writer->startDocument('1.0', 'UTF-8');
     $writer->startElement('wrapper');
-
-    $tray = array();
-    $non_pair_tags = array('br', 'img');
 
     if (!isset($this->job->settings['xliff_validation'])) {
       $this->job->settings['xliff_validation'] = array();
     }
     $xliff_validation = $this->job->settings['xliff_validation'];
 
-    /** @var DOMElement $node */
-    foreach ($iterator as $node) {
-
-      if (in_array($node->nodeName, array('html', 'body', 'head', 'meta'))) {
-        continue;
-      }
-
-      if ($node->nodeType === XML_ELEMENT_NODE) {
-        // Increment the elements count and compose element id.
-        if (!isset($xliff_validation[$key_string])) {
-          $xliff_validation[$key_string] = 0;
-        }
-        $xliff_validation[$key_string]++;
-        $id = 'tjiid' . $tjiid . '-' . $xliff_validation[$key_string];
-
-        $is_pair_tag = !in_array($node->nodeName, $non_pair_tags);
-
-        if ($is_pair_tag) {
-          $this->writeBPT($writer, $node, $id);
-        }
-        elseif ($node->nodeName == 'img') {
-          $this->writeIMG($writer, $node, $id);
-        }
-        elseif ($node->nodeName == 'br') {
-          $this->writeBR($writer, $node, $id);
-        }
-
-        // Add to tray new element info.
-        $tray[$id] = array(
-          'name' => $node->nodeName,
-          'id' => $id,
-          'value' => $node->nodeValue,
-          'built_text' => '',
-          'is_pair_tag' => $is_pair_tag,
-        );
-
-      }
-      // The current node is a text.
-      elseif ($node->nodeName == '#text') {
-        // Add the node value to the text output.
-        $writer->writeCdata($this->toEntities($node->nodeValue));
-        foreach ($tray as &$info) {
-          $info['built_text'] .= $node->nodeValue;
-        }
-      }
-
-      // Reverse so that pair tags are closed in the expected order.
-      $reversed_tray = array_reverse($tray);
-      foreach ($reversed_tray as $_info) {
-        // If the build_text equals to the node value and it is not a pair tag
-        // add the end pair tag markup.
-        if ($_info['value'] == $_info['built_text'] && $_info['is_pair_tag']) {
-          // Count also for the closing elements.
-          $xliff_validation[$key_string]++;
-          $this->writeEPT($writer, $_info['name'], $_info['id']);
-          // When the end pair tag has been written unset the element info
-          // from the tray.
-          unset($tray[$_info['id']]);
-        }
-      }
+    foreach ($dom->getElementsByTagName('body')->item(0)->childNodes as $node) {
+      $this->processRecursiveForExport($node, $writer, $tjiid, $key_string, $xliff_validation);
     }
 
     // Set the xliff_validation data and save the job.
