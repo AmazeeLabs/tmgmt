@@ -432,7 +432,9 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
       }
     }
     elseif ($element->nodeName == '#text') {
-      $writer->writeCdata($this->toEntities($element->nodeValue));
+      // Some editors will get confused by the '\r\n' line endings, so we use
+      // only '\n'
+      $writer->writeCdata(str_replace("\r\n", "\n", $this->toEntities($element->nodeValue)));
     }
   }
 
