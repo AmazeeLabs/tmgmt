@@ -385,16 +385,12 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
    *
    * @param DOMElement $element
    *  The source element to process.
-   *
    * @param XMLWriter $writer
    *  The xml writer used to output the resulted html.
-   *
    * @param int $tjiid
    *  The job item id.
-   *
    * @param string $key_string
    *  The key string used to store the xliff validation counts.
-   *
    * @param array $xliff_validation
    *  An array with the xliff validation counts.
    */
