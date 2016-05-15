@@ -59,7 +59,6 @@ class TranslatorUITest extends TMGMTTestBase {
 
     // Test translator overview page.
     $this->drupalGet('admin/tmgmt/translators');
-    $this->assertRaw('<img class="tmgmt-logo-overview"');
     $this->assertText('Test translator changed');
     $this->assertLink(t('Edit'));
     $this->assertLink(t('Delete'));
@@ -70,5 +69,4 @@ class TranslatorUITest extends TMGMTTestBase {
     $clone_position = strpos($content, '<li class="clone">');
     $this->assertTrue($edit_position < $clone_position);
   }
-
 }

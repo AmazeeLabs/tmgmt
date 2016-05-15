@@ -27,28 +27,6 @@
   .state-unprocessed #tmgmt-ui-job-checkout-details details {
     margin-left: 1em;
   }
-
-  #tmgmt-ui-translator-wrapper .tmgmt-logo-settings {
-    float: inherit;
-    margin-top: 0;
-  }
-
-}
-
-@media
-  screen and (min-width: 975px) {
-  .tmgmt-logo-settings {
-    float: right;
-    margin-top: -4.5em;
-  }
-}
-
-@media
-screen and (min-width: 1680px) {
-  #tmgmt-ui-translator-wrapper .tmgmt-logo-settings {
-    float: right;
-    margin-top: -4.5em;
-  }
 }
 
 .tmgmt-ui-job-items-suggestions details {
@@ -264,16 +242,4 @@ td.views-field-tjid a {
  /* @todo Added while in core is set to "fixed". */
 .tmgmt-ui-review table.diff {
   table-layout: auto;
-}
-
-/* Provider logo */
-.tmgmt-logo-overview {
-  max-height: 32px;
-  display: inline;
-  vertical-align: middle;
-}
-.tmgmt-logo-settings {
-  max-height: 120px;
-  max-width: 250px;
-  margin-right: 1em;
 }

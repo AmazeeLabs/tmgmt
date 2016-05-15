@@ -143,21 +143,6 @@ class TranslatorForm extends EntityForm {
           'wrapper' => 'tmgmt-plugin-wrapper',
         ),
       );
-
-      // Add the provider logo in the settings wrapper.
-      if (isset($definition['logo'])) {
-        $form['plugin_wrapper']['logo'] = $logo_render_array = [
-          '#theme' => 'image',
-          '#uri' => file_create_url(drupal_get_path('module', $definition['provider']) . '/' . $definition['logo']),
-          '#alt' => $definition['label'],
-          '#title' => $definition['label'],
-          '#attributes' => [
-            'class' => 'tmgmt-logo-settings',
-          ],
-          '#suffix' => '<div class="clearfix"></div>',
-        ];
-      }
-
       $form['plugin_wrapper']['settings'] = array(
         '#type' => 'details',
         '#title' => t('@plugin plugin settings', array('@plugin' => $definition['label'])),
@@ -204,8 +189,6 @@ class TranslatorForm extends EntityForm {
         }
       }
     }
-
-    $form['#attached']['library'][] = 'tmgmt/admin';
 
     return $form;
   }

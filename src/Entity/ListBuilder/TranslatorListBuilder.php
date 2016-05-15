@@ -80,8 +80,7 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header['label'] = t('Label');
-    $header['logo'] = t('Provider');
+    $header['label'] = t('Translator name');
     $installed_translators = $this->translatorManager->getLabels();
     if (empty($installed_translators)) {
       drupal_set_message(t("There are no provider plugins available. Please install a provider plugin."), 'error');
@@ -106,33 +105,8 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
-    $row['label'] = $entity->label();
-
-    // Add provider logo.
-    /** @var \Drupal\tmgmt\Entity\Translator $entity */
-    $definition = \Drupal::service('plugin.manager.tmgmt.translator')->getDefinition($entity->getPluginId());
-    if (isset($definition['logo'])) {
-      $logo_render_array = [
-        '#theme' => 'image',
-        '#uri' => file_create_url(drupal_get_path('module', $definition['provider']) . '/' . $definition['logo']),
-        '#alt' => $definition['label'],
-        '#title' => $definition['label'],
-        '#attributes' => [
-          'class' => 'tmgmt-logo-overview',
-        ],
-      ];
-    }
-    $row['logo'] = isset($logo_render_array) ? $logo_render_array : ['#markup' => $definition['label']];
+    $row['label'] = $this->getLabel($entity);
     return $row + parent::buildRow($entity);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    $form = parent::buildForm($form, $form_state);
-    $form['#attached']['library'][] = 'tmgmt/admin';
-    return $form;
   }
 
   /**
