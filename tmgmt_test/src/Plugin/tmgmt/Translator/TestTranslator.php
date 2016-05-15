@@ -27,7 +27,8 @@ use Drupal\tmgmt\TranslatorRejectDataInterface;
  *   default_settings = {
  *     "expose_settings" = TRUE,
  *   },
- *   ui = "Drupal\tmgmt_test\TestTranslatorUi"
+ *   ui = "Drupal\tmgmt_test\TestTranslatorUi",
+ *   logo = "icons/tmgmt_test.svg",
  * )
  */
 class TestTranslator extends TranslatorPluginBase implements TranslatorRejectDataInterface, ContinuousTranslatorInterface {
