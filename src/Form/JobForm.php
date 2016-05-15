@@ -377,9 +377,25 @@ class JobForm extends TmgmtFormBase {
         '#required' => TRUE,
         '#ajax' => array(
           'callback' => array($this, 'ajaxTranslatorSelect'),
-          'wrapper' => 'tmgmt-ui-translator-settings',
+          'wrapper' => 'tmgmt-ui-translator-wrapper',
         ),
       );
+
+      // Add the provider logo in the settings wrapper.
+      /** @var \Drupal\tmgmt\Entity\Translator $entity */
+      $definition = \Drupal::service('plugin.manager.tmgmt.translator')->getDefinition($job->getTranslatorPlugin()->getPluginId());
+      if (isset($definition['logo'])) {
+        $form['translator_wrapper']['logo'] = $logo_render_array = [
+          '#theme' => 'image',
+          '#uri' => file_create_url(drupal_get_path('module', $definition['provider']) . '/' . $definition['logo']),
+          '#alt' => $definition['label'],
+          '#title' => $definition['label'],
+          '#attributes' => [
+            'class' => 'tmgmt-logo-settings',
+          ],
+          '#suffix' => '<div class="clearfix"></div>',
+        ];
+      }
 
       $settings = $this->checkoutSettingsForm($form_state, $job);
       if(!is_array($settings)){
@@ -661,7 +677,7 @@ class JobForm extends TmgmtFormBase {
    * Ajax callback to fetch the options provided by a translator.
    */
   public function ajaxTranslatorSelect(array $form, FormStateInterface $form_state) {
-    return $form['translator_wrapper']['settings'];
+    return $form['translator_wrapper'];
   }
 
   /**
