@@ -105,6 +105,34 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
   }
 
   /**
+   * Gets the mapper ID.
+   *
+   * @param \Drupal\tmgmt\JobItemInterface $job_item
+   *   The job item.
+   *
+   * @return string
+   *   The mapper ID to be used for the config mapper manager.
+   */
+  protected function getMapperId(JobItemInterface $job_item) {
+    // @todo: Inject dependencies.
+    if ($job_item->getItemType() == static::SIMPLE_CONFIG) {
+      return $job_item->getItemId();
+    }
+    else {
+      $mapper_id = $job_item->getItemType();
+      if ($mapper_id == 'field_config') {
+        // Field configs are exposed as a different type for each entity type
+        // to the config mapper manager.
+        // @todo Consider doing the same for item types, would result in more
+        //   item types.
+        $id_parts = explode('.', $job_item->getItemId());
+        $mapper_id = $id_parts[2] . '_fields';
+      }
+      return $mapper_id;
+    }
+  }
+
+  /**
    * Gets the mapper.
    *
    * @param \Drupal\tmgmt\JobItemInterface $job_item
@@ -118,12 +146,9 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    */
   protected function getMapper(JobItemInterface $job_item) {
     // @todo: Inject dependencies.
-    if ($job_item->getItemType() == static::SIMPLE_CONFIG) {
-      $config_mapper =$this->configMapperManager->createInstance($job_item->getItemId());
-    }
-    else {
-      $config_mapper = $this->configMapperManager->createInstance($job_item->getItemType());
+    $config_mapper =$this->configMapperManager->createInstance($this->getMapperId($job_item));
 
+    if ($job_item->getItemType() != static::SIMPLE_CONFIG) {
       /** @var \Drupal\Core\Config\Entity\ConfigEntityTypeInterface $entity_type */
       $entity_type = $this->entityManager->getDefinition($config_mapper->getType());
 
@@ -318,12 +343,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public function getType(JobItemInterface $job_item) {
-    if ($job_item->getItemType() == static::SIMPLE_CONFIG) {
-      $definition = $this->configMapperManager->getDefinition($job_item->getItemId());
-    }
-    else {
-      $definition = $this->configMapperManager->getDefinition($job_item->getItemType());
-    }
+    $definition = $this->configMapperManager->getDefinition($this->getMapperId($job_item));
     return $definition['title'];
   }
 

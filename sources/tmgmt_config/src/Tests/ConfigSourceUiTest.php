@@ -285,6 +285,19 @@ class ConfigSourceUiTest extends EntityTestBase {
     $this->assertText(t('Configuration ID'));
     $this->assertText('field.field.node.article.body');
 
+    $edit = [
+      'items[field.field.node.article.body]' => TRUE,
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Add to cart'));
+    $this->clickLink(t('cart'));
+
+    $this->assertText('Body');
+
+    $edit = [
+      'target_language[]' => 'de',
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Request translation'));
+
     // Assert that we cannot add config entities into continuous jobs.
     $this->assertNoText(t('Check for continuous jobs'));
     $this->assertNoField('add_all_to_continuous_jobs');
