@@ -78,6 +78,7 @@ class ContentTranslationPreviewController extends ControllerBase {
 
     // The preview is not cacheable.
     $page['#cache']['max-age'] = 0;
+    \Drupal::service('page_cache_kill_switch')->trigger();
 
     return $page;
   }

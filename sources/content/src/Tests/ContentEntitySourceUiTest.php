@@ -623,6 +623,13 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->clickLink(t('Preview'));
     $this->assertText('de(de-ch): Test title for preview translation from en to de.');
 
+    // Test if anonymous user can see also the changes.
+    $this->drupalLogout();
+    $key = \Drupal::service('tmgmt_content.key_access')->getKey($job_item);
+    $this->drupalGet(Url::fromRoute('tmgmt_content.job_item_preview', ['tmgmt_job_item' => $job_item->id()], ['query' => ['key' => $key]]));
+    $this->assertResponse(200);
+    $this->assertText('de(de-ch): Test title for preview translation from en to de.');
+
     $items = $job->getItems();
     $item = reset($items);
     $item->acceptTranslation();
