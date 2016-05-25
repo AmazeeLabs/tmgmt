@@ -353,7 +353,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
     if (empty($this->importedTransUnits)) {
       $reader = new \XMLReader();
       foreach ($this->importedXML->xpath('//xliff:trans-unit') as $unit) {
-        if ($job->getSetting('xliff_cdata')) {
+        if (!$job->getSetting('xliff_processing')) {
           $this->importedTransUnits[(string) $unit['id']]['#text'] = (string) $unit->target;
           continue;
         }

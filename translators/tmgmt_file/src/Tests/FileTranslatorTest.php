@@ -7,6 +7,7 @@
 
 namespace Drupal\tmgmt_file\Tests;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\Translator;
@@ -292,7 +293,7 @@ class FileTranslatorTest extends TMGMTTestBase {
     \Drupal::state()->set('tmgmt.test_source_data', array(
       'dummy' => array(
         'deep_nesting' => array(
-          '#text' => 'Text of deep nested item @id.',
+          '#text' => file_get_contents(drupal_get_path('module', 'tmgmt') . '/tests/testing_html/sample.html') . ' @id.',
           '#label' => 'Label of deep nested item @id',
         ),
       ),
@@ -488,19 +489,19 @@ class FileTranslatorTest extends TMGMTTestBase {
     // Review both items.
     $this->clickLink(t('Review'));
     foreach ($translated_text[1] as $key => $value) {
-      $this->assertText($value);
+      $this->assertText(Html::escape($value));
     }
     foreach ($translated_text[2] as $key => $value) {
-      $this->assertNoText($value);
+      $this->assertNoText(Html::escape($value));
     }
     $this->drupalPostForm(NULL, array(), t('Save as completed'));
     // Review both items.
     $this->clickLink(t('Review'));
     foreach ($translated_text[1] as $key => $value) {
-      $this->assertNoText($value);
+      $this->assertNoText(Html::escape($value));
     }
     foreach ($translated_text[2] as $key => $value) {
-      $this->assertText($value);
+      $this->assertText(Html::escape($value));
     }
     $this->drupalPostForm(NULL, array(), t('Save as completed'));
     // @todo: Enable this assertion once new releases for views and entity
