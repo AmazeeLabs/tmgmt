@@ -20,6 +20,7 @@ use Drupal\tmgmt\TMGMTException;
 use Drupal\tmgmt\TranslatorRejectDataInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Url;
 
 /**
  * Form controller for the job item edit forms.
@@ -178,14 +179,6 @@ class JobItemForm extends TmgmtFormBase {
     $item = $this->entity;
 
     // Add the form actions as well.
-    $actions['abort_job_item'] = array(
-      '#type' => 'submit',
-      '#value' => t('Abort Item'),
-      '#redirect' => 'admin/tmgmt/items/' . $item->id() . '/abort',
-      '#submit' => array('tmgmt_submit_redirect'),
-      '#access' => $item->isAbortable(),
-      '#weight' => 20,
-    );
     $actions['accept'] = array(
       '#type' => 'submit',
       '#button_type' => 'primary',
@@ -227,6 +220,17 @@ class JobItemForm extends TmgmtFormBase {
         ],
       ];
     }
+    $actions['abort_job_item'] = [
+      '#type' => 'link',
+      '#title' => t('Abort'),
+      '#access' => $item->isAbortable(),
+      '#url' => Url::fromRoute('entity.tmgmt_job_item.abort_form', ['tmgmt_job_item' => $item->id()]),
+      '#weight' => 40,
+      '#attributes' => [
+        'class' => ['button', 'button--danger'],
+      ],
+    ];
+
     return $actions;
   }
 

@@ -354,8 +354,11 @@ class TMGMTUiTest extends EntityTestBase {
     )));
     $end_rows = $this->xpath('//tbody/tr');
     $this->assertEqual(count($end_rows), 4);
-    $this->drupalPostForm('admin/tmgmt/items/' . $item4->id(), array(), t('Abort Item'));
+    $this->drupalGet('admin/tmgmt/items/' . $item4->id());
+    $this->clickLink('Abort');
     $this->drupalPostForm(NULL, array(), t('Confirm'));
+    $this->assertText('Aborted');
+    $this->assertNoLink('Abort');
   }
 
   /**
