@@ -329,7 +329,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       'tmgmt_local_task_bulk_form[0]' => TRUE,
       'action' => 'tmgmt_local_task_assign_to_me',
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $this->assertText(t('Assign to me was applied to 1 item.'));
 
     // Unassign again.
@@ -337,7 +337,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       'tmgmt_local_task_bulk_form[0]' => TRUE,
       'action' => 'tmgmt_local_task_unassign_multiple',
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $this->assertText(t('Unassign was applied to 1 item.'));
 
     // Now test the assign link.
@@ -752,13 +752,13 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       'tmgmt_local_task_bulk_form[0]' => TRUE,
       'action' => 'tmgmt_local_task_assign_to_me',
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $this->assertText(t('Assign to me was applied to 1 item.'));
     $edit = array(
       'tmgmt_local_task_bulk_form[0]' => TRUE,
       'action' => 'tmgmt_local_task_unassign_multiple',
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $this->assertText(t('Unassign was applied to 1 item.'));
 
     // Login as admin and check VBO submit actions are present.
@@ -768,7 +768,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       'tmgmt_local_task_bulk_form[0]' => TRUE,
       'action' => 'tmgmt_local_task_assign_multiple',
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $edit = array(
       'tuid' => $assignee->id(),
     );
@@ -835,14 +835,14 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       'action' => 'tmgmt_local_task_assign_to_me',
       'tmgmt_local_task_bulk_form[0]' => 1,
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     $this->assertTaskStatusIcon(1, 'manage-translate-task', 'assigned', 'Needs action');
     // Unassign it back.
     $edit = array(
       'action' => 'tmgmt_local_task_unassign_multiple',
       'tmgmt_local_task_bulk_form[0]' => 1,
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     // Check its unassigned icon.
     $this->drupalGet('/manage-translate');
     $this->assertTaskStatusIcon(1, 'manage-translate-task', 'unassigned', 'Unassigned');
@@ -854,7 +854,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $edit = array(
       'tmgmt_local_task_bulk_form[0]' => 1,
     );
-    $this->drupalPostForm(NULL, $edit, t('Apply'));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
     // Check the needs action status.
     $this->assertTaskStatusIcon(1, 'task-overview', 'my-tasks', 'Needs action');
 
