@@ -150,6 +150,13 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
   }
 
   /**
+   * If TRUE, getData will just return those items that are not yet translated.
+   *
+   * @var bool
+   */
+  protected $filterTranslatedItems = FALSE;
+
+  /**
    * {@inheritdoc}
    */
   public function getTargetLanguage() {
@@ -347,6 +354,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
    * {@inheritdoc}
    */
   public function getItems($conditions = array()) {
+    $items = [];
     $query = \Drupal::entityQuery('tmgmt_job_item')
       ->condition('tjid', $this->id());
     foreach ($conditions as $key => $condition) {
@@ -360,9 +368,14 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     }
     $results = $query->execute();
     if (!empty($results)) {
-      return entity_load_multiple('tmgmt_job_item', $results);
+      $items = \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->loadMultiple($results);
+      if ($this->filterTranslatedItems) {
+        $items = array_filter($items, function (JobItemInterface $item) {
+          return $item->getCountPending() > 0;
+        });
+      }
     }
-    return array();
+    return $items;
   }
 
   /**
@@ -685,10 +698,23 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     if (!$this->isContinuous()) {
       $this->setOwnerId(\Drupal::currentUser()->id());
     }
+
+    // Call the hook before requesting the translation.
+    \Drupal::moduleHandler()->invokeAll('tmgmt_job_before_request_translation', [$this->getItems()]);
+
+    // We do not want to translate the items that are already translated.
+    $this->filterTranslatedItems = TRUE;
+
     // We don't know if the translator plugin already processed our
     // translation request after this point. That means that the plugin has to
     // set the 'submitted', 'needs review', etc. states on its own.
     $this->getTranslatorPlugin()->requestTranslation($this);
+
+    // Reset it again so getData returns again all the values.
+    $this->filterTranslatedItems = FALSE;
+
+    // Call the hook after requesting the translation.
+    \Drupal::moduleHandler()->invokeAll('tmgmt_job_after_request_translation', [$this->getItems()]);
   }
 
   /**
