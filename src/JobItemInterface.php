@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\tmgmt\JobItemInterface.
- */
-
 namespace Drupal\tmgmt;
 
 use Drupal\Core\Entity\ContentEntityInterface;

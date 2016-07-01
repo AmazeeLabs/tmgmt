@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_content\Tests\ContentEntitySourceUiTest.
- */
-
 namespace Drupal\tmgmt_content\Tests;
 
 use Drupal\comment\Entity\Comment;

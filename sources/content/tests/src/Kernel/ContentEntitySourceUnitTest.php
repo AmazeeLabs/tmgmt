@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\Tests\tmgmt_content\Kernel\ContentEntitySourceUnitTest.php
- */
-
 namespace Drupal\Tests\tmgmt_content\Kernel;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\TranslatorPluginInterface.
- */
-
 namespace Drupal\tmgmt;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;

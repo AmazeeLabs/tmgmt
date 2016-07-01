@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\Form\JobItemAbortForm.
- */
-
 namespace Drupal\tmgmt\Form;
 
 use Drupal\Core\Entity\ContentEntityConfirmFormBase;

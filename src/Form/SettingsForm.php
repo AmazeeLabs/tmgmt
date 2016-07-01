@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\Controller\SettingsForm.
- */
-
 namespace Drupal\tmgmt\Form;
 
 use Drupal\Core\Form\ConfigFormBase;

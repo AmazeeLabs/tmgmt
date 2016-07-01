@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\tmgmt\Data.
- */
 
 namespace Drupal\tmgmt;
 

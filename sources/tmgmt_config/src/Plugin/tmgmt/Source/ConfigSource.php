@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\tmgmt_config\ConfigSource.
- */
-
 namespace Drupal\tmgmt_config\Plugin\tmgmt\Source;
 
 use Drupal\config_translation\ConfigMapperManagerInterface;

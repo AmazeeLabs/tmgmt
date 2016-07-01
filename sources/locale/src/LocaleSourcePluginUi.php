@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Provides the I18nString source controller.
- */
-
 namespace Drupal\tmgmt_locale;
 
 use Drupal\Core\Form\FormStateInterface;

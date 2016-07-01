@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\tmgmt_test\Plugin\tmgmt\Translator\TestSource.
- */
-
 namespace Drupal\tmgmt_test\Plugin\tmgmt\Translator;
 
 use Drupal\Core\Form\FormStateInterface;

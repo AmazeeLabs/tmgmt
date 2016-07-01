@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_local\Form\LocalTaskItemForm.
- */
-
 namespace Drupal\tmgmt_local\Form;
 
 use Drupal\Component\Utility\Html;

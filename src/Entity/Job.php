@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\tmgmt\Entity\Job.
- */
 
 namespace Drupal\tmgmt\Entity;
 

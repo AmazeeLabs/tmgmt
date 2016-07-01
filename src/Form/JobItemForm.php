@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\Form\JobItemForm.
- */
-
 namespace Drupal\tmgmt\Form;
 
 use Drupal\Component\Diff\Diff;

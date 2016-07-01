@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_local\Tests\LocalTranslatorTest.
- */
-
 namespace Drupal\tmgmt_local\Tests;
 
 use Drupal\filter\Entity\FilterFormat;

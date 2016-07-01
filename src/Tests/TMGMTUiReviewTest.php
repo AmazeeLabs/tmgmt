@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\tmgmt\Tests\TMGMTUiReviewTest.
- */
-
 namespace Drupal\tmgmt\Tests;
 
 use Drupal\field\Entity\FieldConfig;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\ContinuousManager.
- */
-
 namespace Drupal\tmgmt;
 
 use Drupal\Core\Config\ConfigFactoryInterface;

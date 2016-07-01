@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_content\ContentEntitySourcePluginUi.
- */
-
 namespace Drupal\tmgmt_content;
 
 use Drupal\Core\Entity\ContentEntityInterface;

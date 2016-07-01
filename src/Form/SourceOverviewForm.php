@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt\Controller\SourceOverviewForm.
- */
-
 namespace Drupal\tmgmt\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;

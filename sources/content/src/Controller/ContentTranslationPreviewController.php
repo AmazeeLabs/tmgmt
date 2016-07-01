@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_content\Controller\ContentTranslationPreviewController.
- */
-
 namespace Drupal\tmgmt_content\Controller;
 
 use Drupal\Core\Controller\ControllerBase;

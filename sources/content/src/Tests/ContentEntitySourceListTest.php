@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tmgmt_content\Tests\ContentEntitySourceListTest.
- */
-
 namespace Drupal\tmgmt_content\Tests;
 
 use Drupal\tmgmt\Entity\JobItem;

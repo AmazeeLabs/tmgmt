@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Provides the user translator plugin controller.
- */
-
 namespace Drupal\tmgmt_local\Plugin\tmgmt\Translator;
 
 use Drupal\tmgmt\ContinuousTranslatorInterface;
