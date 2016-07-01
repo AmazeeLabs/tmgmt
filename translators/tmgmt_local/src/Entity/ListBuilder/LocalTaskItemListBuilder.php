@@ -20,7 +20,7 @@ class LocalTaskItemListBuilder extends EntityListBuilder {
   protected function getDefaultOperations(EntityInterface $entity) {
     /** @var \Drupal\tmgmt_local\Entity\LocalTaskItem $entity */
     $operations = parent::getDefaultOperations($entity);
-    if ($entity->access('view', \Drupal::currentUser()) && $entity->getTask()->getAssignee()->id() == \Drupal::currentUser()->id()) {
+    if ($entity->access('view', \Drupal::currentUser()) && $entity->getTask()->getAssignee() && $entity->getTask()->getAssignee()->id() == \Drupal::currentUser()->id()) {
       if ($entity->isPending()) {
         $operations['translate'] = [
           'url' => $entity->urlInfo(),

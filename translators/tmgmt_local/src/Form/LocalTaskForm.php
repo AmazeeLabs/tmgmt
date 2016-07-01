@@ -52,7 +52,7 @@ class LocalTaskForm extends ContentEntityForm {
       '#type' => 'select',
       '#options' => $assignees,
       '#empty_option' => t('- Unassigned -'),
-      '#default_value' => $local_task->getAssignee()->id(),
+      '#default_value' => $local_task->getAssignee() ? $local_task->getAssignee()->id() : NULL,
       '#access' => \Drupal::currentUser()->hasPermission('administer tmgmt') || \Drupal::currentUser()->hasPermission('administer translation tasks'),
     );
 

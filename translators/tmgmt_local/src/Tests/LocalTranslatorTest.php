@@ -367,6 +367,22 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->drupalGet('translate/items/' . $first_task_item->id());
     $this->assertResponse(403);
 
+    $this->drupalLogin($this->admin_user);
+
+    // Unassign the task.
+    $this->drupalGet('translate/' . $task->id());
+    $edit = [
+      'tuid' => '',
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Save task'));
+    $this->clickLink(t('View'));
+
+    // Assign again the task to himself.
+    $edit = [
+      'tuid' => $this->assignee->id(),
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Save task'));
+
     $this->drupalLogin($this->assignee);
 
     // Translate the task.
