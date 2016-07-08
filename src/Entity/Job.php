@@ -708,7 +708,12 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     // We don't know if the translator plugin already processed our
     // translation request after this point. That means that the plugin has to
     // set the 'submitted', 'needs review', etc. states on its own.
-    $this->getTranslatorPlugin()->requestTranslation($this);
+    if (!empty($this->getItems())) {
+      $this->getTranslatorPlugin()->requestTranslation($this);
+    }
+    else {
+      $this->submitted();
+    }
 
     // Reset it again so getData returns again all the values.
     $this->filterTranslatedItems = FALSE;
