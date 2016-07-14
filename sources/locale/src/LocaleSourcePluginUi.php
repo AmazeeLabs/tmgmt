@@ -89,7 +89,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
   }
 
   /**
-   * Implements TMGMTSourceUIControllerInterface::overviewForm().
+   * {@inheritdoc}
    */
   public function overviewForm(array $form, FormStateInterface $form_state, $type) {
     $form = parent::overviewForm($form, $form_state, $type);
@@ -238,7 +238,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
   }
 
   /**
-   * Implements TMGMTSourceUIControllerInterface::overviewFormSubmit().
+   * {@inheritdoc}
    */
   public function overviewFormSubmit(array $form, FormStateInterface $form_state, $type) {
     // Handle search redirect.
