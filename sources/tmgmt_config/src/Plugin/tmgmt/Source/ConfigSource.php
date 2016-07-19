@@ -172,9 +172,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
       return $this->getMapper($job_item)->getTitle();
     }
     catch (TMGMTException $e) {
-      drupal_set_message(t('Title can not be displayed, the entity does not exist: %error.', array(
-        '%error' => $e->getMessage(),
-      )), 'error');
+      // Don't throw an error here as it would clutter the UI.
     }
     return NULL;
   }
