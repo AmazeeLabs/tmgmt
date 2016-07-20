@@ -40,17 +40,7 @@ class JobItemAbortForm extends ContentEntityConfirmFormBase {
     $entity = $this->entity;
     try {
       if (!$entity->abortTranslation()) {
-        foreach ($entity->getMessagesSince() as $message) {
-          /** @var \Drupal\tmgmt\MessageInterface $message */
-          if ($message->getType() == 'debug') {
-            continue;
-          }
-          if ($text = $message->getMessage()) {
-            // We want to persist also the type therefore we will set the
-            // messages directly and not return them.
-            drupal_set_message($text, $message->getType());
-          }
-        }
+        tmgmt_write_request_messages($entity);
       }
     }
     catch(TMGMTException $e) {

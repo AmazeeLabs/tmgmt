@@ -693,15 +693,15 @@ function tmgmt_job_request_translation(JobInterface $job) {
 /**
  * Print all messages that occurred since our request to the screen.
  *
- * @param \Drupal\tmgmt\JobInterface $job
- *    The translation job for which the message should be written.
+ * @param \Drupal\tmgmt\JobInterface|\Drupal\tmgmt\JobItemInterface $entity
+ *    The translation job or job item for which the message should be written.
  *
  * @return bool
  *    FALSE if there are message with severity error, TRUE otherwise.
  */
-function tmgmt_write_request_messages(JobInterface $job) {
+function tmgmt_write_request_messages($entity) {
   $errors = FALSE;
-  foreach ($job->getMessagesSince() as $message) {
+  foreach ($entity->getMessagesSince() as $message) {
     // Ignore debug messages.
     if ($message->getType() == 'debug') {
       continue;
@@ -813,7 +813,7 @@ function tmgmt_translation_review_form_update_state(array $form, FormStateInterf
     }
   }
   $job_item->save();
-  tmgmt_write_request_messages($job_item->getJob());
+  tmgmt_write_request_messages($job_item);
 }
 
 /**
