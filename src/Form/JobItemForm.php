@@ -329,31 +329,27 @@ class JobItemForm extends TmgmtFormBase {
       $translator_ui->reviewFormSubmit($form, $form_state, $item);
     }
     // Write changes back to item.
+    $data_service = \Drupal::service('tmgmt.data');
     foreach ($form_state->getValues() as $key => $value) {
       if (is_array($value) && isset($value['translation'])) {
         // Update the translation, this will only update the translation in case
         // it has changed. We have two different cases, the first is for nested
         // texts.
-        if (is_array($value['translation'])) {
-          $data = array(
-            '#text' => $value['translation']['value'],
-            '#origin' => 'local',
-          );
-        }
-        else {
-          $data = array(
-            '#text' => $value['translation'],
-            '#origin' => 'local',
-          );
-        }
+        $text = is_array($value['translation']) ? $value['translation']['value'] : $value['translation'];
+        // Unmask the translation's HTML tags.
+        $data_item = $item->getData($data_service->ensureArrayKey($key));
+        $contexts = ['data_item' => $data_item, 'job_item' => $this->entity];
+        \Drupal::moduleHandler()->alter('tmgmt_data_item_text_input', $text, $contexts);
+
+        $data = [
+          '#text' => $text,
+          '#origin' => 'local',
+        ];
         if ($data['#text'] == '' && $item->isActive() && $form_state->getTriggeringElement()['#value'] != '✓') {
           $data = NULL;
           continue;
         }
-
-        $data_service = \Drupal::service('tmgmt.data');
-        $current_data_status = $item->getData($data_service->ensureArrayKey($key))['#status'];
-
+        $current_data_status = $data_item['#status'];
         $item->addTranslatedData($data, $key, $current_data_status);
       }
     }
@@ -475,9 +471,16 @@ class JobItemForm extends TmgmtFormBase {
         $rows = min($rows, 15);
         $rows = max($rows, 3);
 
+        // Allow other modules to change the source and translation texts,
+        // for example to mask HTML-tags.
+        $source_text = $data_item['#text'];
+        $translation_text = isset($data_item['#translation']['#text']) ? $data_item['#translation']['#text'] : '';
+        $contexts = ['data_item' => $data_item, 'job_item' => $this->entity];
+        \Drupal::moduleHandler()->alter('tmgmt_data_item_text_output', $source_text, $translation_text, $contexts);
+
         // Build source and translation areas.
-        $item_element = $this->buildSource($item_element, $data_item, $rows, $form_state);
-        $item_element = $this->buildTranslation($item_element, $data_item, $rows, $form_state, $is_preliminary);
+        $item_element = $this->buildSource($item_element, $source_text, $data_item, $rows, $form_state);
+        $item_element = $this->buildTranslation($item_element, $translation_text, $data_item, $rows, $form_state, $is_preliminary);
 
         $item_element = $this->buildChangedSource($item_element, $form_state, $field_name, $key, $ajax_id);
 
@@ -949,6 +952,8 @@ class JobItemForm extends TmgmtFormBase {
    *
    * @param array $item_element
    *   The form element for the data item.
+   * @param string $translation_text
+   *   The translation's text to display in the item element.
    * @param array $data_item
    *   The data item.
    * @param int $rows
@@ -961,11 +966,11 @@ class JobItemForm extends TmgmtFormBase {
    * @return array
    *   The form element for the data item.
    */
-  protected function buildTranslation($item_element, $data_item, $rows, FormStateInterface $form_state, $is_preliminary) {
+  protected function buildTranslation($item_element, $translation_text, $data_item, $rows, FormStateInterface $form_state, $is_preliminary) {
     if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item')) {
       $item_element['translation'] = array(
         '#type' => 'text_format',
-        '#default_value' => isset($data_item['#translation']['#text']) ? $data_item['#translation']['#text'] : NULL,
+        '#default_value' => $translation_text,
         '#title' => t('Translation'),
         '#disabled' => $this->entity->isAccepted() || $is_preliminary,
         '#rows' => $rows,
@@ -984,7 +989,7 @@ class JobItemForm extends TmgmtFormBase {
     else {
       $item_element['translation'] = array(
         '#type' => 'textarea',
-        '#default_value' => isset($data_item['#translation']['#text']) ? $data_item['#translation']['#text'] : NULL,
+        '#default_value' => $translation_text,
         '#title' => t('Translation'),
         '#disabled' => $this->entity->isAccepted() || $is_preliminary,
         '#rows' => $rows,
@@ -1025,6 +1030,8 @@ class JobItemForm extends TmgmtFormBase {
    *
    * @param array $item_element
    *   The form element for the data item.
+   * @param string $source_text
+   *   The source's text to display in the item element.
    * @param array $data_item
    *   The data item.
    * @param int $rows
@@ -1035,11 +1042,11 @@ class JobItemForm extends TmgmtFormBase {
    * @return array
    *   The form element for the data item.
    */
-  protected function buildSource($item_element, $data_item, $rows, FormStateInterface $form_state) {
+  protected function buildSource($item_element, $source_text, $data_item, $rows, FormStateInterface $form_state) {
     if (!empty($data_item['#format']) && $this->config('tmgmt.settings')->get('respect_text_format') && !$form_state->has('accept_item')) {
       $item_element['source'] = array(
         '#type' => 'text_format',
-        '#default_value' => $data_item['#text'],
+        '#default_value' => $source_text,
         '#title' => t('Source'),
         '#disabled' => TRUE,
         '#rows' => $rows,
@@ -1058,7 +1065,7 @@ class JobItemForm extends TmgmtFormBase {
     else {
       $item_element['source'] = array(
         '#type' => 'textarea',
-        '#default_value' => $data_item['#text'],
+        '#default_value' => $source_text,
         '#title' => t('Source'),
         '#disabled' => TRUE,
         '#rows' => $rows,
