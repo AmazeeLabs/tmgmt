@@ -278,20 +278,23 @@ class JobItemForm extends TmgmtFormBase {
       $group_key = $value['group_key'];
       // If has HTML tags will be an array.
       if (isset($value['data']['translation']['value'])) {
-        $label = $value['data']['translation']['value']['#value'];
+        $translation_text = $value['data']['translation']['value']['#value'];
       }
       else {
-        $label = $value['data']['translation']['#value'];
+        $translation_text = $value['data']['translation']['#value'];
       }
 
       // Validate that is not empty.
-      if (empty($label)) {
+      if (empty($translation_text)) {
         $form_state->setError($form['review'][$group_key][$parent_key][$key]['translation'], $this->t('The field is empty.'));
         continue;
       }
-      else {
-        drupal_set_message(t('Validation completed successfully.'));
-      }
+      /** @var \Drupal\tmgmt\SegmenterInterface $segmenter */
+      $segmenter = \Drupal::service('tmgmt.segmenter');
+      $segmenter->validateFormTranslation($form_state, $form['review'][$group_key][$parent_key][$key]['translation'], $this->getEntity());
+    }
+    if (!$form_state->hasAnyErrors()) {
+      drupal_set_message(t('Validation completed successfully.'));
     }
   }
 
