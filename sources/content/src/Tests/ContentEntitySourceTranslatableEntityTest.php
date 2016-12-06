@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt_content\Tests;
 
+use Drupal\node\Entity\Node;
 use Drupal\tmgmt_composite_test\Entity\EntityTestComposite;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
@@ -32,6 +33,8 @@ class ContentEntitySourceTranslatableEntityTest extends EntityTestBase {
    */
   function setUp() {
     parent::setUp();
+
+    $this->addLanguage('de');
 
     $this->loginAsAdmin(['administer tmgmt']);
 
@@ -110,6 +113,20 @@ class ContentEntitySourceTranslatableEntityTest extends EntityTestBase {
     $this->drupalGet('/admin/tmgmt/sources');
     $this->assertOption('edit-source', 'content:node');
     $this->assertNoOption('edit-source', 'content:entity_test_composite');
+
+    // Now request a translation and save it back.
+    $job->translator = $this->default_translator->id();
+    $job->requestTranslation();
+    $items = $job->getItems();
+    $item = reset($items);
+    $item->acceptTranslation();
+
+    // Load existing node and test translating
+    $node = Node::load($node->id());
+    $translation = $node->getTranslation('de');
+    $composite = EntityTestComposite::load($translation->entity_test_composite->target_id);
+    $composite = $composite->getTranslation('de');
+    $this->assertEqual('de(de-ch): composite name', $composite->label());
   }
 }
 

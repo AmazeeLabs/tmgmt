@@ -368,7 +368,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
       $entity->addTranslation($target_langcode, $entity->toArray());
     }
 
-    $embeded_fields = \Drupal::config('tmgmt_content.settings')->get('embedded_fields');
+    $embeded_fields = $this->getEmbeddableFields($entity);
 
     $translation = $entity->getTranslation($target_langcode);
     $manager = \Drupal::service('content_translation.manager');
@@ -387,7 +387,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
           }
           // If the field is an embeddable reference, we assume that the
           // property is a field reference.
-          elseif (isset($embeded_fields[$entity->getEntityTypeId()][$name])) {
+          elseif (isset($embeded_fields[$name])) {
             $this->doSaveTranslations($translation->get($name)->offsetGet($delta)->$property, $property_data, $target_langcode);
           }
         }
