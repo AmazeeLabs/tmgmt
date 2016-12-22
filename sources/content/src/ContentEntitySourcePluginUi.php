@@ -173,6 +173,15 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       }
 
       $build = $this->buildTranslationStatus($translation_status, isset($current_job_items[$langcode]) ? $current_job_items[$langcode] : NULL);
+
+      if ($translation_status != 'missing' && $entity->hasLinkTemplate('canonical')) {
+        $build['source'] = [
+          '#type' => 'link',
+          '#url' => $entity->toUrl('canonical', ['language' => $language]),
+          '#title' => $build['source'],
+          ];
+      }
+
       $row['langcode-' . $langcode] = [
         'data' => \Drupal::service('renderer')->render($build),
         'class' => array('langstatus-' . $langcode),
