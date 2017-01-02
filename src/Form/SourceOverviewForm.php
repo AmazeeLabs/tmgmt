@@ -57,7 +57,7 @@ class SourceOverviewForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'tmgmt_overview_form';
   }
 

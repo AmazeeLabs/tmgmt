@@ -67,7 +67,7 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'tmgmt_translator_overview';
   }
 

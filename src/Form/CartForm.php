@@ -14,7 +14,7 @@ class Cartform extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'tmgmt_cart_form';
   }
 
