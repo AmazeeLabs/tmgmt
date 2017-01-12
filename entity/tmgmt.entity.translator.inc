@@ -242,6 +242,11 @@ class TMGMTTranslator extends Entity {
    *   NULL if the setting does not exist at all.
    */
   public function getSetting($name) {
+    // Allow settings override.
+    if ($settings = variable_get("tmgmt_settings_$name", NULL)) {
+      return $settings;
+    }
+
     if (isset($this->settings[$name])) {
       return $this->settings[$name];
     }
