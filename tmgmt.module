@@ -622,7 +622,10 @@ function tmgmt_job_checkout_multiple(array $jobs) {
       // Normally I would expect this to catch all failed requests and
       // afterwards send the user through a multistep form which contains the
       // failed elements.
-      // No manual checkout required. Request translations now.
+      // No manual checkout required. Request translations now, save the job
+      // in case someone excepts to be able to load the job and have the
+      // translator available.
+      $job->save();
       tmgmt_job_request_translation($job);
     }
   }

@@ -377,7 +377,9 @@ class TMGMTUiTest extends EntityTestBase {
     $default_translator
       ->setSetting('expose_settings', FALSE)
       ->save();
-    $job = $this->createJob();
+
+    // Create a job but do not save yet, to simulate how this works in the UI.
+    $job = tmgmt_job_create('en', 'de', 0, []);
 
     $redirects = tmgmt_job_checkout_multiple(array($job));
     $this->assertFalse($redirects);
