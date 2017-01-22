@@ -456,7 +456,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     // Searching for sources with missing translation.
     if (!empty($property_conditions['target_status']) && !empty($property_conditions['target_language']) && in_array($property_conditions['target_language'], $languages)) {
 
-      $translation_table_alias = db_escape_field('translation_' . $property_conditions['target_language']);
+      $translation_table_alias = db_escape_table('translation_' . $property_conditions['target_language']);
       $query->leftJoin($data_table, $translation_table_alias, "%alias.$id_key= e.$id_key AND %alias.langcode = :language",
         array(':language' => $property_conditions['target_language']));
 
