@@ -183,11 +183,24 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
             $format = $property->getValue();
           }
         }
-        // Add the format to the translatable properties.
         if (!empty($format)) {
-          foreach ($data[$key][$index] as $name => $value) {
-            if (is_array($value) && isset($value['#translate']) && $value['#translate'] == TRUE) {
-              $data[$key][$index][$name]['#format'] = $format;
+          $allowed_formats = (array) \Drupal::config('tmgmt.settings')->get('allowed_formats');
+
+          if ($allowed_formats && array_search($format, $allowed_formats) === FALSE) {
+            // There are allowed formats and this one is not part of them,
+            // explicitly mark all data as untranslatable.
+            foreach ($data[$key][$index] as $name => $value) {
+              if (is_array($value) && isset($value['#translate'])) {
+                $data[$key][$index][$name]['#translate'] = FALSE;
+              }
+            }
+          }
+          else {
+            // Add the format to the translatable properties.
+            foreach ($data[$key][$index] as $name => $value) {
+              if (is_array($value) && isset($value['#translate']) && $value['#translate'] == TRUE) {
+                $data[$key][$index][$name]['#format'] = $format;
+              }
             }
           }
         }

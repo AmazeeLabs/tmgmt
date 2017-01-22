@@ -54,8 +54,8 @@ class ContentEntitySourceTranslatableEntityTest extends EntityTestBase {
 
     // Assert there is NO embedded references yet.
     $this->drupalGet('/admin/tmgmt/settings');
-    $xpath = '//*[@id="edit-embedded-fields"]';
-    $embedded_entity = '<label for="edit-embedded-fields-always-embedded">Always embedded</label>';
+    $xpath = '//*[@id="edit-content"]';
+    $embedded_entity = '<label for="edit-always-embedded">Always embedded</label>';
     $embedded_node = '<span class="fieldset-legend">Content</span>';
     $this->assertFalse(strpos($this->xpath($xpath)[0]->asXml(), $embedded_entity));
     $this->assertFalse(strpos($this->xpath($xpath)[0]->asXml(), $embedded_node));
