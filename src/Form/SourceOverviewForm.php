@@ -102,12 +102,12 @@ class SourceOverviewForm extends FormBase {
     $form['#title'] = $this->t('@type overview (@plugin)', array('@type' => $source->getItemTypeLabel($item_type), '@plugin' => $definition['label']));
 
     $options = array();
-    foreach ($this->sourceManager->getDefinitions() as $type => $definition) {
-      $plugin_type = $this->sourceManager->createInstance($type);
+    foreach ($this->sourceManager->getDefinitions() as $plugin_id => $definition) {
+      $plugin_type = $this->sourceManager->createInstance($plugin_id);
       $item_types = $plugin_type->getItemTypes();
       asort($item_types);
-      foreach ($item_types as $item_types => $item_label) {
-        $options[(string) $definition['label']][$type . ':' . $item_types] = $item_label;
+      foreach ($item_types as $item_type_key => $item_type_label) {
+        $options[(string) $definition['label']][$plugin_id . ':' . $item_type_key] = $item_type_label;
       }
     }
     $form['source_type'] = array(
