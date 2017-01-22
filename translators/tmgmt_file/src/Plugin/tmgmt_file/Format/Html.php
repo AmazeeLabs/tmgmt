@@ -61,7 +61,7 @@ class Html implements FormatInterface {
    */
   public function import($imported_file, $is_file = TRUE) {
     $dom = new \DOMDocument();
-    $dom->loadHTMLFile($imported_file);
+    $is_file ? $dom->loadHTMLFile($imported_file) : $dom->loadHTML($imported_file);
     $xml = simplexml_import_dom($dom);
 
     $data = array();
