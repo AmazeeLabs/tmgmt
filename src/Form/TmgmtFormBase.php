@@ -50,7 +50,7 @@ class TmgmtFormBase extends ContentEntityForm {
    *   The renderer.
    */
   public function __construct(EntityManagerInterface $entity_manager, TranslatorManager $translator_manager, SourceManager $source_manager, RendererInterface $renderer) {
-    $this->entityManager = $entity_manager;
+    parent::__construct($entity_manager);
     $this->translatorManager = $translator_manager;
     $this->sourceManager = $source_manager;
     $this->renderer = $renderer;
