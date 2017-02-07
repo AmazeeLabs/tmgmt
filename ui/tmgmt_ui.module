@@ -362,15 +362,17 @@ function tmgmt_ui_add_cart_form(&$form, &$form_state, $plugin, $item_type, $item
   }
   else {
 
-    // UBX-927 We only want query items having English source.
-    $fake_job_item = new TMGMTJobItem(array(
-      'item_type' => $item_type,
-      'item_id' => $item_id,
-    ));
-    $source_langcode = tmgmt_source_plugin_controller($plugin)->getSourceLangCode($fake_job_item);
-    if (!in_array($source_langcode, array('en-US'))) {
-      $form['add_to_cart']['#access'] = FALSE;
-      drupal_set_message(t('The "Add to cart" operation is not possible for items having non English source language.'), 'warning', FALSE);
+    // UBX-927 For non i18n items we only want items having English source.
+    if ($plugin != 'i18n_string') {
+      $fake_job_item = new TMGMTJobItem(array(
+        'item_type' => $item_type,
+        'item_id' => $item_id,
+      ));
+      $source_langcode = tmgmt_source_plugin_controller($plugin)->getSourceLangCode($fake_job_item);
+      if (!in_array($source_langcode, array('en-US'))) {
+        $form['add_to_cart']['#access'] = FALSE;
+        drupal_set_message(t('The "Add to cart" operation is not possible for items having non English source language.'), 'warning', FALSE);
+      }
     }
 
     //
@@ -423,7 +425,15 @@ function tmgmt_ui_source_add_to_cart_submit($form, &$form_state) {
     unset($target_langcodes);
   }
   elseif (!empty($cart_info['plugin']) && !empty($cart_info['item_type']) && !empty($cart_info['item_id']) && !empty($form_state['input']['languages'])) {
-    $source_items = array($cart_info['item_id'] => $form_state['input']['languages']);
+    $langcodes = array();
+    foreach ($form_state['input']['languages'] as $langcode) {
+      $pieces = explode(':', $langcode);
+      $langcode = array_pop($pieces);
+      if ($langcode) {
+        $langcodes[$langcode] = $langcode;
+      }
+    }
+    $source_items = array($cart_info['item_id'] => $langcodes);
     $item_type = $cart_info['item_type'];
     $plugin = $cart_info['plugin'];
   }

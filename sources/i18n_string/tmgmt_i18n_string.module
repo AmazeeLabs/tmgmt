@@ -144,8 +144,20 @@ function tmgmt_i18n_string_form_i18n_string_translate_page_overview_form_alter(&
         '#disabled' => TRUE,
       );
     }
+    elseif ($lang == 'en-US') {
+      // It makes no sense to translate from "en" to "en-US".
+      $form['languages'][$id . ':' . $lang] = array(
+        '#type' => 'checkbox',
+        '#disabled' => TRUE,
+      );
+    }
+    else {
+      // Check by default.
+      $form['languages']['#options'][$id . ':' . $lang]['#checked'] = TRUE;
+    }
   }
 
+  $form['languages']['#process'] = array('form_process_tableselect', '_tmgmt_entity_ui_process_tableselect');
   unset($form['languages']['#rows'], $form['languages']['#theme']);
 
 //  $form['actions']['request_translation'] = array(
