@@ -956,11 +956,13 @@ display:
               1:
                 title: Normal
                 operator: '='
-                value: normal
+                value:
+                  value: 'normal'
               2:
                 title: Continuous
                 operator: '='
-                value: continuous
+                value:
+                  value: 'continuous'
           entity_type: tmgmt_job
           plugin_id: tmgmt_job_type_filter
       sorts: {  }

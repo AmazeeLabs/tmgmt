@@ -4,6 +4,7 @@ namespace Drupal\tmgmt\Form;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\tmgmt\ContinuousTranslatorInterface;
 use Drupal\tmgmt\Entity\Job;
@@ -30,9 +31,8 @@ class ContinuousJobForm extends JobForm {
     $available['source_language'] = tmgmt_available_languages();
 
     // Handle target language.
-    $selected = $job->getSourceLangcode() != 'und' ?: array_keys(tmgmt_available_languages())[0];
-    $selected_option = [$selected => tmgmt_available_languages()[$selected]];
-    $available['target_language'] = array_diff(tmgmt_available_languages(), $selected_option);
+    $selected = $job->getSourceLangcode() != LanguageInterface::LANGCODE_NOT_SPECIFIED ? $job->getSourceLangcode() : array_keys(tmgmt_available_languages())[0];
+    $available['target_language'] = tmgmt_available_languages([$selected]);
 
     $this->entity->set('job_type', Job::TYPE_CONTINUOUS);
 

@@ -43,9 +43,9 @@ class JobForm extends TmgmtFormBase {
 
     // Remove impossible combinations so we don't end up with the same source and
     // target language in the dropdowns.
-    foreach (array('source_language' => 'target_language', 'target_language' => 'source_language') as $key => $opposite) {
-      if (!empty($job->{$key})) {
-        unset($available[$opposite][$job->{$key}->value]);
+    foreach (array('source_language' => 'target_language', 'target_language' => 'source_language') as $field_name => $opposite) {
+      if (!empty($job->get($field_name)->value)) {
+        unset($available[$opposite][$job->get($field_name)->value]);
       }
     }
 

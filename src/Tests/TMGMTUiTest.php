@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt\Tests;
 
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\JobItem;
 use Drupal\tmgmt\Entity\Translator;
@@ -385,8 +386,8 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertFalse($redirects);
     $this->assertTrue($job->isActive());
 
-    // A job without target language needs to be checked out.
-    $job = $this->createJob('en', '');
+    // A job without target (not specified) language needs to be checked out.
+    $job = $this->createJob('en', LanguageInterface::LANGCODE_NOT_SPECIFIED);
     $redirects = tmgmt_job_checkout_multiple(array($job));
     $this->assertEqual($job->urlInfo()->getInternalPath(), $redirects[0]);
     $this->assertTrue($job->isUnprocessed());
@@ -422,7 +423,7 @@ class TMGMTUiTest extends EntityTestBase {
 
     // Load all suggestions.
     $commands = $this->drupalPostAjaxForm(NULL, array(), array('op' => t('Load suggestions')));
-    $this->assertEqual(count($commands), 5, 'Found 5 commands in AJAX-Request.');
+    $this->assertEqual(count($commands), 4, 'Found 4 commands in AJAX-Request.');
 
     // Check each command for success.
     foreach ($commands as $command) {

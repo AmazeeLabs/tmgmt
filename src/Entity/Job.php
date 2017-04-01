@@ -73,13 +73,11 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
 
     $fields['source_language'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Source language code'))
-      ->setDescription(t('The source language.'))
-      ->setDefaultValue(LanguageInterface::LANGCODE_NOT_SPECIFIED);
+      ->setDescription(t('The source language.'));
 
     $fields['target_language'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Target language code'))
-      ->setDescription(t('The target language.'))
-      ->setDefaultValue(LanguageInterface::LANGCODE_NOT_SPECIFIED);
+      ->setDescription(t('The target language.'));
 
     $fields['label'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Label'))
@@ -147,6 +145,33 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
       ->setDefaultValue(array());
 
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function preCreate(EntityStorageInterface $storage, array &$values) {
+    parent::preCreate($storage, $values);
+
+    // If either the source or target language is empty.
+    if (empty($values['source_language']) || empty($values['target_language'])) {
+      $languages = tmgmt_available_languages();
+      if (empty($values['source_language'])) {
+        $values['source_language'] = key($languages);
+      }
+      if (empty($values['target_language'])) {
+        // Values might be an array, simplify it to a scalar langcode.
+        $source_language = $values['source_language'];
+        while (is_array($source_language)) {
+          $source_language = reset($source_language);
+        }
+
+        // Make sure the source language is not available as target language,
+        // use the next best value as the default.
+        unset($languages[$source_language]);
+        $values['target_language'] = key($languages);
+      }
+    }
   }
 
   /**
