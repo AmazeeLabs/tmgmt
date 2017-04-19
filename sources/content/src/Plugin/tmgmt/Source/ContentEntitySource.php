@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt_content\Plugin\tmgmt\Source;
 
+use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
@@ -136,9 +137,31 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
 
     $field_definitions = $entity->getFieldDefinitions();
     $exclude_field_types = ['language'];
+
+    // Exclude field types from translation.
     $translatable_fields = array_filter($field_definitions, function (FieldDefinitionInterface $field_definition) use ($exclude_field_types) {
-        return $field_definition->isTranslatable() && !in_array($field_definition->getType(), $exclude_field_types);
+
+        // Field is not translatable.
+        if (!$field_definition->isTranslatable()) {
+          return FALSE;
+        }
+
+        // Field type matches field types to exclude.
+        if (in_array($field_definition->getType(), $exclude_field_types)) {
+          return FALSE;
+        }
+
+        // User marked the field to be excluded.
+        if ($field_definition instanceof ThirdPartySettingsInterface) {
+          $is_excluded = $field_definition->getThirdPartySetting('tmgmt_content', 'excluded', FALSE);
+          if ($is_excluded) {
+            return FALSE;
+          }
+        }
+        return TRUE;
     });
+
+    \Drupal::moduleHandler()->alter('tmgmt_translatable_fields', $entity, $translatable_fields);
 
     $data = array();
     foreach ($translatable_fields as $key => $field_definition) {

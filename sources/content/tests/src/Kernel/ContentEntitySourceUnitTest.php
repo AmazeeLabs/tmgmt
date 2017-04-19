@@ -28,7 +28,7 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
    *
    * @var array
    */
-  public static $modules = array('tmgmt', 'tmgmt_content', 'tmgmt_test', 'node', 'filter', 'file', 'image', 'language', 'content_translation', 'options', 'entity_reference');
+  public static $modules = array('tmgmt', 'tmgmt_content', 'tmgmt_test', 'node', 'filter', 'file', 'image', 'language', 'content_translation', 'options', 'entity_reference', 'text');
 
   protected $entityTypeId = 'entity_test_mul';
 
@@ -101,6 +101,23 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     ));
     $this->image->save();
 
+    // Add a translatable text field that should be ignored.
+    $field_storage = FieldStorageConfig::create(array(
+      'field_name' => 'ignored_field',
+      'entity_type' => $this->entityTypeId,
+      'type' => 'text',
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
+      'translatable' => TRUE,
+    ));
+    $field_storage->save();
+    FieldConfig::create(array(
+      'entity_type' => $this->entityTypeId,
+      'field_storage' => $field_storage,
+      'bundle' => $this->entityTypeId,
+      'label' => $this->randomMachineName(),
+    ))->setThirdPartySetting('tmgmt_content', 'excluded', TRUE)
+      ->save();
+
     tmgmt_translator_auto_create(\Drupal::service('plugin.manager.tmgmt.translator')->getDefinition('test_translator'));
   }
 
@@ -133,6 +150,11 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     );
     $translation->image_test->appendItem($values);
     $entity_test->save();
+
+    $translation->ignored_field->appendItem([
+      'value' => 'This field should not be translated.',
+      'format' => 'text_plain',
+    ]);
 
     $job = tmgmt_job_create('en', 'de');
     $job->translator = 'test_translator';
@@ -194,6 +216,9 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertTrue($image_item['title']['#translate']);
     $this->assertEqual($image_item['title']['#label'], t('Title'));
     $this->assertEqual($image_item['title']['#text'], $entity_test->image_test->title);
+
+    // Test the ignored field.
+    $this->assertFalse(isset($data['ignored_field']));
 
     // Now request a translation and save it back.
     $job->requestTranslation();

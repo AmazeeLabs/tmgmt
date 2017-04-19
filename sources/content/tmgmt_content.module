@@ -9,6 +9,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\tmgmt\JobInterface;
+use Drupal\field\FieldConfigInterface;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -318,4 +319,30 @@ function tmgmt_content_entity_access(\Drupal\Core\Entity\EntityInterface $entity
     }
   }
   return $result->addCacheContexts(['url.query_args:key']);
+}
+
+/**
+ * Implements hook_FORM_ID_alter().
+ */
+function tmgmt_content_form_field_config_edit_form_alter(&$form, FormStateInterface $form_state) {
+
+  /** @var \Drupal\field\Entity\FieldConfig $field_config */
+  $field_config = $form_state->getFormObject()->getEntity();
+
+  $form['tmgmt_content_excluded'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Exclude from translations'),
+    '#weight' => -8,
+    '#default_value' => $field_config->getThirdPartySetting('tmgmt_content', 'excluded', 0),
+  );
+
+  $form['#entity_builders'][] = 'tmgmt_content_entity_builder';
+}
+
+/**
+ * Entity builder callback.
+ */
+function tmgmt_content_entity_builder($entity_type, FieldConfigInterface $entity, &$form, FormStateInterface $form_state) {
+  $exclude_from_translation = $form_state->getValue('tmgmt_content_excluded');
+  $entity->setThirdPartySetting('tmgmt_content', 'excluded', $exclude_from_translation);
 }

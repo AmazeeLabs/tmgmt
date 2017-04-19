@@ -5,8 +5,6 @@
  * Hooks provided by the content entity source module.
  */
 
-use Drupal\Core\Entity\Query\QueryInterface;
-
 /**
  * @addtogroup tmgmt_source
  * @{
@@ -18,8 +16,22 @@ use Drupal\Core\Entity\Query\QueryInterface;
  *
  * @see TMGMTEntityDefaultSourceUIController
  */
-function hook_tmgmt_content_list_query_alter(QueryInterface $query) {
+function hook_tmgmt_content_list_query_alter(\Drupal\Core\Entity\Query\QueryInterface $query) {
   $query->condition('type', array('article', 'page'), 'IN');
+}
+
+/**
+ * Allows to exclude some fields from translation with TMGMT.
+ *
+ * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+ *   The entity to exclude fields from.
+ * @param \Drupal\Core\Field\FieldDefinitionInterface[] $translatable_fields
+ *   An array of field definitions, keyed by field name.
+ */
+function hook_tmgmt_translatable_fields_alter(\Drupal\Core\Entity\ContentEntityInterface $entity, array &$translatable_fields) {
+  if (isset($translatable_fields['title'])) {
+    unset($translatable_fields['title']);
+  }
 }
 
 /**
