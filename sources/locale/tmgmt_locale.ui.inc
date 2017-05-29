@@ -28,7 +28,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
   function getStrings($textgroup, $search_label = NULL, $missing_target_language = NULL) {
     $languages = drupal_map_assoc(array_keys(language_list()));
     $select = db_select('locales_source', 'ls')
-      ->fields('ls', array('lid', 'source'));
+      ->fields('ls', array('lid', 'source', 'context'));
 
     $select->condition('ls.textgroup', $textgroup);
     if (!empty($search_label)) {
@@ -36,6 +36,10 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
     }
     if (!empty($missing_target_language) && in_array($missing_target_language, $languages)) {
       $select->isNull("lt_$missing_target_language.language");
+    }
+
+    if (isset($_GET['context']) && is_string($_GET['context'])) {
+      $select->condition('ls.context', $_GET['context'], 'LIKE');
     }
 
     // Join locale targets for each language.
@@ -49,7 +53,11 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       $langcode_to_filed_alias_map[$langcode] = $select->addField($table_alias, 'language');
     }
 
-    $select = $select->extend('PagerDefault')->limit(variable_get('tmgmt_source_list_limit', 20));
+    $page_limit = isset($_GET['per_page']) && is_string($_GET['per_page']) && ctype_digit($_GET['per_page'])
+      ? $_GET['per_page']
+      : variable_get('tmgmt_source_list_limit', 20);
+
+    $select = $select->extend('PagerDefault')->limit($page_limit);
     $rows = $select->execute()->fetchAll();
     foreach ($rows as $row) {
       foreach ($langcode_to_filed_alias_map as $langcode => $field_alias) {
@@ -77,6 +85,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
 
     $header = array(
       'source' => array('data' => t('Source text')),
+      'context' => array('data' => t('Context')),
     ) + $languages;
 
     return $header;
@@ -204,6 +213,21 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       '#value' => t('Search'),
     );
 
+    $form['advanced_features'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Advanced features'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'description' => array(
+        '#markup' => t('You can use additional query parameters in the URL:
+<ul>
+<li>context: string context to be used in LIKE expression; you can use "%" placeholder</li>
+<li>per_page: integer; how many items to show per page</li>
+</ul>
+For example: /admin/tmgmt/sources/locale_default?context=%uos%&per_page=500'),
+      ),
+    );
+
     return $form;
   }
 
@@ -247,6 +271,7 @@ class TMGMTLocaleSourceUIController extends TMGMTDefaultSourceUIController {
       'source' => l($source->source, 'admin/config/regional/translate/edit/' . $source->lid, array(
         'query' => drupal_get_destination(),
       )),
+      'context' => $source->context,
     );
 
     foreach (language_list() as $langcode => $language) {
