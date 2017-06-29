@@ -92,7 +92,7 @@ class ContentTranslationPreviewController extends ControllerBase {
     $title = $this->entityTypeManager
       ->getStorage($tmgmt_job_item->getItemType())
       ->load($tmgmt_job_item->getItemId())
-      ->getTitle();
+      ->label();
     return t("Preview of @title for @target_language", [
       '@title' => $title,
       '@target_language' => $target_language,

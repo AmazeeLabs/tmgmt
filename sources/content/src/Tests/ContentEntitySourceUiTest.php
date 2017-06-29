@@ -2,6 +2,8 @@
 
 namespace Drupal\tmgmt_content\Tests;
 
+use Drupal\block_content\Entity\BlockContent;
+use Drupal\block_content\Entity\BlockContentType;
 use Drupal\comment\Entity\Comment;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\Core\Url;
@@ -23,7 +25,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
    *
    * @var array
    */
-  public static $modules = array('tmgmt_content', 'comment', 'ckeditor');
+  public static $modules = array('tmgmt_content', 'comment', 'ckeditor', 'block_content');
 
   /**
    * {@inheritdoc}
@@ -544,6 +546,35 @@ class ContentEntitySourceUiTest extends EntityTestBase {
    * Test content entity source preview.
    */
   function testEntitySourcePreview() {
+    // Create the basic block type.
+    $bundle = BlockContentType::create([
+      'id' => 'basic',
+      'label' => 'basic',
+    ]);
+    $bundle->save();
+
+    // Enable translation for basic blocks.
+    $edit = [
+      'entity_types[block_content]' => 'block_content',
+      'settings[block_content][basic][translatable]' => TRUE,
+    ];
+    $this->drupalPostForm('admin/config/regional/content-language', $edit, t('Save configuration'));
+    $this->assertText(t('Settings successfully updated.'));
+
+    // Create a custom block.
+    $custom_block = BlockContent::create([
+      'type' => 'basic',
+      'info' => 'Custom Block',
+      'langcode' => 'en',
+    ]);
+    $custom_block->save();
+    // Translate the custom block and assert the preview.
+    $this->drupalPostForm('admin/tmgmt/sources/content/block_content', ['items[1]' => 1], t('Request translation'));
+    $this->drupalPostForm(NULL, ['target_language' => 'de', 'translator' => 'test_translator'], t('Submit to provider'));
+    $this->clickLink(t('reviewed'));
+    $this->clickLink(t('Preview'));
+    $this->assertText(t('Preview of Custom Block for German'));
+
     // Create a node and translation job.
     $node = $this->createTranslatableNode('page', 'en');
     $this->drupalPostForm('admin/tmgmt/sources', ['items[1]' => 1], t('Request translation'));
