@@ -4,15 +4,12 @@ namespace Drupal\tmgmt_local\Entity\ListBuilder;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
-use Drupal\Core\Routing\RedirectDestinationTrait;
 use Drupal\tmgmt_local\LocalTaskInterface;
 
 /**
  * Provides the views data for the message entity type.
  */
 class LocalTaskListBuilder extends EntityListBuilder {
-
-  use RedirectDestinationTrait;
 
   /**
    * {@inheritdoc}
@@ -24,7 +21,9 @@ class LocalTaskListBuilder extends EntityListBuilder {
       $operations['view'] = array(
         'title' => $this->t('View'),
         'weight' => -10,
-        'url' => $entity->toUrl('canonical')->setOption('query', $this->getDestinationArray()),
+        // Backwards compatibility with Drupal <8.5, which does not yet
+        // provide ensureDestination().
+        'url' => method_exists($this, 'ensureDestination') ? $this->ensureDestination($entity->toUrl('canonical')) : $entity->toUrl('canonical'),
       );
     }
 
