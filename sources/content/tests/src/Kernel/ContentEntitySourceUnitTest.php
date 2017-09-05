@@ -462,7 +462,6 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       'field_storage' => $field1,
       'bundle' => $this->entityTypeId,
       'label' => 'Field 1',
-      'translatable' => FALSE,
       'settings' => array(),
     ))->save();
     FieldConfig::create(array(

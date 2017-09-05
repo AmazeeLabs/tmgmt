@@ -236,7 +236,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
       }
     }
 
-    $embeddable_fields = $this->getEmbeddableFields($entity);
+    $embeddable_fields = static::getEmbeddableFields($entity);
     foreach ($embeddable_fields as $key => $field_definition) {
       $field = $entity->get($key);
       foreach ($field as $index => $field_item) {
@@ -270,15 +270,15 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The entity to get the translatable data from.
    *
-   * @return array $embeddable_fields
-   *   Translatable data.
+   * @return \Drupal\Core\Field\FieldDefinitionInterface[] $embeddable_fields
+   *   A list of field definitions that can be embedded.
    */
-  public function getEmbeddableFields(ContentEntityInterface $entity) {
+  public static function getEmbeddableFields(ContentEntityInterface $entity) {
     // Get the configurable embeddable references.
     $field_definitions = $entity->getFieldDefinitions();
     $embeddable_field_names = \Drupal::config('tmgmt_content.settings')->get('embedded_fields');
     $embeddable_fields = array_filter($field_definitions, function (FieldDefinitionInterface $field_definition) use ($embeddable_field_names) {
-      return !$field_definition->isTranslatable() && isset($embeddable_field_names[$field_definition->getTargetEntityTypeId()][$field_definition->getName()]);
+      return isset($embeddable_field_names[$field_definition->getTargetEntityTypeId()][$field_definition->getName()]);
     });
 
     // Get always embedded references.
@@ -404,7 +404,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
       $entity->addTranslation($target_langcode, $entity->toArray());
     }
 
-    $embeded_fields = $this->getEmbeddableFields($entity);
+    $embedded_fields = static::getEmbeddableFields($entity);
 
     $translation = $entity->getTranslation($target_langcode);
     $manager = \Drupal::service('content_translation.manager');
@@ -417,13 +417,22 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
           $property_data = $field_item[$property];
           // If there is translation data for the field property, save it.
           if (isset($property_data['#translation']['#text']) && $property_data['#translate']) {
+
+            if (!$translation->hasField($name)) {
+              throw new \Exception("Field '$name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
+            }
+
+            if (!$translation->get($name)->offsetExists($delta)) {
+              throw new \Exception("Offset $delta on field '$name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
+            }
+
             $translation->get($name)
               ->offsetGet($delta)
               ->set($property, $property_data['#translation']['#text']);
           }
-          // If the field is an embeddable reference, we assume that the
-          // property is a field reference.
-          elseif (isset($embeded_fields[$name])) {
+          // If the field is an embeddable reference and the property is a
+          // content entity, process it recursively.
+          elseif (isset($embedded_fields[$name]) && $translation->get($name)->offsetGet($delta)->$property instanceof ContentEntityInterface) {
             $this->doSaveTranslations($translation->get($name)->offsetGet($delta)->$property, $property_data, $target_langcode);
           }
         }

@@ -44,7 +44,11 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
    *   The node which is prepared with all needed fields for the suggestions.
    */
   protected function prepareTranslationSuggestions() {
-    // Create a content type with fields.
+    // Create an untranslatable node type.
+    $untranslatable_type = NodeType::create(['type' => $this->randomMachineName()]);
+    $untranslatable_type->save();
+
+    // Create a translatable content type with fields.
     // Only the first field is a translatable reference.
     $type = NodeType::create(['type' => $this->randomMachineName()]);
     $type->save();
@@ -68,6 +72,18 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
       'settings' => array('target_type' => 'node'),
     ));
     $field2->save();
+    $embedded_field = FieldStorageConfig::create(array(
+      'field_name' => 'embedded_field',
+      'entity_type' => 'node',
+      'type' => 'entity_reference',
+      'cardinality' => -1,
+      'settings' => array('target_type' => 'node'),
+    ));
+    $embedded_field->save();
+
+    $this->config('tmgmt_content.settings')
+      ->set('embedded_fields.node.embedded_field', TRUE)
+      ->save();
 
     // Create field instances on the content type.
     FieldConfig::create(array(
@@ -85,13 +101,21 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
       'settings' => array(),
     ))->save();
 
+    FieldConfig::create(array(
+      'field_storage' => $embedded_field,
+      'bundle' => $type->id(),
+      'label' => 'Field 2',
+      'translatable' => TRUE,
+      'settings' => array(),
+    ))->save();
+
     // Create a translatable body field.
     node_add_body_field($type);
     $field = FieldConfig::loadByName('node', $type->id(), 'body');
     $field->setTranslatable(TRUE);
     $field->save();
 
-    // Create 4 nodes to be referenced.
+    // Create 4 translatable nodes to be referenced.
     $references = array();
     for ($i = 0; $i < 4; $i++) {
       $references[$i] = Node::create(array(
@@ -102,28 +126,31 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
       $references[$i]->save();
     }
 
+    // Create one untranslatable node.
+    $untranslatable_node = Node::create([
+      'title' => $this->randomMachineName(),
+      'type' => $untranslatable_type->id(),
+    ]);
+    $untranslatable_node->save();
+
     // Create a node with two translatable and two non-translatable references.
-    $node = Node::create(array(
+    $node = Node::create([
       'title' => $this->randomMachineName(),
       'type' => $type->id(),
       'language' => 'en',
       'body' => $this->randomMachineName(),
-      $field1->getName() => array(
-        array(
-          'target_id' => $references[0]->id(),
-        ),
-        array(
-          'target_id' => $references[1]->id(),
-        ),
-      ),
-      $field2->getName() => array(
-      array(
-        'target_id' => $references[2]->id(),
-      ),
-      array(
-        'target_id' => $references[3]->id(),
-      ),
-    )));
+      $field1->getName() => [
+        ['target_id' => $references[0]->id()],
+        ['target_id' => $references[1]->id()],
+      ],
+      $field2->getName() => [
+        ['target_id' => $references[2]->id()],
+        ['target_id' => $untranslatable_node->id()],
+      ],
+      $embedded_field->getName() => [
+        ['target_id' => $references[3]->id()],
+      ],
+    ]);
     $node->save();
 
     $link = MenuLinkContent::create([
@@ -145,8 +172,9 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
     $job = $this->createJob();
     $node = $this->prepareTranslationSuggestions();
     $expected_nodes = array(
+      $node->field1[0]->target_id => $node->field1[0]->target_id,
+      $node->field1[1]->target_id => $node->field1[1]->target_id,
       $node->field2[0]->target_id => $node->field2[0]->target_id,
-      $node->field2[1]->target_id => $node->field2[1]->target_id,
     );
     $item = $job->addItem('content', 'node', $node->id());
 
@@ -154,9 +182,8 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
     $suggestions = $job->getSuggestions();
     $job->cleanSuggestionsList($suggestions);
 
-    // Check for three suggestions.
-    $this->assertEqual(count($suggestions), 3, 'Found three suggestions.');
-
+    // There should be 4 suggestions, 3 translatable nodes and the menu link.
+    $this->assertEquals(4, count($suggestions));
 
     foreach ($suggestions as $suggestion) {
       switch ($suggestion['job_item']->getItemType()) {

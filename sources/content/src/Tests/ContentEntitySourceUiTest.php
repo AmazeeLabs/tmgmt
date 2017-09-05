@@ -424,10 +424,9 @@ class ContentEntitySourceUiTest extends EntityTestBase {
    * Tests the embedded references.
    */
   function testEmbeddedReferences() {
-    // Create two reference fields, one to a translatable and untranslatable
-    // node type, one only for a untranslatable. Only the first one should be
-    // available.
 
+    // Create 4 field storages, 3 for nodes, 1 for users (not translatable
+    // target).
     $field1 = FieldStorageConfig::create(
         array(
           'field_name' => 'field1',
@@ -448,10 +447,36 @@ class ContentEntitySourceUiTest extends EntityTestBase {
       )
     );
     $field2->save();
+    $field3 = FieldStorageConfig::create(
+      array(
+        'field_name' => 'field3',
+        'entity_type' => 'node',
+        'type' => 'entity_reference',
+        'cardinality' => -1,
+        'settings' => array('target_type' => 'node'),
+      )
+    );
+    $field3->save();
+    $field4 = FieldStorageConfig::create(
+      array(
+        'field_name' => 'field4',
+        'entity_type' => 'node',
+        'type' => 'entity_reference',
+        'cardinality' => -1,
+        'settings' => array('target_type' => 'user'),
+      )
+    );
+    $field4->save();
 
     $this->createNodeType('untranslatable', 'Untranslatable', FALSE);
 
-    // Create field instances on the content type.
+    // There are two node types, article (translatable) and untranslatable, with
+    // the following field configuration:
+    // Untranslatable Field 1 on article and untranslatable: Available
+    // Untranslatable Field 2 on untranslatable: Not Available
+    // Translatable Field 3 on article: Available
+    // Untranslatable Field 4 (user reference) on article: Not available.
+
     FieldConfig::create(
       array(
         'field_storage' => $field1,
@@ -480,6 +505,26 @@ class ContentEntitySourceUiTest extends EntityTestBase {
       )
     )->save();
 
+    FieldConfig::create(
+      array(
+        'field_storage' => $field3,
+        'bundle' => 'article',
+        'label' => 'Field 3',
+        'translatable' => TRUE,
+        'settings' => array(),
+      )
+    )->save();
+
+    FieldConfig::create(
+      array(
+        'field_storage' => $field4,
+        'bundle' => 'article',
+        'label' => 'Field 4',
+        'translatable' => FALSE,
+        'settings' => array(),
+      )
+    )->save();
+
     EntityViewDisplay::load('node.article.default')
       ->setComponent('field1', [
         'type' => 'entity_reference_entity_view',
@@ -489,15 +534,21 @@ class ContentEntitySourceUiTest extends EntityTestBase {
 
     $this->drupalGet('admin/tmgmt/settings');
 
+    // Field 1 and 3 should be available, enable them.
     $checked_reference_fields = array(
       'embedded_fields[node][field1]' => TRUE,
+      'embedded_fields[node][field3]' => TRUE,
     );
 
-    $this->assertNoField('embedded_fields[node][field_image]');
-    $this->assertNoField('embedded_fields[node][field_tags]');
+    // The node about translatable fields should be shown exactly once.
+    $this->assertUniqueText('Note: This is a translatable field, embedding this will add a translation on the existing reference.');
+
+    // String fields, field 2 and 4 as well as the node type aund uid reference
+    // should not show up.
     $this->assertNoField('embedded_fields[node][title]');
     $this->assertNoField('embedded_fields[node][uid]');
     $this->assertNoField('embedded_fields[node][field2]');
+    $this->assertNoField('embedded_fields[node][field4]');
     $this->assertNoField('embedded_fields[node][type]');
 
     $this->drupalPostForm(NULL, $checked_reference_fields, t('Save configuration'));
@@ -505,6 +556,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     // Check if the save was successful.
     $this->assertText(t('The configuration options have been saved.'));
     $this->assertFieldChecked('edit-embedded-fields-node-field1');
+    $this->assertFieldChecked('edit-embedded-fields-node-field3');
 
     // Create translatable child node.
     $edit = [
