@@ -35,5 +35,18 @@ function hook_tmgmt_translatable_fields_alter(\Drupal\Core\Entity\ContentEntityI
 }
 
 /**
+ * Any module can override the default field processor and register its own
+ * class for a given field type in hook_field_info_alter() using the
+ * tmgmt_field_processor key.
+ *
+ * The class must implement \Drupal\tmgmt_content\FieldProcessorInterface.
+ *
+ * @see \Drupal\tmgmt_content\DefaultFieldProcessor
+ */
+function hook_field_info_alter(&$info) {
+  $info['metatag']['tmgmt_field_processor_class'] = '\Drupal\Acme\MetatagFieldProcessor';
+}
+
+/**
  * @} End of "addtogroup tmgmt_source".
  */

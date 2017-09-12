@@ -8,9 +8,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Session\AnonymousUserSession;
-use Drupal\Core\TypedData\OptionsProviderInterface;
-use Drupal\Core\TypedData\Type\StringInterface;
-use Drupal\Core\TypedData\PrimitiveInterface;
 use Drupal\Core\Url;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\SourcePluginBase;
@@ -164,95 +161,29 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
     \Drupal::moduleHandler()->alter('tmgmt_translatable_fields', $entity, $translatable_fields);
 
     $data = array();
-    foreach ($translatable_fields as $key => $field_definition) {
-      $field = $entity->get($key);
-      foreach ($field as $index => $field_item) {
-        $format = NULL;
-        $translatable_properties = 0;
-        /* @var FieldItemInterface $field_item */
-        foreach ($field_item->getProperties() as $property_key => $property) {
-          // Ignore computed values.
-          $property_definition = $property->getDataDefinition();
-          // Ignore values that are not primitives.
-          if (!($property instanceof PrimitiveInterface)) {
-            continue;
-          }
-          $translate = TRUE;
-          // Ignore properties with limited allowed values or if they're not strings.
-          if ($property instanceof OptionsProviderInterface || !($property instanceof StringInterface)) {
-            $translate = FALSE;
-          }
-          // All the labels are here, to make sure we don't have empty labels in
-          // the UI because of no data.
-          if ($translate == TRUE) {
-            $data[$key]['#label'] = $field_definition->getLabel();
-            if (count($field) > 1) {
-              // More than one item, add a label for the delta.
-              $data[$key][$index]['#label'] = t('Delta #@delta', array('@delta' => $index));
-            }
-          }
-          $data[$key][$index][$property_key] = array(
-            '#label' => $property_definition->getLabel(),
-            '#text' => $property->getValue(),
-            '#translate' => $translate,
-          );
-
-          $translatable_properties += (int) $translate;
-          if ($translate && ($field_item->getFieldDefinition()->getFieldStorageDefinition()->getSetting('max_length') != 0)) {
-            $data[$key][$index][$property_key]['#max_length'] = $field_item->getFieldDefinition()->getFieldStorageDefinition()->getSetting('max_length');
-          }
-
-          if ($property_definition->getDataType() == 'filter_format') {
-            $format = $property->getValue();
-          }
-        }
-        if (!empty($format)) {
-          $allowed_formats = (array) \Drupal::config('tmgmt.settings')->get('allowed_formats');
-
-          if ($allowed_formats && array_search($format, $allowed_formats) === FALSE) {
-            // There are allowed formats and this one is not part of them,
-            // explicitly mark all data as untranslatable.
-            foreach ($data[$key][$index] as $name => $value) {
-              if (is_array($value) && isset($value['#translate'])) {
-                $data[$key][$index][$name]['#translate'] = FALSE;
-              }
-            }
-          }
-          else {
-            // Add the format to the translatable properties.
-            foreach ($data[$key][$index] as $name => $value) {
-              if (is_array($value) && isset($value['#translate']) && $value['#translate'] == TRUE) {
-                $data[$key][$index][$name]['#format'] = $format;
-              }
-            }
-          }
-        }
-        // If there is only one translatable property, remove the label for it.
-        if ($translatable_properties <= 1) {
-          foreach (Element::children($data[$key][$index]) as $property_key) {
-            unset($data[$key][$index][$property_key]['#label']);
-          }
-        }
-      }
+    foreach ($translatable_fields as $field_name => $field_definition) {
+      $field = $entity->get($field_name);
+      $data[$field_name] = $this->getFieldProcessor($field_definition->getType())->extractTranslatableData($field);
     }
 
     $embeddable_fields = static::getEmbeddableFields($entity);
-    foreach ($embeddable_fields as $key => $field_definition) {
-      $field = $entity->get($key);
-      foreach ($field as $index => $field_item) {
-        /* @var FieldItemInterface $field_item */
+    foreach ($embeddable_fields as $field_name => $field_definition) {
+      $field = $entity->get($field_name);
+
+      /* @var \Drupal\Core\Field\FieldItemInterface $field_item */
+      foreach ($field as $delta => $field_item) {
         foreach ($field_item->getProperties(TRUE) as $property_key => $property) {
           // If the property is a content entity reference and it's value is
           // defined, than we call this method again to get all the data.
           if ($property instanceof EntityReference && $property->getValue() instanceof ContentEntityInterface) {
             // All the labels are here, to make sure we don't have empty
             // labels in the UI because of no data.
-            $data[$key]['#label'] = $field_definition->getLabel();
+            $data[$field_name]['#label'] = $field_definition->getLabel();
             if (count($field) > 1) {
               // More than one item, add a label for the delta.
-              $data[$key][$index]['#label'] = t('Delta #@delta', array('@delta' => $index));
+              $data[$field_name][$delta]['#label'] = t('Delta #@delta', array('@delta' => $delta));
             }
-            $data[$key][$index][$property_key] = $this->extractTranslatableData($property->getValue());
+            $data[$field_name][$delta][$property_key] = $this->extractTranslatableData($property->getValue());
           }
         }
 
@@ -397,6 +328,9 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    *   The translation data for the fields.
    * @param string $target_langcode
    *   The target language.
+   *
+   * @throws \Exception
+   *   Thrown when a field or field offset is missing.
    */
   protected function doSaveTranslations(ContentEntityInterface $entity, array $data, $target_langcode) {
     // If the translation for this language does not exist yet, initialize it.
@@ -404,40 +338,41 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
       $entity->addTranslation($target_langcode, $entity->toArray());
     }
 
-    $embedded_fields = static::getEmbeddableFields($entity);
-
     $translation = $entity->getTranslation($target_langcode);
     $manager = \Drupal::service('content_translation.manager');
     $manager->getTranslationMetadata($translation)->setSource($entity->language()->getId());
 
-    foreach ($data as $name => $field_data) {
-      foreach (Element::children($field_data) as $delta) {
-        $field_item = $field_data[$delta];
+    foreach ($data as $field_name => $field_data) {
+
+      if (!$translation->hasField($field_name)) {
+        throw new \Exception("Field '$field_name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
+      }
+
+      $field = $translation->get($field_name);
+      $field_processor = $this->getFieldProcessor($field->getFieldDefinition()->getType());
+      $field_processor->setTranslations($field_data, $field);
+    }
+
+    $embeddable_fields = static::getEmbeddableFields($entity);
+    foreach ($embeddable_fields as $field_name => $field_definition) {
+
+      if (!isset($data[$field_name])) {
+        continue;
+      }
+
+      foreach (Element::children($data[$field_name]) as $delta) {
+        $field_item = $data[$field_name][$delta];
         foreach (Element::children($field_item) as $property) {
-          $property_data = $field_item[$property];
-          // If there is translation data for the field property, save it.
-          if (isset($property_data['#translation']['#text']) && $property_data['#translate']) {
-
-            if (!$translation->hasField($name)) {
-              throw new \Exception("Field '$name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
-            }
-
-            if (!$translation->get($name)->offsetExists($delta)) {
-              throw new \Exception("Offset $delta on field '$name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
-            }
-
-            $translation->get($name)
-              ->offsetGet($delta)
-              ->set($property, $property_data['#translation']['#text']);
-          }
           // If the field is an embeddable reference and the property is a
           // content entity, process it recursively.
-          elseif (isset($embedded_fields[$name]) && $translation->get($name)->offsetGet($delta)->$property instanceof ContentEntityInterface) {
-            $this->doSaveTranslations($translation->get($name)->offsetGet($delta)->$property, $property_data, $target_langcode);
+          $field = $translation->get($field_name);
+          if ($field->offsetExists($delta) && $field->offsetGet($delta)->$property instanceof ContentEntityInterface) {
+            $this->doSaveTranslations($translation->get($field_name)->offsetGet($delta)->$property, $field_item[$property], $target_langcode);
           }
         }
       }
     }
+
     $translation->save();
   }
 
@@ -546,6 +481,21 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
         ->getLabel();
     }
     return $this->t('@label type', ['@label' => $entity_type->getLabel()]);
+  }
+
+  /**
+   * Returns the field processor for a given field type.
+   *
+   * @param string $field_type
+   *   The field type.
+   *
+   * @return \Drupal\tmgmt_content\FieldProcessorInterface $field_processor
+   *   The field processor for this field type.
+   */
+  protected function getFieldProcessor($field_type) {
+    $definition = \Drupal::service('plugin.manager.field.field_type')->getDefinition($field_type);
+
+    return \Drupal::service('class_resolver')->getInstanceFromDefinition($definition['tmgmt_field_processor']);
   }
 
 }

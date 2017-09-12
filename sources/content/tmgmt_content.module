@@ -13,6 +13,8 @@ use Drupal\field\FieldConfigInterface;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\tmgmt_content\DefaultFieldProcessor;
+use Drupal\tmgmt_content\MetatagsFieldProcessor;
 use Drupal\tmgmt_content\Plugin\tmgmt\Source\ContentEntitySource;
 
 /**
@@ -353,4 +355,22 @@ function tmgmt_content_form_field_config_edit_form_alter(&$form, FormStateInterf
 function tmgmt_content_entity_builder($entity_type, FieldConfigInterface $entity, &$form, FormStateInterface $form_state) {
   $exclude_from_translation = $form_state->getValue('tmgmt_content_excluded');
   $entity->setThirdPartySetting('tmgmt_content', 'excluded', $exclude_from_translation);
+}
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function tmgmt_content_field_info_alter(&$info) {
+
+  if (isset($info['metatag'])) {
+    $info['metatag']['tmgmt_field_processor'] = MetatagsFieldProcessor::class;
+  }
+
+  // Set a default processor class for all fields that do not have one yet.
+  foreach ($info as &$field_type) {
+    if (!isset($field_type['tmgmt_field_processor'])) {
+      $field_type['tmgmt_field_processor'] = DefaultFieldProcessor::class;
+    }
+  }
+
 }
