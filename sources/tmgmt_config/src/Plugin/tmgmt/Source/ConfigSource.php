@@ -10,12 +10,14 @@ use Drupal\Core\Config\Schema\Sequence;
 use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\TypedData\TraversableTypedDataInterface;
 use Drupal\Core\Url;
 use Drupal\language\ConfigurableLanguageManagerInterface;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\SourcePluginBase;
 use Drupal\tmgmt\TMGMTException;
 use Drupal\Core\Render\Element;
+use Drupal\tmgmt_config\DefaultConfigProcessor;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -62,6 +64,11 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    * @var \Drupal\language\ConfigurableLanguageManagerInterface
    */
   protected $languageManager;
+
+  /**
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface
+   */
+  protected $typedConfig;
 
   /**
    * Constructs a ConfigTranslationController.
@@ -140,7 +147,6 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    *   If there is no entity, throws an exception.
    */
   protected function getMapper(JobItemInterface $job_item) {
-    // @todo: Inject dependencies.
     $config_mapper =$this->configMapperManager->createInstance($this->getMapperId($job_item));
 
     if ($job_item->getItemType() != static::SIMPLE_CONFIG) {
@@ -204,8 +210,12 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
     $data = array();
     foreach ($config_mapper->getConfigData() as $config_id => $config_data) {
       $schema = $this->typedConfig->get($config_id);
+
+      $processor = $this->getConfigProcessor($schema);
+      $processor->setConfigMapper($config_mapper);
+
       $config_id = str_replace('.', '__', $config_id);
-      $data[$config_id] = $this->extractTranslatables($schema, $config_data);
+      $data[$config_id] = $processor->extractTranslatables($schema, $config_data);
     }
     // If there is only one, we simplify the data and return it.
     if (count($data) == 1) {
@@ -214,6 +224,27 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
     else {
       return $data;
     }
+  }
+
+  /**
+   * Returns the config processor for a given configuration definition.
+   *
+   * @param \Drupal\Core\TypedData\TraversableTypedDataInterface $definition
+   *   The field type.
+   *
+   * @return \Drupal\tmgmt_config\ConfigProcessorInterface
+   *   The config processor for this configuration definition.
+   */
+  protected function getConfigProcessor(TraversableTypedDataInterface $definition) {
+    $class = DefaultConfigProcessor::class;
+    $data_definition = $definition->getDataDefinition();
+    if (method_exists($data_definition, 'toArray')) {
+      $array_definition = $data_definition->toArray();
+      if (!empty($array_definition['tmgmt_config_processor'])) {
+        $class = $array_definition['tmgmt_config_processor'];
+      }
+    }
+    return \Drupal::service('class_resolver')->getInstanceFromDefinition($class);
   }
 
   /**
@@ -258,7 +289,8 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
 
       $element = ConfigTranslationFormBase::createFormElement($schema);
 
-      $element->setConfig($base_config, $config_translation, $this->convertToTranslation($data[$name]));
+      $processor = $this->getConfigProcessor($schema);
+      $element->setConfig($base_config, $config_translation, $processor->convertToTranslation($data[$name]));
 
       // If no overrides, delete language specific configuration file.
       $saved_config = $config_translation->get();
@@ -270,40 +302,6 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
       }
     }
     return TRUE;
-  }
-
-  /**
-   * Converts a translated data structure. We convert it.
-   *
-   * @param array $data
-   *   The translated data structure.
-   *
-   * @return array
-   *   Returns a translation array as expected by
-   *   \Drupal\config_translation\FormElement\ElementInterface::setConfig().
-   * Converts a translated data structure. We convert it.
-   *
-   * @param array $data
-   *   The translated data structure.
-   *
-   * @return array
-   *   Returns a translation array as expected by
-   *   \Drupal\config_translation\FormElement\ElementInterface::setConfig().
-   *
-   */
-  public function convertToTranslation($data) {
-    $children = Element::children($data);
-    if ($children) {
-      $translation = array();
-      foreach ($children as $name) {
-        $property_data = $data[$name];
-        $translation[$name] = $this->convertToTranslation($property_data);
-      }
-      return $translation;
-    }
-    elseif (isset($data['#translation']['#text'])) {
-      return $data['#translation']['#text'];
-    }
   }
 
   /**
@@ -354,38 +352,6 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
   public function getExistingLangCodes(JobItemInterface $job_item) {
     // @todo
     return array();
-  }
-
-  /**
-   * @param $schema
-   */
-  protected function extractTranslatables($schema, $config_data, $base_key = '') {
-    $data = array();
-    foreach ($schema as $key => $element) {
-      $element_key = isset($base_key) ? "$base_key.$key" : $key;
-      $definition = $element->getDataDefinition();
-        // + array('label' => t('N/A'));
-      if ($element instanceof Mapping || $element instanceof Sequence) {
-        // Build sub-structure and include it with a wrapper in the form
-        // if there are any translatable elements there.
-        $sub_data = $this->extractTranslatables($element, $config_data[$key], $element_key);
-        if ($sub_data) {
-          $data[$key] = $sub_data;
-          $data[$key]['#label'] = $definition->getLabel();
-        }
-      }
-      else {
-        if (!isset($definition['translatable']) || !isset($definition['type']) || empty($config_data[$key])) {
-          continue;
-        }
-        $data[$key] = array(
-          '#label' => $definition['label'],
-          '#text' => $config_data[$key],
-          '#translate' => TRUE,
-        );
-      }
-    }
-    return $data;
   }
 
 }
