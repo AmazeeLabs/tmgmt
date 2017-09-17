@@ -8,6 +8,9 @@
 /**
  * Extract translatable text elements from a field.
  *
+ * Such hooks should be implemented in behalf of modules that are providing the
+ * file types.
+ *
  * @param $entity_type
  *   The type of $entity.
  * @param $entity
