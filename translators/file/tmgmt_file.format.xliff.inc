@@ -235,7 +235,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // Compare source language.
     if (!isset($xml->file['source-language']) || $job->getTranslator()->mapToRemoteLanguage($job->source_language) != $xml->file['source-language']) {
       $job->addMessage('The imported file source language @file_language does not match the job source language @job_language.', array(
-        '@file_language' => empty($xml->file['source-language']) ? t('none') : $xml->file['source-language'],
+        '@file_language' => empty($xml->file['source-language']) ? t('none') : (string) $xml->file['source-language'],
         '@job_language' => $job->source_language,
       ), 'error');
       return FALSE;
@@ -244,7 +244,7 @@ class TMGMTFileformatXLIFF extends XMLWriter implements TMGMTFileFormatInterface
     // Compare target language.
     if (!isset($xml->file['target-language']) || $job->getTranslator()->mapToRemoteLanguage($job->target_language) != $xml->file['target-language']) {
       $job->addMessage('The imported file target language @file_language does not match the job target language @job_language.', array(
-        '@file_language' => empty($xml->file['target-language']) ? t('none') : $xml->file['target-language'],
+        '@file_language' => empty($xml->file['target-language']) ? t('none') : (string) $xml->file['target-language'],
         '@job_language' => $job->target_language,
       ), 'error');
       return FALSE;
