@@ -122,7 +122,8 @@ class ContentTranslationPreviewController extends ControllerBase {
 
     $translation = $entity->getTranslation($target_langcode);
 
-    foreach ($data as $name => $field_data) {
+    foreach (Element::children($data) as $name) {
+      $field_data = $data[$name];
       foreach (Element::children($field_data) as $delta) {
         $field_item = $field_data[$delta];
         foreach (Element::children($field_item) as $property) {

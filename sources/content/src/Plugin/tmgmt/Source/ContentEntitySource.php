@@ -7,6 +7,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Url;
 use Drupal\tmgmt\JobItemInterface;
@@ -184,6 +185,9 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
               $data[$field_name][$delta]['#label'] = t('Delta #@delta', array('@delta' => $delta));
             }
             $data[$field_name][$delta][$property_key] = $this->extractTranslatableData($property->getValue());
+            // Use the ID of the entity to identify it later, do not rely on the
+            // UUID as content entities are not required to have one.
+            $data[$field_name][$delta][$property_key]['#id'] = $property->getValue()->id();
           }
         }
 
@@ -342,7 +346,8 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
     $manager = \Drupal::service('content_translation.manager');
     $manager->getTranslationMetadata($translation)->setSource($entity->language()->getId());
 
-    foreach ($data as $field_name => $field_data) {
+    foreach (Element::children($data) as $field_name) {
+      $field_data = $data[$field_name];
 
       if (!$translation->hasField($field_name)) {
         throw new \Exception("Field '$field_name' does not exist on entity " . $translation->getEntityTypeId() . '/' . $translation->id());
@@ -360,14 +365,14 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
         continue;
       }
 
+      $field = $translation->get($field_name);
       foreach (Element::children($data[$field_name]) as $delta) {
         $field_item = $data[$field_name][$delta];
         foreach (Element::children($field_item) as $property) {
-          // If the field is an embeddable reference and the property is a
-          // content entity, process it recursively.
-          $field = $translation->get($field_name);
-          if ($field->offsetExists($delta) && $field->offsetGet($delta)->$property instanceof ContentEntityInterface) {
-            $this->doSaveTranslations($translation->get($field_name)->offsetGet($delta)->$property, $field_item[$property], $target_langcode);
+          if ($target_entity = $this->findReferencedEntity($field, $field_item, $delta, $property)) {
+            // If the field is an embeddable reference and the property is a
+            // content entity, process it recursively.
+            $this->doSaveTranslations($target_entity, $field_item[$property], $target_langcode);
           }
         }
       }
@@ -496,6 +501,32 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
     $definition = \Drupal::service('plugin.manager.field.field_type')->getDefinition($field_type);
 
     return \Drupal::service('class_resolver')->getInstanceFromDefinition($definition['tmgmt_field_processor']);
+  }
+
+  /**
+   * @param \Drupal\Core\Field\FieldItemListInterface $field
+   * @param array $field_item
+   * @param $delta
+   * @param $property
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface|null
+   */
+  protected function findReferencedEntity(FieldItemListInterface $field, array $field_item, $delta, $property) {
+
+    // If an id is provided, loop over the field item deltas until we find the matching entity.
+    if (isset($field_item[$property]['#id'])) {
+      foreach ($field as $item) {
+        if ($item->$property instanceof ContentEntityInterface && $item->$property->id() == $field_item[$property]['#id']) {
+          return $item->$property;
+        }
+      }
+
+      // @todo Support loading an entity, throw an exception or log a warning?
+    }
+    // For backwards compatiblity, also support matching based on the delta.
+    elseif ($field->offsetExists($delta) && $field->offsetGet($delta)->$property instanceof ContentEntityInterface) {
+      return $field->offsetGet($delta)->$property;
+    }
   }
 
 }

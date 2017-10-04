@@ -4,6 +4,7 @@ namespace Drupal\Tests\tmgmt_content\Kernel;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\filter\Entity\FilterFormat;
@@ -67,7 +68,7 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
 
     // Make the test field translatable.
     $field_storage = FieldStorageConfig::loadByName('entity_test_mul', 'field_test_text');
-    $field_storage->setCardinality(3);
+    $field_storage->setCardinality(4);
     $field_storage->save();
     $field = FieldConfig::loadByName('entity_test_mul', 'entity_test_mul', 'field_test_text');
     $field->setTranslatable(TRUE);
@@ -127,20 +128,25 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       'langcode' => 'en',
       'user_id' => 1,
     );
-    $entity_test = entity_create($this->entityTypeId, $values);
-    $translation = $entity_test->getTranslation('en');
-    $translation->name->value = $this->randomMachineName();
-    $translation->field_test_text->appendItem([
+    $entity_test = EntityTestMul::create($values);
+    $entity_test->name->value = $this->randomMachineName();
+    $entity_test->field_test_text->appendItem([
       'value' => $this->randomMachineName(),
       'format' => 'text_plain',
     ]);
-    $translation->field_test_text->appendItem([
+    $entity_test->field_test_text->appendItem([
       'value' => $this->randomMachineName(),
       'format' => 'text_plain',
     ]);
-    $translation->field_test_text->appendItem([
+    $entity_test->field_test_text->appendItem([
       'value' => $this->randomMachineName(),
       'format' => 'unallowed_format',
+    ]);
+
+    // Add another item that will be removed again.
+    $entity_test->field_test_text->appendItem([
+      'value' => $this->randomMachineName(),
+      'format' => 'text_plain',
     ]);
 
     $values = array(
@@ -148,13 +154,14 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       'alt' => $this->randomMachineName(),
       'title' => $this->randomMachineName(),
     );
-    $translation->image_test->appendItem($values);
-    $entity_test->save();
+    $entity_test->image_test->appendItem($values);
 
-    $translation->ignored_field->appendItem([
+    $entity_test->ignored_field->appendItem([
       'value' => 'This field should not be translated.',
       'format' => 'text_plain',
     ]);
+
+    $entity_test->save();
 
     $job = tmgmt_job_create('en', 'de');
     $job->translator = 'test_translator';
@@ -203,6 +210,15 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertEqual($data['field_test_text'][2]['format']['#translate'], FALSE);
     $this->assertFalse(isset($data['field_test_text'][2]['processed']));
 
+    $this->assertEqual($data['field_test_text'][3]['#label'], 'Delta #3');
+    $this->assertFalse(isset($data['field_test_text'][3]['value']['#label']));
+    $this->assertEqual($data['field_test_text'][3]['value']['#text'], $entity_test->field_test_text[3]->value);
+    $this->assertEqual($data['field_test_text'][3]['value']['#translate'], TRUE);
+    $this->assertFalse(isset($data['field_test_text'][3]['format']['#label']));
+    $this->assertEqual($data['field_test_text'][3]['format']['#text'], $entity_test->field_test_text[3]->format);
+    $this->assertEqual($data['field_test_text'][3]['format']['#translate'], FALSE);
+    $this->assertFalse(isset($data['field_test_text'][3]['processed']));
+
     // Test the image field.
     $image_item = $data['image_test'][0];
     $this->assertEqual($data['image_test']['#label'], $this->image_label);
@@ -222,6 +238,10 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
 
     // Now request a translation and save it back.
     $job->requestTranslation();
+
+    $entity_test->get('field_test_text')->offsetUnset(3);
+    $entity_test->save();
+
     $items = $job->getItems();
     $item = reset($items);
     $item->acceptTranslation();
@@ -234,6 +254,10 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertEqual($translation->name->value, $data['name'][0]['value']['#translation']['#text']);
     $this->assertEqual($translation->field_test_text[0]->value, $data['field_test_text'][0]['value']['#translation']['#text']);
     $this->assertEqual($translation->field_test_text[1]->value, $data['field_test_text'][1]['value']['#translation']['#text']);
+    $this->assertEqual($translation->field_test_text[2]->value, $data['field_test_text'][2]['value']['#text']);
+
+    // Ensure no item was created for the removed delta.
+    $this->assertFalse(isset($translation->field_test_text[3]));
   }
 
   /**
@@ -472,32 +496,31 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       'settings' => array(),
     ))->save();
 
-    // Create a test entity that can be referenced.
-    $referenced_values = [
-      'langcode' => 'en',
-      'user_id' => 1,
-      'name' => $this->randomString(),
-    ];
-
     $this->config('tmgmt_content.settings')
       ->set('embedded_fields.' . $this->entityTypeId . '.field1', TRUE)
       ->save();
 
-    $referenced_entity = entity_create($this->entityTypeId, $referenced_values);
-    $referenced_entity->save();
+    // Create a test entity that can be referenced.
+    $referenced_entities = [];
+    for ($i = 0; $i < 5; $i++) {
+      $referenced_values = [
+        'langcode' => 'en',
+        'user_id' => 1,
+        'name' => 'Referenced entity #' . $i,
+      ];
+      $referenced_entities[$i] = EntityTestMul::create($referenced_values);
+      $referenced_entities[$i]->save();
+    }
 
     // Create an english test entity.
     $values = array(
       'langcode' => 'en',
       'user_id' => 1,
+      'name' => $this->randomString(),
+      'field1' => [$referenced_entities[0], $referenced_entities[1], $referenced_entities[2]],
+      'field2' => $referenced_entities[4],
     );
-    $entity_test = entity_create($this->entityTypeId, $values);
-    $translation = $entity_test->getTranslation('en');
-    $translation->name->value = $this->randomMachineName();
-
-    $translation->field1->target_id = $referenced_entity->id();
-    $translation->field2->target_id = $referenced_entity->id();
-
+    $entity_test = EntityTestMul::create($values);
     $entity_test->save();
 
     $job = tmgmt_job_create('en', 'de');
@@ -513,26 +536,38 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertFalse(isset($data['field2']));
 
     // Ensure some labels and structure for field 1.
-    $this->assertEqual($data['field1']['#label'], 'Field 1');
-    $this->assertFalse(isset($data['field1'][0]['#label']));
-    $this->assertEqual($data['field1'][0]['entity']['name']['#label'], 'Name');
-    $this->assertEqual($data['field1'][0]['entity']['name'][0]['value']['#text'], $referenced_values['name']);
+    $this->assertEquals('Field 1', $data['field1']['#label']);
+    $this->assertEquals('Delta #0', $data['field1'][0]['#label']);
+    $this->assertEquals('Name', $data['field1'][0]['entity']['name']['#label'], 'Name');
+    $this->assertEquals($data['field1'][0]['entity']['name'][0]['value']['#text'], $referenced_entities[0]->label());
+    $this->assertEquals($data['field1'][1]['entity']['name'][0]['value']['#text'], $referenced_entities[1]->label());
+    $this->assertEquals($data['field1'][2]['entity']['name'][0]['value']['#text'], $referenced_entities[2]->label());
 
-    // Now request a translation and save it back.
+    // Now request a translation.
     $job->requestTranslation();
+
+    // Mess with the source entity while the job is being translated. Remove
+    // the second reference and switch positions.
+    $entity_test->set('field1', [$referenced_entities[2], $referenced_entities[0]]);
+    $entity_test->save();
+
     $items = $job->getItems();
     $item = reset($items);
     $item->acceptTranslation();
     $data = $item->getData();
 
-    // Check that the translations were saved correctly.
-    $entity_test = entity_load($this->entityTypeId, $entity_test->id());
-    $translation = $entity_test->getTranslation('de');
+    // Check that the translations were saved correctly, making sure that the
+    // translations were attached to the correct referenced entities as far
+    // as possible.
+    $referenced_translation = EntityTestMul::load($referenced_entities[0]->id())->getTranslation('de');
+    $this->assertEquals($data['field1'][0]['entity']['name'][0]['value']['#translation']['#text'], $referenced_translation->name->value);
 
-    $referenced_entity = entity_load($this->entityTypeId, $referenced_entity->id());
-    $referenced_translation = $referenced_entity->getTranslation('de');
-    $this->assertEqual($referenced_translation->name->value, $data['field1'][0]['entity']['name'][0]['value']['#translation']['#text']);
+    $referenced_translation = EntityTestMul::load($referenced_entities[2]->id())->getTranslation('de');
+    $this->assertEquals($data['field1'][2]['entity']['name'][0]['value']['#translation']['#text'], $referenced_translation->name->value);
 
+    $this->assertFalse(EntityTestMul::load($referenced_entities[1]->id())->hasTranslation('de'));
+    $this->assertFalse(EntityTestMul::load($referenced_entities[3]->id())->hasTranslation('de'));
+    $this->assertFalse(EntityTestMul::load($referenced_entities[4]->id())->hasTranslation('de'));
   }
 
   /**
