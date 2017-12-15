@@ -4,7 +4,9 @@ namespace Drupal\tmgmt;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\metatag_dc\Plugin\metatag\Tag\Source;
 use Drupal\tmgmt\Entity\JobItem;
+use Drupal\tmgmt\Form\SourceOverviewForm;
 
 /**
  * Default ui controller class for source plugin.
@@ -86,7 +88,95 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
    *   Entity type.
    */
   public function overviewFormSubmit(array $form, FormStateInterface $form_state, $type) {
-    // Nothing to do here by default.
+    // Handle search redirect.
+    if ($this->overviewSearchFormRedirect($form, $form_state, $type)) {
+      return;
+    }
+
+    $target_language = $form_state->getValue('target_language');
+    if ($target_language == SourceOverviewForm::ALL) {
+      $target_languages = array_keys(tmgmt_available_languages());
+    }
+    elseif ($target_language == SourceOverviewForm::MULTIPLE) {
+      $target_languages = array_filter($form_state->getValue('target_languages'));
+    }
+    else {
+      $target_languages = [$target_language];
+    }
+
+    $enforced_source_language = NULL;
+    if ($form_state->getValue('source_language') != SourceOverviewForm::SOURCE) {
+      $enforced_source_language = $form_state->getValue('source_language');
+    }
+
+    $skipped_count = 0;
+    $job_items_by_source_language = [];
+    // Group the selected items by source language.
+    foreach (array_filter($form_state->getValue('items')) as $item_id) {
+      $job_item = tmgmt_job_item_create($this->pluginId, $type, $item_id);
+      $source_language = $enforced_source_language ? $enforced_source_language : $job_item->getSourceLangCode();
+      if (in_array($source_language, $job_item->getExistingLangCodes())) {
+        $job_items_by_source_language[$source_language][$item_id] = $job_item;
+      }
+      else {
+        $skipped_count++;
+      }
+    }
+
+    $jobs = [];
+    $remove_job_item_ids = [];
+    // Loop over all target languages, create a job for each source and target
+    // language combination add add the relevant job items to it.
+    foreach ($target_languages as $target_language) {
+      foreach ($job_items_by_source_language as $source_language => $job_items) {
+        // Skip in case the source language is the same as the target language.
+        if ($source_language == $target_language) {
+          continue;
+        }
+
+        $job = tmgmt_job_create($source_language, $target_language, \Drupal::currentUser()->id());
+        $job_empty = TRUE;
+        /** @var \Drupal\tmgmt\JobItemInterface $job_item */
+        foreach ($job_items as $id => $job_item) {
+          try {
+            // As the same item might be added to multiple jobs, we need to
+            // re-create them.
+            $job->addItem($job_item->getPlugin(), $job_item->getItemType(), $job_item->getItemId());
+            $remove_job_item_ids[$job_item->id()] = $job_item->id();
+            $job_empty = FALSE;
+          } catch (\Exception $e) {
+            // If an item fails for one target language, then it is also going
+            // to fail for others, so remove it from the array.
+            unset($job_items_by_source_language[$source_language][$id]);
+            drupal_set_message($e->getMessage(), 'error');
+          }
+        }
+        if (!$job_empty) {
+          $jobs[] = $job;
+        }
+      }
+    }
+
+    // Start the checkout process if any jobs were created.
+    if ($jobs) {
+      if ($enforced_source_language) {
+
+        drupal_set_message($this->t('You have enforced the job source language which most likely resulted in having a translation of your original content as the job source text. You should review the job translation received from the translator carefully to prevent the content quality loss.'), 'warning');
+        if ($skipped_count) {
+          $languages = \Drupal::languageManager()->getLanguages();
+          drupal_set_message(
+            \Drupal::translation()->formatPlural(
+              $skipped_count, 'One item skipped as for the language @language it was not possible to retrieve a translation.',
+              '@count items skipped as for the language @language it was not possible to retrieve a translations.', ['@language' => $languages[$enforced_source_language]->getName()]
+            )
+          );
+        }
+      }
+      tmgmt_job_checkout_and_redirect($form_state, $jobs);
+    }
+    else {
+      drupal_set_message($this->t('From the selection you made it was not possible to create any translation job.'), 'error');
+    }
   }
 
   /**
@@ -205,7 +295,7 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
   function buildTranslationStatus($status, JobItemInterface $job_item = NULL) {
     switch ($status) {
       case 'original':
-        $label = t('Source language');
+        $label = t('Original language');
         $icon = 'core/misc/icons/bebebe/house.svg';
         break;
 

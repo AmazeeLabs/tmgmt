@@ -28,6 +28,7 @@ class ContentEntitySourceListTest extends EntityTestBase {
 
     $this->addLanguage('de');
     $this->addLanguage('fr');
+    $this->addLanguage('it');
 
     $this->createNodeType('article', 'Article', TRUE);
     $this->createNodeType('page', 'Page', TRUE);
@@ -132,7 +133,7 @@ class ContentEntitySourceListTest extends EntityTestBase {
     $langstatus_en = $this->xpath('//table[@id="edit-items"]/tbody/tr[1]/td[@class="langstatus-en"]/a/img/@title');
     $langstatus_de = $this->xpath('//table[@id="edit-items"]/tbody/tr[1]/td[@class="langstatus-de"]/img/@title');
 
-    $this->assertEqual($langstatus_en[0]['title'], t('Source language'));
+    $this->assertEqual($langstatus_en[0]['title'], t('Original language'));
     $this->assertEqual($langstatus_de[0]['title'], t('Not translated'));
 
     // Test status: Active job item.
@@ -173,7 +174,7 @@ class ContentEntitySourceListTest extends EntityTestBase {
     $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
     $this->assertText(t('One job needs to be checked out.'));
 
-    // Submission of two entities of the same source language.
+    // Submission of two entities of the same original language.
     $nid1 = $this->nodes['article']['en'][0]->id();
     $nid2 = $this->nodes['article']['en'][1]->id();
     $edit = array();
@@ -182,7 +183,7 @@ class ContentEntitySourceListTest extends EntityTestBase {
     $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
     $this->assertText(t('One job needs to be checked out.'));
 
-    // Submission of several entities of different source languages.
+    // Submission of several entities of different original languages.
     $nid1 = $this->nodes['article']['en'][0]->id();
     $nid2 = $this->nodes['article']['en'][1]->id();
     $nid3 = $this->nodes['article']['en'][2]->id();
@@ -196,8 +197,76 @@ class ContentEntitySourceListTest extends EntityTestBase {
     $edit["items[$nid4]"] = 1;
     $edit["items[$nid5]"] = 1;
     $edit["items[$nid6]"] = 1;
+    $edit['target_language'] = 'it';
     $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
     $this->assertText(t('@count jobs need to be checked out.', array('@count' => '3')));
+
+    // Submission of several entities of different original languages to multiple
+    // target languages.
+    $edit = array();
+    $edit["items[$nid1]"] = 1;
+    $edit["items[$nid2]"] = 1;
+    $edit["items[$nid3]"] = 1;
+    $edit["items[$nid4]"] = 1;
+    $edit["items[$nid5]"] = 1;
+    $edit["items[$nid6]"] = 1;
+    $edit['target_language'] = '_multiple';
+    $edit['target_languages[de]'] = TRUE;
+    $edit['target_languages[fr]'] = TRUE;
+
+    // This needs to create 4 jobs:
+    // EN => DE
+    // EN => FR
+    // DE => FR
+    // FR => DE
+
+    $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
+    $this->assertText(t('@count jobs need to be checked out.', array('@count' => 4)));
+
+    // Submission of several entities of different original languages to all
+    // target languages.
+    $edit = array();
+    $edit["items[$nid1]"] = 1;
+    $edit["items[$nid2]"] = 1;
+    $edit["items[$nid3]"] = 1;
+    $edit["items[$nid4]"] = 1;
+    $edit["items[$nid5]"] = 1;
+    $edit["items[$nid6]"] = 1;
+    $edit['target_language'] = '_all';
+
+    // This needs to create 9 jobs:
+    // EN => DE
+    // EN => FR
+    // EN => IT
+    // DE => FR
+    // DE => EN
+    // DE => IT
+    // FR => DE
+    // FR => IT
+    // FR => EN
+
+    $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
+    $this->assertText(t('@count jobs need to be checked out.', array('@count' => 9)));
+
+    // Submission of several entities of different original languages to all
+    // target languages and force a source language.
+    $edit = array();
+    $edit["items[$nid1]"] = 1;
+    $edit["items[$nid2]"] = 1;
+    $edit["items[$nid3]"] = 1;
+    $edit["items[$nid4]"] = 1;
+    $edit["items[$nid5]"] = 1;
+    $edit["items[$nid6]"] = 1;
+    $edit['source_language'] = 'fr';
+    $edit['target_language'] = '_all';
+
+    // This needs to create 3 jobs.
+    // FR => DE
+    // FR => IT
+    // FR => EN
+
+    $this->drupalPostForm('admin/tmgmt/sources/content/node', $edit, t('Request translation'));
+    $this->assertText(t('@count jobs need to be checked out.', array('@count' => 3)));
   }
 
   function testNodeEntityListings() {

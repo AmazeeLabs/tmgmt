@@ -57,7 +57,7 @@ abstract class SourcePluginBase extends PluginBase implements SourcePluginInterf
    * {@inheritdoc}
    */
   public function getExistingLangCodes(JobItemInterface $job_item) {
-    return array();
+    return [$this->getSourceLangCode($job_item)];
   }
 
 }

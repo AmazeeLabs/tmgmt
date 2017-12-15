@@ -3,7 +3,6 @@
 namespace Drupal\tmgmt_locale;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
 use Drupal\tmgmt\SourcePluginUiBase;
 
 /**
@@ -235,34 +234,6 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     }
 
     return $row;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function overviewFormSubmit(array $form, FormStateInterface $form_state, $type) {
-    // Handle search redirect.
-    if ($this->overviewSearchFormRedirect($form, $form_state, $type)) {
-      return;
-    }
-    $items = array_filter($form_state->getValue('items'));
-    $type = $form_state->get('item_type');
-
-    $source_lang = 'en';
-
-    // Create only single job for all items as the source language is just
-    // the same for all.
-    $job = tmgmt_job_create($source_lang, NULL, \Drupal::currentUser()->id());
-
-    // Loop through entities and create individual jobs for each source language.
-    foreach ($items as $item) {
-      $job->addItem('locale', $type, $item);
-    }
-
-    $url = $job->urlInfo();
-    $url->setOption('destination', Url::fromRoute('<current>')->getInternalPath());
-    $form_state->setRedirectUrl($url);
-    drupal_set_message(t('One job needs to be checked out.'));
   }
 
   /**

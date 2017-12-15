@@ -6,6 +6,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\tmgmt\ContinuousManager;
 use Drupal\tmgmt\ContinuousSourceInterface;
 use Drupal\tmgmt\SourceManager;
@@ -16,6 +17,10 @@ use Drupal\Core\Url;
  * Source overview form.
  */
 class SourceOverviewForm extends FormBase {
+
+  const ALL = '_all';
+  const MULTIPLE = '_multiple';
+  const SOURCE = '_source';
 
   /**
    * The source manager.
@@ -113,7 +118,7 @@ class SourceOverviewForm extends FormBase {
     $form['source_type'] = array(
       '#type' => 'container',
       '#open' => TRUE,
-      '#attributes' => array('class' => array('tmgmt-source-operations-wrapper')),
+      '#attributes' => array('class' => array('tmgmt-source-type-wrapper')),
       '#weight' => -100,
     );
     $form['source_type']['source'] = array(
@@ -134,29 +139,71 @@ class SourceOverviewForm extends FormBase {
       '#attributes' => array('class' => array('js-hide')),
     );
 
-    $form['actions'] = array(
-      '#type' => 'details',
-      '#title' => t('Operations'),
-      '#open' => TRUE,
+    $form['operations'] = [
+      '#type' => 'container',
       '#attributes' => array('class' => array('tmgmt-source-operations-wrapper')),
+    ];
+    $form['operations']['checkout'] = array(
+      '#type' => 'details',
+      '#open' => TRUE,
+      '#title' => $this->t('Checkout'),
+      '#attributes' => array('class' => array('tmgmt-source-checkout-wrapper')),
     );
-    $form['actions']['submit'] = array(
+
+    $languages = tmgmt_available_languages();
+
+    $form['operations']['checkout']['source_language'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Source language'),
+      '#options' => [static::SOURCE => $this->t('- Original -')] + $languages,
+    ];
+
+    $form['operations']['checkout']['target_language'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Target language'),
+      '#empty_option' => $this->t('- Select later -'),
+      '#empty_value' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
+      '#options' => [
+        static::MULTIPLE => $this->t('- Multiple -'),
+        static::ALL => $this->t('- All -'),
+      ] + $languages,
+    ];
+
+    $form['operations']['checkout']['submit'] = array(
       '#type' => 'submit',
       '#button_type' => 'primary',
       '#validate' => array('::validateItemsSelected'),
       '#value' => t('Request translation'),
       '#submit' => array('::submitForm'),
     );
-    tmgmt_add_cart_form($form['actions'], $form_state, $plugin, $item_type);
+
+    $form['operations']['checkout']['target_languages'] = [
+      '#type' => 'checkboxes',
+      '#title' => $this->t('Target languages'),
+      '#options' => $languages,
+      '#states' => [
+        'visible' => [
+          ':input[name=target_language]' => ['value' => static::MULTIPLE],
+        ],
+      ],
+    ];
+
+    $form['operations']['operations'] = array(
+      '#type' => 'details',
+      '#title' => $this->t('Operations'),
+      '#open' => TRUE,
+      '#attributes' => array('class' => array('tmgmt-source-additional-wrapper')),
+    );
+    tmgmt_add_cart_form($form['operations']['operations'], $form_state, $plugin, $item_type);
 
     if ($source instanceof ContinuousSourceInterface && $this->continuousManager->hasContinuousJobs()) {
-      $form['actions']['add_to_continuous_jobs'] = array(
+      $form['operations']['operations']['add_to_continuous_jobs'] = array(
         '#type' => 'submit',
         '#validate' => array('::validateItemsSelected'),
         '#value' => t('Check for continuous jobs'),
         '#submit' => array('::submitToContinuousJobs'),
       );
-      $form['actions']['add_all_to_continuous_jobs'] = array(
+      $form['operations']['operations']['add_all_to_continuous_jobs'] = array(
         '#type' => 'checkbox',
         '#title' => 'All (continuous check only)',
         '#default_value' => FALSE,
@@ -190,6 +237,7 @@ class SourceOverviewForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $plugin =  $form_state->get('plugin');
+
     $item_type = $form_state->get('item_type');
     // Execute the submit method on the source plugin controller.
     $source_ui = $this->sourceManager->createUIInstance($plugin);

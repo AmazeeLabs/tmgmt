@@ -4,10 +4,7 @@ namespace Drupal\tmgmt_content;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Url;
 use Drupal\tmgmt\SourcePluginUiBase;
-use Drupal\tmgmt\TMGMTException;
 
 /**
  * Content entity source plugin UI.
@@ -228,60 +225,6 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     $target_language = $form_state->getValue(array('search', 'target_language'));
     if (!empty($target_language) && $form_state->getValue(array('search', 'langcode')) == $target_language) {
       $form_state->setErrorByName('search[target_language]', $this->t('The source and target languages must not be the same.'));
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function overviewFormSubmit(array $form, FormStateInterface $form_state, $type) {
-    // Handle search redirect.
-    if ($this->overviewSearchFormRedirect($form, $form_state, $type)) {
-      return;
-    }
-
-    $jobs = array();
-    $entities = entity_load_multiple($type, $form_state->getValue('items'));
-    $source_lang_registry = array();
-
-    // Loop through entities and create individual jobs for each source language.
-    foreach ($entities as $entity) {
-      /* @var $entity \Drupal\Core\Entity\EntityInterface */
-      $source_lang = $entity->language()->getId();
-
-      try {
-        // For given source lang no job exists yet.
-        if (!isset($source_lang_registry[$source_lang])) {
-          // Create new job.
-          $job = tmgmt_job_create($source_lang, LanguageInterface::LANGCODE_NOT_SPECIFIED, \Drupal::currentUser()->id());
-          // Add initial job item.
-          $job->addItem('content', $type, $entity->id());
-          // Add job identifier into registry
-          $source_lang_registry[$source_lang] = $job->id();
-          // Add newly created job into jobs queue.
-          $jobs[$job->id()] = $job;
-        }
-        // We have a job for given source lang, so just add new job item for the
-        // existing job.
-        else {
-          $jobs[$source_lang_registry[$source_lang]]->addItem('content', $type, $entity->id());
-        }
-      } catch (TMGMTException $e) {
-        watchdog_exception('tmgmt', $e);
-        drupal_set_message($this->t('Unable to add job item for entity %name: %error.', array(
-          '%name' => $entity->label(),
-          '%error' => $e->getMessage()
-        )), 'error');
-      }
-    }
-
-    // If necessary, do a redirect.
-    $redirects = tmgmt_job_checkout_multiple($jobs);
-    if ($redirects) {
-      tmgmt_redirect_queue_set($redirects, Url::fromRoute('<current>')->getInternalPath());
-      $form_state->setRedirectUrl(Url::fromUri('base:' . tmgmt_redirect_queue_dequeue()));
-
-      drupal_set_message(\Drupal::translation()->formatPlural(count($redirects), $this->t('One job needs to be checked out.'), $this->t('@count jobs need to be checked out.')));
     }
   }
 

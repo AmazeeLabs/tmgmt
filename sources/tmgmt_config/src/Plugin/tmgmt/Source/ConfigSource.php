@@ -350,8 +350,8 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public function getExistingLangCodes(JobItemInterface $job_item) {
-    // @todo
-    return array();
+    // @todo Support additional source language codes.
+    return [$this->getSourceLangCode($job_item)];
   }
 
 }

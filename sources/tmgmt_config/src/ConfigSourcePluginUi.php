@@ -4,10 +4,7 @@ namespace Drupal\tmgmt_config;
 
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Url;
 use Drupal\tmgmt\SourcePluginUiBase;
-use Drupal\tmgmt\TMGMTException;
 use Drupal\tmgmt_config\Plugin\tmgmt\Source\ConfigSource;
 
 /**
@@ -258,88 +255,6 @@ class ConfigSourcePluginUi extends SourcePluginUiBase {
     $target_language = $form_state->getValue(array('search', 'target_language'));
     if (!empty($target_language) && $form_state->getValue(array('search', 'langcode')) == $target_language) {
       $form_state->setErrorByName('search[target_language]', $this->t('The source and target languages must not be the same.'));
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function overviewFormSubmit(array $form, FormStateInterface $form_state, $type) {
-    // Handle search redirect.
-    if ($this->overviewSearchFormRedirect($form, $form_state, $type)) {
-      return;
-    }
-
-    $jobs = array();
-    $items = array();
-    if ($type == ConfigSource::SIMPLE_CONFIG) {
-      foreach (array_filter($form_state->getValue('items')) as $item) {
-        $definition = \Drupal::service('plugin.manager.config_translation.mapper')->getDefinition($item);
-        $item_id = $definition['id'];
-        $items[$item_id]['label'] = $definition['title'];;
-        $items[$item_id]['langcode'] = \Drupal::config($definition['names'][0])->get('langcode') ?: 'en';
-        $items[$item_id]['type'] = $type;
-      }
-    }
-    else {
-      $entity_type = \Drupal::entityManager()->getDefinition($type);
-      $entity_ids = str_replace($entity_type->getConfigPrefix() . '.', '', array_filter($form_state->getValue('items')));
-      $entities = entity_load_multiple($type, $entity_ids);
-      foreach ($entities as $entity) {
-        /* @var $entity \Drupal\Core\Entity\EntityInterface */
-        $item_id = $entity->getConfigDependencyName();
-        $items[$item_id]['label'] = $entity->label();
-        $items[$item_id]['langcode'] = $entity->language()->getId();
-
-        // The type cannot be field_config, should be the id of the
-        // fieldable entity type.
-        if ($type == 'field_config') {
-          $items[$item_id]['type'] = $entity->get('entity_type') . '_fields';
-        }
-        else {
-          $items[$item_id]['type'] = $type;
-        }
-      }
-    }
-    $source_lang_registry = array();
-
-    // Loop through entities and create individual jobs for each source language.
-    foreach ($items as $id => $extra) {
-      $source_lang = $extra['langcode'];
-
-      try {
-        // For given source lang no job exists yet.
-        if (!isset($source_lang_registry[$source_lang])) {
-          // Create new job.
-          $job = tmgmt_job_create($source_lang, LanguageInterface::LANGCODE_NOT_SPECIFIED, \Drupal::currentUser()->id());
-          // Add initial job item.
-          $job->addItem('config', $extra['type'], $id);
-          // Add job identifier into registry
-          $source_lang_registry[$source_lang] = $job->id();
-          // Add newly created job into jobs queue.
-          $jobs[$job->id()] = $job;
-        }
-        // We have a job for given source lang, so just add new job item for the
-        // existing job.
-        else {
-          $jobs[$source_lang_registry[$source_lang]]->addItem('config', $extra['type'], $id);
-        }
-      } catch (TMGMTException $e) {
-        watchdog_exception('tmgmt', $e);
-        drupal_set_message($this->t('Unable to add job item for entity %name: %error.', array(
-          '%name' => $extra['label'],
-          '%error' => $e->getMessage()
-        )), 'error');
-      }
-    }
-
-    // If necessary, do a redirect.
-    $redirects = tmgmt_job_checkout_multiple($jobs);
-    if ($redirects) {
-      tmgmt_redirect_queue_set($redirects, Url::fromRoute('<current>')->getInternalPath());
-      $form_state->setRedirectUrl(Url::fromUri('base:' . tmgmt_redirect_queue_dequeue()));
-
-      drupal_set_message(\Drupal::translation()->formatPlural(count($redirects), $this->t('One job needs to be checked out.'), $this->t('@count jobs need to be checked out.')));
     }
   }
 

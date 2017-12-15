@@ -147,10 +147,6 @@ table.tmgmt-ui-review tbody th {
   margin: 20px 0 0 0;
 }
 
-.tmgmt-source-operations-wrapper {
-  clear: both;
-}
-
 .tmgmt-source-operations-wrapper .form-item-add-all-to-continuous-jobs {
   display: inline-block;
 }

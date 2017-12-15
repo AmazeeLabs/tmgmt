@@ -920,7 +920,7 @@ function tmgmt_color_legend() {
   $items = [
     [
       'icon' => file_create_url('core/misc/icons/bebebe/house.svg'),
-      'legend' => t('Source language'),
+      'legend' => t('Original language'),
     ],
     [
       'icon' => file_create_url('core/misc/icons/bebebe/ex.svg'),
