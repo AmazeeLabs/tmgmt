@@ -175,6 +175,14 @@ table.tmgmt-ui-review tbody th {
   float: right;
 }
 
+.tmgmt-job-form .progress__bar {
+  background-image: none;
+}
+
+.tmgmt-job-form .progress__percentage {
+  display: none;
+}
+
 .tmgmt-progress-pending, .tmgmt-progress-translated,
 .tmgmt-progress-reviewed, .tmgmt-progress-accepted {
   float: left;

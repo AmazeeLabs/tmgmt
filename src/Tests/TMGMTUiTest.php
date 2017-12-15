@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt\Tests;
 
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\JobItem;
@@ -61,8 +62,7 @@ class TMGMTUiTest extends EntityTestBase {
     $job->addItem('test_source', 'test', 1);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
     // Test primary buttons.
     $this->assertRaw('Save job" class="button js-form-submit form-submit"');
@@ -70,13 +70,16 @@ class TMGMTUiTest extends EntityTestBase {
     // Check checkout form.
     $this->assertText('test_source:test:1');
 
+    // Assert that the messages element is not shown.
+    $this->assertNoText('Translation Job messages');
+    $this->assertNoText('Checkout progress');
+
     // Add two more job items.
     $job->addItem('test_source', 'test', 2);
     $job->addItem('test_source', 'test', 3);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
     // Check checkout form.
     $this->assertText('test_source:test:1');
@@ -132,8 +135,7 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertNotEqual($job->id(), $previous_tjid);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
      // Check checkout form.
     $this->assertText('You can provide a label for this job in order to identify it easily later on.');
@@ -153,8 +155,7 @@ class TMGMTUiTest extends EntityTestBase {
     $item10 = $job->addItem('test_source', 'test', 10);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
      // Check checkout form.
     $this->assertText('You can provide a label for this job in order to identify it easily later on.');
@@ -238,8 +239,7 @@ class TMGMTUiTest extends EntityTestBase {
     $job->addItem('test_source', 'test', 11);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
      // Check checkout form.
     $this->assertText('You can provide a label for this job in order to identify it easily later on.');
@@ -261,8 +261,7 @@ class TMGMTUiTest extends EntityTestBase {
     $job->addItem('test_source', 'test', 12);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
     // Check checkout form.
     $this->assertText('You can provide a label for this job in order to identify it easily later on.');
@@ -284,8 +283,7 @@ class TMGMTUiTest extends EntityTestBase {
     $job->addItem('test_source', 'test', 13);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
      // Check checkout form.
     $this->assertText('You can provide a label for this job in order to identify it easily later on.');
@@ -366,10 +364,13 @@ class TMGMTUiTest extends EntityTestBase {
   function testCheckoutFunction() {
     $job = $this->createJob();
 
+    /** @var \Drupal\tmgmt\JobCheckoutManager $job_checkout_manager */
+    $job_checkout_manager = \Drupal::service('tmgmt.job_checkout_manager');
+
     // Check out a job when only the test translator is available. That one has
     // settings, so a checkout is necessary.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->assertEqual($job->urlInfo()->getInternalPath(), $redirects[0]);
+    $jobs = $job_checkout_manager->checkoutMultiple(array($job));
+    $this->assertEqual($job->id(), $jobs[0]->id());
     $this->assertTrue($job->isUnprocessed());
     $job->delete();
 
@@ -382,14 +383,14 @@ class TMGMTUiTest extends EntityTestBase {
     // Create a job but do not save yet, to simulate how this works in the UI.
     $job = tmgmt_job_create('en', 'de', 0, []);
 
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->assertFalse($redirects);
+    $jobs = $job_checkout_manager->checkoutMultiple(array($job));
+    $this->assertFalse($jobs);
     $this->assertTrue($job->isActive());
 
     // A job without target (not specified) language needs to be checked out.
     $job = $this->createJob('en', LanguageInterface::LANGCODE_NOT_SPECIFIED);
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->assertEqual($job->urlInfo()->getInternalPath(), $redirects[0]);
+    $jobs = $job_checkout_manager->checkoutMultiple(array($job));
+    $this->assertEqual($job->id(), $jobs[0]->id());
     $this->assertTrue($job->isUnprocessed());
 
     // Create a second file translator. This should check
@@ -401,8 +402,8 @@ class TMGMTUiTest extends EntityTestBase {
       ->setSetting('expose_settings', FALSE)
       ->save();
 
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->assertEqual($job->urlInfo()->getInternalPath(), $redirects[0]);
+    $jobs = $job_checkout_manager->checkoutMultiple(array($job));
+    $this->assertEqual($job->id(), $jobs[0]->id());
     $this->assertTrue($job->isUnprocessed());
   }
 
@@ -416,46 +417,11 @@ class TMGMTUiTest extends EntityTestBase {
     $job->addItem('test_source', 'test', 7);
 
     // Go to checkout form.
-    $redirects = tmgmt_job_checkout_multiple(array($job));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job->toUrl());
 
     $this->assertRaw('20');
 
-    // Load all suggestions.
-    $commands = $this->drupalPostAjaxForm(NULL, array(), array('op' => t('Load suggestions')));
-    $this->assertEqual(count($commands), 4, 'Found 4 commands in AJAX-Request.');
-
-    // Check each command for success.
-    foreach ($commands as $command) {
-      // Ignore irrelevant commands.
-      if ($command['command'] == 'settings' || $command['command'] == 'update_build_id' || $command['data'] == "\n") {
-      }
-      // Other commands must be from type "insert".
-      elseif ($command['command'] == 'insert') {
-        // This should be the tableselect javascript file for the header.
-        if (($command['method'] == 'append') && ($command['selector'] == 'body')) {
-          $this->assertTrue(substr_count($command['data'], 'misc/tableselect.js'), 'Javascript for Tableselect found.');
-        }
-        // Check for the main content, the tableselect with the suggestions.
-        elseif (($command['method'] == NULL) && ($command['selector'] == NULL)) {
-          $this->assertTrue(substr_count($command['data'], '</th>') == 5, 'Found five table header.');
-          $this->assertTrue(substr_count($command['data'], '</tr>') == 3, 'Found two suggestion and one table header.');
-          $this->assertTrue(substr_count($command['data'], '<td>11</td>') == 2, 'Found 10 words to translate per suggestion.');
-          $this->assertTrue(substr_count($command['data'], 'value="Add suggestions"'), 'Found add button.');
-        }
-        // Nothing to prepend...
-        elseif (($command['method'] == 'prepend') && ($command['selector'] == NULL)) {
-          $this->assertTrue(empty($command['data']), 'No content will be prepended.');
-        }
-        else {
-          $this->fail('Unknown method/selector combination.');
-        }
-      }
-      else {
-        $this->fail('Unknown command.');
-      }
-    }
-
+    // Verify that suggestions are immediately visible.
     $this->assertText('test_source:test_suggestion:1');
     $this->assertText('test_source:test_suggestion:7');
     $this->assertText('Test suggestion for test source 1');
@@ -468,10 +434,17 @@ class TMGMTUiTest extends EntityTestBase {
     // Total word count should now include the added job.
     $this->assertRaw('31');
     // The suggestion for 7 was added, so there should now be a suggestion
-    // or the suggestion instead.
+    // for the suggestion instead.
     $this->assertNoText('Test suggestion for test source 7');
     $this->assertText('test_source:test_suggestion_suggestion:7');
 
+    // The HTML test source does not provide suggestions, ensure that the
+    // suggestions UI does not show up if there are none.
+    $job = $this->createJob();
+    $job->addItem('test_html_source', 'test', 1);
+
+    $this->drupalGet($job->toUrl());
+    $this->assertNoText('Suggestions');
   }
 
   /**
@@ -971,8 +944,7 @@ class TMGMTUiTest extends EntityTestBase {
     // Add 2 items to job1 and submit it to provider.
     $item1 = $job1->addItem('test_source', 'test', 1);
     $job1->addItem('test_source', 'test', 2);
-    $redirects = tmgmt_job_checkout_multiple(array($job1));
-    $this->drupalGet(reset($redirects));
+    $this->drupalGet($job1->toUrl());
     $this->drupalGet('admin/tmgmt/job_items', array('query' => array('state' => '2')));
     $this->assertEqual(count($this->xpath('//tbody/tr')), 2);
     $this->assertJobItemOverviewStateIcon(1, 'Inactive');
@@ -1073,13 +1045,13 @@ class TMGMTUiTest extends EntityTestBase {
    *   The expected state.
    *
    */
-  private function assertJobItemStateIcon($row, $state) {
+  protected function assertJobItemStateIcon($row, $state) {
     if ($state == 'Inactive' || $state == 'Aborted' || $state == 'Accepted') {
-      $result = $this->xpath('//*[@id="edit-job-items-wrapper"]/div/div/div/div/table/tbody/tr[' . $row . ']/td[4]')[0];
+      $result = $this->xpath('//div[@id="edit-job-items-wrapper"]//tbody/tr[' . $row . ']/td[4]')[0];
       $this->assertEqual(trim((string) $result), $state);
     }
     else {
-      $result = $this->xpath('//*[@id="edit-job-items-wrapper"]/div/div/div/div/table/tbody/tr[' . $row . ']/td[1]/img')[0];
+      $result = $this->xpath('//div[@id="edit-job-items-wrapper"]//tbody/tr[' . $row . ']/td[1]/img')[0];
       $this->assertEqual($result['title'], $state);
     }
   }

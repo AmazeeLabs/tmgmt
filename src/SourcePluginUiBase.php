@@ -172,7 +172,7 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
           );
         }
       }
-      tmgmt_job_checkout_and_redirect($form_state, $jobs);
+      \Drupal::service('tmgmt.job_checkout_manager')->checkoutAndRedirect($form_state, $jobs);
     }
     else {
       drupal_set_message($this->t('From the selection you made it was not possible to create any translation job.'), 'error');

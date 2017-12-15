@@ -169,6 +169,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
     parent::preSave($storage);
     if ($this->getJobId()) {
       $this->recalculateStatistics();
+      drupal_static_reset('tmgmt_job_statistics_load');
     }
     if ($this->unserializedData) {
       $this->data = serialize($this->unserializedData);

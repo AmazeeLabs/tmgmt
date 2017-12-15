@@ -230,12 +230,12 @@ function hook_tmgmt_translator_plugin_info_alter(&$info) {
  * Note: The default behavior will ignore jobs that have already been checked
  * out. Remove jobs from the array to prevent the default behavior for them.
  *
- * @param $redirects
+ * @param \Drupal\tmgmt\JobInterface[] $remaining_jobs
  *   List of redirects the user is supposed to be redirected to.
- * @param $jobs
+ * @param \Drupal\tmgmt\JobInterface[] $jobs
  *   Array with the translation jobs to be checked out.
  */
-function hook_tmgmt_job_checkout_before_alter(&$redirects, &$jobs) {
+function hook_tmgmt_job_checkout_before_alter(&$remaining_jobs, &$jobs) {
   foreach ($jobs as $job) {
     // Automatically check out all jobs using the default settings.
     $job->translator = 'example';

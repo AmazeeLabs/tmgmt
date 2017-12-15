@@ -203,8 +203,8 @@ function tmgmt_job_item_load_latest($plugin, $item_type, $item_id, $source_langu
  * @param string $source_language
  *   The source language of the item.
  *
- * @return array
- *   An array of job entities.
+ * @return \Drupal\tmgmt\Entity\JobItem[]
+ *   An array of job item entities.
  */
 function tmgmt_job_item_load_all_latest($plugin, $item_type, $item_id, $source_language) {
   $query = db_select('tmgmt_job_item', 'tji');
@@ -228,7 +228,7 @@ function tmgmt_job_item_load_all_latest($plugin, $item_type, $item_id, $source_l
     }
     return $return;
   }
-  return FALSE;
+  return [];
 }
 
 /**
@@ -592,6 +592,9 @@ function template_preprocess_tmgmt_data_items_form(&$variables) {
  *
  * @see tmgmt_redirect_queue()
  * @see tmgmt_job_checkout_and_redirect()
+ *
+ * @deprecated Deprecated in 8.x-1.x, use
+ *   \Drupal\tmgmt\JobCheckoutManager::checkoutMultiple() instead.
  */
 function tmgmt_job_checkout_multiple(array $jobs) {
   $redirects = array();
@@ -651,6 +654,9 @@ function tmgmt_job_checkout_multiple(array $jobs) {
  *
  * @return
  *   TRUE if the job needs a checkout form.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use
+ *   \Drupal\tmgmt\JobCheckoutManager::needsCheckoutForm() instead.
  */
 function tmgmt_job_needs_checkout_form(JobInterface $job) {
   // If the job has no target language (or source language, even though this
@@ -686,6 +692,9 @@ function tmgmt_job_needs_checkout_form(JobInterface $job) {
  * @return
  *   TRUE if it worked, FALSE if there were any errors of the type error which
  *   means that something did go wrong.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use
+ *   \Drupal\tmgmt\JobCheckoutManager::requestTranslation() instead.
  */
 function tmgmt_job_request_translation(JobInterface $job) {
   // Process the translation request.
@@ -855,6 +864,9 @@ function tmgmt_translation_review_form_reject_confirm(array $form, FormStateInte
  *   returned by tmgmt_job_checkout_multiple().
  * @param $destination
  *   A final destination to go to after the queue has been processed.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use \Drupal\tmgmt\JobQueue::startQueue()
+ *   instead.
  */
 function tmgmt_redirect_queue_set(array $redirects, $destination = NULL) {
   $_SESSION['tmgmt']['redirect_queue'] = $redirects;
@@ -872,6 +884,9 @@ function tmgmt_redirect_queue_set(array $redirects, $destination = NULL) {
  * @return
  *   The stored destination if defined, otherwise the passed in default
  *   destination.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use
+ *   \Drupal\tmgmt\JobQueue::getDestination() instead.
  */
 function tmgmt_redirect_queue_destination($destination = NULL) {
   if (!empty($_SESSION['tmgmt']['destination'])) {
@@ -887,6 +902,9 @@ function tmgmt_redirect_queue_destination($destination = NULL) {
  *
  * @return
  *   The amount of entries in the redirect queue.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use \Drupal\tmgmt\JobQueue::count()
+ *   instead.
  */
 function tmgmt_redirect_queue_count() {
   if (!empty($_SESSION['tmgmt']['redirect_queue'])) {
@@ -900,6 +918,9 @@ function tmgmt_redirect_queue_count() {
  *
  * @return
  *   A redirect URL or NULL if the queue is empty.
+ *
+ * @deprecated Deprecated in 8.x-1.x, use \Drupal\tmgmt\JobQueue::getNextJob()
+ *   instead.
  */
 function tmgmt_redirect_queue_dequeue() {
   if (!empty($_SESSION['tmgmt']['redirect_queue'])) {
@@ -1088,6 +1109,8 @@ function tmgmt_color_review_legend() {
  * @ingroup tmgmt_job
  *
  * @see tmgmt_job_checkout_multiple()
+ *
+ * @deprecated
  */
 function tmgmt_job_checkout_and_redirect(FormStateInterface $form_state, array $jobs) {
   $redirects = tmgmt_job_checkout_multiple($jobs);

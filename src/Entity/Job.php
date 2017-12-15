@@ -359,6 +359,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
   public function addExistingItem(JobItemInterface $item) {
     $item->tjid = $this->id();
     $item->save();
+
   }
 
   /**
@@ -935,9 +936,18 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
         // Check if there already exists a translation job for this item in the
         // current language.
         $items = tmgmt_job_item_load_all_latest($jobItem->getPlugin(), $jobItem->getItemType(), $jobItem->getItemId(), $this->getSourceLangcode());
-        if ($items && isset($items[$this->getTargetLangcode()])) {
+        if (isset($items[$this->getTargetLangcode()])) {
           unset($suggestions[$k]);
           continue;
+        }
+
+        // If the item is part of the current job, no matter which language,
+        // remove it.
+        foreach ($items as $item) {
+          if ($item->getJobId() == $this->id()) {
+            unset($suggestions[$k]);
+            continue;
+          }
         }
       } else {
         unset($suggestions[$k]);

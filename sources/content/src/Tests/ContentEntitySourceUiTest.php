@@ -10,6 +10,7 @@ use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\Entity\Node;
+use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\Translator;
 use Drupal\tmgmt\Tests\EntityTestBase;
 
@@ -37,6 +38,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->addLanguage('fr');
     $this->addLanguage('es');
     $this->addLanguage('el');
+    $this->addLanguage('it');
 
     $this->createNodeType('page', 'Page', TRUE);
     $this->createNodeType('article', 'Article', TRUE);
@@ -223,7 +225,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
   /**
    * Test the translate tab for a single checkout.
    */
-  function testNodeTranslateTabMultipeCheckout() {
+  function testNodeTranslateTabMultipleCheckout() {
     // Allow auto-accept.
     $default_translator = Translator::load('test_translator');
     $default_translator
@@ -243,21 +245,38 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->assertText(t('Translations of @title', array('@title' => $node->getTitle())));
     $this->assertText(t('Pending Translations'));
 
-    // Request a translation for german.
+    // Request a translation for german, spanish and french.
     $edit = array(
       'languages[de]' => TRUE,
       'languages[es]' => TRUE,
+      'languages[it]' => TRUE,
     );
     $this->drupalPostForm(NULL, $edit, t('Request translation'));
 
     // Verify that we are on the translate tab.
-    $this->assertText(t('2 jobs need to be checked out.'));
+    $this->assertText(t('3 jobs need to be checked out.'));
+
+    // Assert progress bar.
+    $this->assertText('3 jobs pending');
+    $this->assertText($node->label() . ', English to German');
+    $this->assertText($node->label() . ', English to Spanish');
+    $this->assertText($node->label() . ', English to Italian');
+    $this->assertRaw('progress__track');
+    $this->assertRaw('<div class="progress__bar" style="width: 3%"></div>');
 
     // Submit all jobs.
-    $this->assertText($node->getTitle());
-    $this->drupalPostForm(NULL, array(), t('Submit to provider and continue'));
-    $this->assertText($node->getTitle());
-    $this->drupalPostForm(NULL, array(), t('Submit to provider'));
+    $edit = [
+      'label[0][value]' => 'Customized label',
+      'submit_all' => TRUE,
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Submit to provider and continue'));
+
+    // Assert messages.
+    $this->assertText('Test translation created.');
+    $this->assertText('The translation job has been finished.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as de(de-ch): ' . $node->label() . '.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as es: ' . $node->label() . '.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as it: ' . $node->label() . '.');
 
     // Make sure that we're back on the translate tab.
     $this->assertEqual($node->url('canonical', array('absolute' => TRUE)) . '/translations', $this->getUrl());
@@ -283,6 +302,78 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->drupalGet('es/node/' . $node->id());
     $this->assertText('es: ' . $node->getTitle());
     $this->assertText('es: ' . $node->body->value);
+
+    // Assert that all jobs were updated to use the customized label.
+    foreach (Job::loadMultiple() as $job) {
+      $this->assertEqual($job->label(), 'Customized label');
+    }
+  }
+
+  /**
+   * Test job submission of multiple jobs with an unsupported language
+   */
+  function testNodeTranslateTabMultipleCheckoutUnsupported() {
+    // Allow auto-accept.
+    $default_translator = Translator::load('test_translator');
+    $default_translator
+      ->setAutoAccept(TRUE)
+      ->save();
+
+    $this->loginAsTranslator([
+      'translate any entity',
+      'create content translations'
+    ]);
+
+    // Create an english source node.
+    $node = $this->createTranslatableNode('page', 'en');
+
+    // Go to the translate tab.
+    $this->drupalGet('node/' . $node->id());
+    $this->clickLink('Translate');
+
+    // Assert some basic strings on that page.
+    $this->assertText(t('Translations of @title', ['@title' => $node->getTitle()]));
+    $this->assertText(t('Pending Translations'));
+
+    // Request a translation for german, spanish and french.
+    $edit = [
+      'languages[de]' => TRUE,
+      'languages[es]' => TRUE,
+      'languages[el]' => TRUE,
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Request translation'));
+
+    // Verify that we are on the translate tab.
+    $this->assertText(t('3 jobs need to be checked out.'));
+
+    // Assert progress bar.
+    $this->assertText('3 jobs pending');
+    $this->assertText($node->label() . ', English to German');
+    $this->assertText($node->label() . ', English to Spanish');
+    $this->assertText($node->label() . ', English to Greek');
+    $this->assertRaw('progress__track');
+    $this->assertRaw('<div class="progress__bar" style="width: 3%"></div>');
+
+    // Submit all jobs.
+    $edit = [
+      'submit_all' => TRUE,
+    ];
+    $this->drupalPostForm(NULL, $edit, t('Submit to provider and continue'));
+
+    // Assert messages.
+    $this->assertText('Test translation created.');
+    $this->assertText('The translation job has been finished.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as de(de-ch): ' . $node->label() . '.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as es: ' . $node->label() . '.');
+    $this->assertText('Job ' . $node->label() . ' is not translatable with the chosen settings: Test provider can not translate from English to Greek.');
+
+    // Assert progress bar.
+    $this->assertText('1 job pending');
+    $this->assertNoText($node->label() . ', English to German');
+    $this->assertNoText($node->label() . ', English to Spanish');
+    $this->assertText($node->label() . ', English to Greek');
+    $this->assertRaw('progress__track');
+    $this->assertRaw('<div class="progress__bar" style="width: 67%"></div>');
   }
 
   /**
