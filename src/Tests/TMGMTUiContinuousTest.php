@@ -21,7 +21,10 @@ class TMGMTUiContinuousTest extends EntityTestBase {
     parent::setUp();
 
     // Login as admin to be able to set environment variables.
-    $this->loginAsAdmin();
+    $this->loginAsAdmin([
+      'translate any entity',
+      'create content translations',
+    ]);
     $this->addLanguage('de');
     $this->addLanguage('es');
 
@@ -155,6 +158,20 @@ class TMGMTUiContinuousTest extends EntityTestBase {
     // Create two new node types one not enabled for translation.
     $this->createNodeType('page1', 'Enabled page', TRUE);
     $this->createNodeType('article1', 'Not enabled article', FALSE);
+
+    // Create a page, request a translation for de and es to initiate a
+    // checkout queue.
+    $node = $this->createNode([
+      'type' => 'page',
+    ]);
+    $edit = array(
+      'languages[de]' => TRUE,
+      'languages[es]' => TRUE,
+    );
+    $this->drupalPostForm('node/' . $node->id() . '/translations', $edit, t('Request translation'));
+    $this->assertText('2 jobs need to be checked out.');
+    $this->assertText('Submit all 2 translation jobs with the same settings');
+
     // Create continuous job through the form.
     $this->drupalGet('admin/tmgmt/continuous_jobs/continuous_add');
     // Test we don't have selected source language in target language dropdown.
@@ -165,6 +182,11 @@ class TMGMTUiContinuousTest extends EntityTestBase {
     $this->assertNotEqual('German', $option1);
     $this->assertNotEqual('German', $option2);
     $this->assertNotEqual('German', $option3);
+
+    // Make sure that no checkout queue UI elements are shown.
+    $this->assertNoText('jobs pending');
+    $this->assertNoText('Submit all');
+    $this->assertNoRaw('progress__track');
 
     $continuous_job_label = strtolower($this->randomMachineName());
     $edit_job = [

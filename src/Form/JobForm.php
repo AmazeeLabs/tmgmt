@@ -17,7 +17,6 @@ use Drupal\tmgmt\JobInterface;
 use Drupal\tmgmt\JobQueue;
 use Drupal\tmgmt\SourceManager;
 use Drupal\tmgmt\TranslatorManager;
-use Drupal\tmgmt_content\ContentEntitySourcePluginUi;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
 use Drupal\tmgmt\ContinuousSourceInterface;
@@ -479,7 +478,7 @@ class JobForm extends TmgmtFormBase {
 
       // If there are additional jobs in the queue, allow to submit them all.
       $count = $this->jobQueue->count();
-      if ($count > 1) {
+      if ($count > 1 && !$job->isContinuous()) {
         $form['translator_wrapper']['submit_all'] = [
           '#type' => 'checkbox',
           '#title' => $this->t('Submit all @count translation jobs with the same settings', ['@count' => $count]),
