@@ -3,8 +3,11 @@
 namespace Drupal\tmgmt;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\tmgmt\Events\ShouldCreateJobEvent;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\tmgmt\Events\ContinuousEvents;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * A service manager for continuous jobs.
@@ -40,6 +43,11 @@ class ContinuousManager {
   protected $translatorManager;
 
   /**
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructs a new ContinuousManager.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -50,12 +58,15 @@ class ContinuousManager {
    *   The config factory.
    * @param \Drupal\tmgmt\TranslatorManager $translator_manager
    *   The translation manager.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   The event dispatcher service
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, SourceManager $source_plugin_manager, ConfigFactoryInterface $config_factory, TranslatorManager $translator_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, SourceManager $source_plugin_manager, ConfigFactoryInterface $config_factory, TranslatorManager $translator_manager, EventDispatcherInterface $event_dispatcher) {
     $this->entityTypeManager = $entity_type_manager;
     $this->sourcePluginManager = $source_plugin_manager;
     $this->configFactory = $config_factory;
     $this->translatorManager = $translator_manager;
+    $this->eventDispatcher = $event_dispatcher;
   }
 
   /**
@@ -114,12 +125,19 @@ class ContinuousManager {
    *
    * @return \Drupal\tmgmt\Entity\JobItem
    *   Continuous job item.
+   *
+   * @see \Drupal\tmgmt\Events\ContinuousEvents::SHOULD_CREATE_JOB
    */
   public function addItem(Job $job, $plugin, $item_type, $item_id) {
     // Check if a job item should be created.
     $most_recent_job_item = $job->getMostRecentItem($plugin, $item_type, $item_id);
     $should_create_item = $this->sourcePluginManager->createInstance($plugin)->shouldCreateContinuousItem($job, $plugin, $item_type, $item_id);
-    if ($should_create_item) {
+
+    // Some modules might want to filter out candidates for items.
+    $event = new ShouldCreateJobEvent($job, $plugin, $item_type, $item_id, $should_create_item);
+    $this->eventDispatcher->dispatch(ContinuousEvents::SHOULD_CREATE_JOB, $event);
+
+    if ($event->shouldCreateItem()) {
       if ($most_recent_job_item) {
         // If the most recent job item is active do nothing.
         if (!$most_recent_job_item->isAborted() && !$most_recent_job_item->isAccepted()) {
