@@ -1023,15 +1023,14 @@ class TMGMTUiTest extends EntityTestBase {
    *   The row of the item you want to check.
    * @param int $state
    *   The expected state.
-   *
    */
   private function assertJobStateIcon($row, $state) {
     if ($state == 'Unprocessed' || $state == 'Rejected' || $state == 'Aborted' || $state == 'Finished') {
-      $result = $this->xpath('/html/body/div/main/div/div/div/div/div[2]/table/tbody/tr[' . $row . ']/td[6]')[0];
+      $result = $this->xpath('//table/tbody/tr[' . $row . ']/td[6]')[0];
       $this->assertEqual(trim((string) $result), $state);
     }
     else {
-      $result = $this->xpath('/html/body/div/main/div/div/div/div/div[2]/table/tbody/tr[' . $row . ']/td[1]/img')[0];
+      $result = $this->xpath('//table/tbody/tr[' . $row . ']/td[1]/img')[0];
       $this->assertEqual($result['title'], $state);
     }
   }
@@ -1067,11 +1066,11 @@ class TMGMTUiTest extends EntityTestBase {
    */
   private function assertJobItemOverviewStateIcon($row, $state) {
     if ($state == 'Inactive' || $state == 'Aborted' || $state == 'Accepted') {
-      $result = $this->xpath('/html/body/div/main/div/div/div/div/div[2]/table/tbody/tr[' . $row . ']/td[7]')[0];
+      $result = $this->xpath('///table/tbody/tr[' . $row . ']/td[7]')[0];
       $this->assertEqual(trim((string) $result), $state);
     }
     else {
-      $result = $this->xpath('/html/body/div/main/div/div/div/div/div[2]/table/tbody/tr[' . $row . ']/td[1]/img')[0];
+      $result = $this->xpath('//table/tbody/tr[' . $row . ']/td[1]/img')[0];
       $this->assertEqual($result['title'], $state);
     }
   }
@@ -1093,7 +1092,7 @@ class TMGMTUiTest extends EntityTestBase {
    *
    */
   private function assertJobProgress($row, $pending, $translated, $reviewed, $accepted) {
-    $result = $this->xpath('/html/body/div/main/div/div/div/div/div[2]/table/tbody/tr[' . $row . ']/td[6]')[0];
+    $result = $this->xpath('//table/tbody/tr[' . $row . ']/td[6]')[0];
     $div_number = 0;
     if ($pending > 0) {
       $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-pending');
