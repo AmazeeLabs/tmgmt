@@ -9,7 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Source overview form.
  */
-class Cartform extends FormBase {
+class CartForm extends FormBase {
 
   /**
    * {@inheritdoc}
