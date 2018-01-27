@@ -61,7 +61,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
     $fields['tjid'] = BaseFieldDefinition::create('integer')
-      ->setLabel(t('Node ID'))
+      ->setLabel(t('Job ID'))
       ->setDescription(t('The Job ID.'))
       ->setReadOnly(TRUE)
       ->setSetting('unsigned', TRUE);

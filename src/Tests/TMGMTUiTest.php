@@ -230,9 +230,16 @@ class TMGMTUiTest extends EntityTestBase {
 
     $this->drupalGet('admin/tmgmt/jobs');
 
-    // Total number of tags should be 8.
-    $tags = trim((int) $this->xpath('//table[@class="views-table views-view-table cols-10"]/tbody/tr')[0]->td[7]);
-    $this->assertEqual($tags, 8);
+    // Total number of tags should be 8 for this job.
+    $rows = $this->xpath('//table[@class="views-table views-view-table cols-10"]/tbody/tr');
+    $found = FALSE;
+    foreach ($rows as $row) {
+      if (trim($row->td[1]) == 'test_source:test:10 and 1 more') {
+        $found = TRUE;
+        $this->assertEqual(8, (int) $row->td[7]);
+      }
+    }
+    $this->assertTrue($found);
 
     // Another job.
     $job = tmgmt_job_match_item('en', 'es');
