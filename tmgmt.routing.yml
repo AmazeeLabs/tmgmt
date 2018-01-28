@@ -111,7 +111,7 @@ tmgmt.source_overview:
     _entity_create_access: tmgmt_job
 
 entity.tmgmt_job.continuous_add_form:
-  path: 'admin/tmgmt/continuous_jobs/continuous_add'
+  path: '/admin/tmgmt/continuous_jobs/continuous_add'
   defaults:
     _entity_form: tmgmt_job.continuous_add
   requirements:
