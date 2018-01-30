@@ -333,7 +333,8 @@ class TMGMTUiReviewTest extends EntityTestBase {
 
     // Test if the icons are displayed.
     $this->assertRaw('views-field-progress">Accepted');
-    $this->assertRaw('icons/ready.svg" title="Needs review"');
+    $this->assertRaw('icons/ready.svg"');
+    $this->assertRaw('title="Needs review"');
     $this->loginAsAdmin();
 
     // Create two translators.

@@ -5,6 +5,8 @@ dependencies:
     - system.menu.admin
   module:
     - tmgmt
+_core:
+  default_config_hash: 7TOHQUMgwQsVTy6GisaOmbqfAxE8VYD65Ap3XwziEQQ
 id: tmgmt_translation_all_job_items
 label: 'Translation All Job Items'
 module: views
@@ -170,7 +172,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'State'
+          label: State
           exclude: false
           alter:
             alter_text: false
@@ -220,7 +222,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Label'
+          label: Label
           exclude: false
           alter:
             alter_text: false
@@ -277,7 +279,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          label: 'Type'
+          label: Type
           exclude: false
           alter:
             alter_text: false
@@ -327,7 +329,7 @@ display:
           relationship: tjid
           group_type: group
           admin_label: ''
-          label: 'From'
+          label: From
           exclude: false
           alter:
             alter_text: false
@@ -393,7 +395,7 @@ display:
           relationship: tjid
           group_type: group
           admin_label: ''
-          label: 'To'
+          label: To
           exclude: false
           alter:
             alter_text: false
@@ -761,17 +763,15 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          operator: '='
+          operator: job_item_state
           value:
-            min: ''
-            max: ''
-            value: ''
+            2: '2'
           group: 1
           exposed: true
           expose:
             operator_id: state_op
             label: States
-            description: null
+            description: ''
             use_operator: false
             operator: state_op
             identifier: state
@@ -780,7 +780,8 @@ display:
             multiple: false
             remember_roles:
               authenticated: authenticated
-          is_grouped: true
+            reduce: false
+          is_grouped: false
           group_info:
             label: State
             description: ''
@@ -789,53 +790,11 @@ display:
             widget: select
             multiple: false
             remember: false
-            default_group: '4'
+            default_group: ''
             default_group_multiple: {  }
-            group_items:
-              1:
-                title: '- Open job items -'
-                operator: between
-                value:
-                  value: ''
-                  min: '0'
-                  max: '2'
-              2:
-                title: 'Inactive'
-                operator: '='
-                value:
-                  value: '0'
-                  min: ''
-                  max: ''
-              3:
-                title: 'In progress'
-                operator: '='
-                value:
-                  value: '1'
-                  min: ''
-                  max: ''
-              4:
-                title: 'Needs review'
-                operator: '='
-                value:
-                  value: '2'
-                  min: ''
-                  max: ''
-              5:
-                title: 'Accepted'
-                operator: '='
-                value:
-                  value: '3'
-                  min: ''
-                  max: ''
-              6:
-                title: 'Aborted'
-                operator: '='
-                value:
-                  value: '4'
-                  min: ''
-                  max: ''
+            group_items: {  }
           entity_type: tmgmt_job_item
-          plugin_id: numeric
+          plugin_id: tmgmt_job_item_filter
         source_language:
           id: source_language
           table: tmgmt_job
@@ -957,12 +916,12 @@ display:
                 title: Normal
                 operator: '='
                 value:
-                  value: 'normal'
+                  value: normal
               2:
                 title: Continuous
                 operator: '='
                 value:
-                  value: 'continuous'
+                  value: continuous
           entity_type: tmgmt_job
           plugin_id: tmgmt_job_type_filter
       sorts: {  }

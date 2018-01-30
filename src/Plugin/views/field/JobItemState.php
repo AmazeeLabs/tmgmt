@@ -2,7 +2,7 @@
 
 namespace Drupal\tmgmt\Plugin\views\field;
 
-use Drupal\tmgmt\JobItemInterface;
+use Drupal\tmgmt\Entity\JobItem;
 use Drupal\views\Plugin\views\field\NumericField;
 use Drupal\views\ResultRow;
 
@@ -17,31 +17,29 @@ class JobItemState extends NumericField {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    $value = parent::render($values);
-    switch ($value) {
-      case JobItemInterface::STATE_ACTIVE:
-        $label = t('In progress');
-        $icon = drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg';
-        break;
+    /** @var \Drupal\tmgmt\JobItemInterface $job_item */
+    $job_item = $values->_entity;
 
-      case JobItemInterface::STATE_REVIEW:
-        $label = t('Needs review');
-        $icon = drupal_get_path('module', 'tmgmt') . '/icons/ready.svg';
-        break;
+    $state_definitions = JobItem::getStateDefinitions();
 
-      default:
-        $icon = NULL;
-        $label = NULL;
+    $state_definition = NULL;
+    $translator_state = $job_item->getTranslatorState();
+    if ($translator_state && isset($state_definitions[$translator_state]['icon'])) {
+      $state_definition = $state_definitions[$translator_state];
     }
-    $element = [
-      '#type' => 'inline_template',
-      '#template' => '{% if label %}<img src="{{ icon }}" title="{{ label }}"><span></span></img>{% endif %}',
-      '#context' => array(
-        'icon' => file_create_url($icon),
-        'label' => $label,
-      ),
-    ];
-    return \Drupal::service('renderer')->render($element);
+    elseif (isset($state_definitions[$job_item->getState()]['icon'])) {
+      $state_definition = $state_definitions[$job_item->getState()];
+    }
+
+    if ($state_definition) {
+      return [
+        '#theme' => 'image',
+        '#uri' => $state_definition['icon'],
+        '#title' => $state_definition['label'],
+        '#width' => 16,
+        '#height' => 16,
+      ];
+    }
   }
 
 }

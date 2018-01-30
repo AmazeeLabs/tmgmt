@@ -82,3 +82,7 @@ views.filter.tmgmt_job_type_filter:
         hide_no_continuous:
           type: boolean
           label: 'Hide this filter if there are no continuous jobs.'
+
+views.filter.tmgmt_job_item_filter:
+  type: views.filter.in_operator
+  label: 'Job item state'

@@ -328,3 +328,15 @@ function hook_tmgmt_data_item_text_output_alter(&$source_text, &$translation_tex
 function hook_tmgmt_data_item_text_input_alter(&$translation_text, array $context) {
   $translation_text = str_replace('Second', 'First', $translation_text);
 }
+
+/**
+ * Allows to alter job state definitions.
+ *
+ * @param array $definitions
+ *   The definitions array.
+ *
+ * @see \Drupal\tmgmt\Entity\JobItem::getStateDefinitions()
+ */
+function hook_tmgmt_job_item_state_definitions_alter(&$definitions) {
+
+}

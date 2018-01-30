@@ -996,16 +996,19 @@ function tmgmt_color_legend() {
  *   Color legend render array.
  */
 function tmgmt_color_job_item_legend() {
-  $items = [
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg'),
-      'legend' => t('In progress'),
-    ],
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/ready.svg'),
-      'legend' => t('Needs review'),
-    ],
-  ];
+
+  $state_definitions = JobItem::getStateDefinitions();
+
+  $items = [];
+
+  foreach ($state_definitions as $state_definition) {
+    if (!empty($state_definition['icon'])) {
+      $items[] = [
+        'icon' => file_url_transform_relative(file_create_url($state_definition['icon'])),
+        'legend' => $state_definition['label'],
+      ];
+    }
+  }
 
   $output = [
     '#attached' => array('library' => ['tmgmt/admin.seven', 'tmgmt/admin']),

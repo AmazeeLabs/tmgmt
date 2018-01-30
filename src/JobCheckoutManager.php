@@ -265,12 +265,14 @@ class JobCheckoutManager {
     if ($template_job_id && $job_id != $template_job_id) {
       /** @var \Drupal\tmgmt\JobInterface $template_job */
       $template_job = $this->entityTypeManager->getStorage('tmgmt_job')->load($template_job_id);
-      $job->set('translator', $template_job->getTranslatorId());
-      $job->set('settings', $template_job->get('settings')->getValue());
+      if ($template_job) {
+        $job->set('translator', $template_job->getTranslatorId());
+        $job->set('settings', $template_job->get('settings')->getValue());
 
-      // If there is a custom label on the template job, copy that as well.
-      if ($template_job->get('label')->value) {
-        $job->set('label', $template_job->get('label')->value);
+        // If there is a custom label on the template job, copy that as well.
+        if ($template_job->get('label')->value) {
+          $job->set('label', $template_job->get('label')->value);
+        }
       }
     }
 

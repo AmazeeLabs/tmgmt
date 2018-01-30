@@ -112,6 +112,9 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       ->setSetting('allowed_values', $states)
       ->setDefaultValue(static::STATE_INACTIVE);
 
+    $fields['translator_state'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Translator job item state'));
+
     $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
       ->setDescription(t('The time that the job was last edited.'));
@@ -537,7 +540,9 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
   public function setState($state, $message = NULL, $variables = array(), $type = 'debug') {
     // Return TRUE if the state could be set. Return FALSE otherwise.
     if (array_key_exists($state, JobItem::getStates()) && $this->get('state')->value != $state) {
-      $this->state = $state;
+      $this->set('state', $state);
+      // Changing the state resets the translator state.
+      $this->setTranslatorState(NULL);
       $this->save();
       // If a message is attached to this state change add it now.
       if (!empty($message)) {
@@ -551,8 +556,6 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    * {@inheritdoc}
    */
   public function getState() {
-    // We don't need to check if the state is actually set because we always set
-    // it in the constructor.
     return $this->get('state')->value;
   }
 
@@ -609,6 +612,21 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    */
   public function isInactive() {
     return $this->isState(static::STATE_INACTIVE);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTranslatorState() {
+    return $this->get('translator_state')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTranslatorState($translator_state = NULL) {
+    $this->get('translator_state')->value = $translator_state;
+    return $this;
   }
 
   /**
@@ -1089,6 +1107,45 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       static::STATE_ABORTED => t('Aborted'),
       static::STATE_INACTIVE => t('Inactive'),
     );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getStateDefinitions() {
+    $definitions = array(
+      static::STATE_ACTIVE => [
+        'label' => t('In progress'),
+        'type' => 'state',
+        'icon' => drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg',
+      ],
+      static::STATE_REVIEW => [
+        'label' => t('Needs review'),
+        'type' => 'state',
+        'icon' => drupal_get_path('module', 'tmgmt') . '/icons/ready.svg',
+      ],
+      static::STATE_ACCEPTED => [
+        'label' => t('Accepted'),
+        'type' => 'state'
+      ],
+      static::STATE_ABORTED => [
+        'label' => t('Aborted'),
+        'type' => 'state'
+      ],
+      static::STATE_INACTIVE => [
+        'label' => t('Inactive'),
+        'type' => 'state'
+      ],
+    );
+
+    \Drupal::moduleHandler()->alter('tmgmt_job_item_state_definitions', $definitions);
+
+    // Ensure that all state definitions have a type and label key set.
+    foreach ($definitions as $key => $definition) {
+      assert(!empty($definition['type']) && !empty($definition['label']), "State definition $key is missing label or type.");
+    }
+
+    return $definitions;
   }
 
 }

@@ -8,6 +8,7 @@
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\Component\Serialization\Yaml;
+use Drupal\tmgmt\JobItemInterface;
 
 /**
  * Add a field for the HTML tag count.
@@ -98,5 +99,35 @@ function tmgmt_update_8007() {
   /** @var \Drupal\tmgmt\JobInterface $continuous_job */
   foreach ($continuous_jobs as $continuous_job) {
     $continuous_job->setState(Job::STATE_CONTINUOUS);
+  }
+}
+
+/**
+ * Adds the translator state field.
+ */
+function tmgmt_update_8008() {
+  $storage_definition = BaseFieldDefinition::create('string')
+    ->setLabel(t('Provider specific state'));
+
+  \Drupal::entityDefinitionUpdateManager()
+    ->installFieldStorageDefinition('translator_state', 'tmgmt_job_item', 'tmgmt', $storage_definition);
+}
+
+/**
+ * Update the job item overview view to use the new state filter configuration.
+ */
+function tmgmt_update_8009() {
+  \Drupal::service('plugin.manager.views.filter')->clearCachedDefinitions();
+  $config = \Drupal::configFactory()->getEditable('views.view.tmgmt_translation_all_job_items');
+
+  // Make sure that we only update it if the view exists and has a state filter.
+  $prefix = 'display.default.display_options.filters.state';
+  if (!$config->isNew() && $config->get($prefix)) {
+    $config->set($prefix . '.operator', 'job_item_state');
+    $config->set($prefix . '.value', [JobItemInterface::STATE_REVIEW => JobItemInterface::STATE_REVIEW]);
+    $config->set($prefix . '.is_grouped', FALSE);
+    $config->set($prefix . '.group_items', []);
+    $config->set($prefix . '.plugin_id', 'tmgmt_job_item_filter');
+    $config->save(TRUE);
   }
 }

@@ -36,7 +36,8 @@ class Progress extends StatisticsBase {
           return t('Finished');
           break;
       }
-    } elseif($entity->getEntityTypeId() == 'tmgmt_job_item') {
+    }
+    elseif ($entity->getEntityTypeId() == 'tmgmt_job_item') {
       switch ($entity->getState()) {
         case JobItemInterface::STATE_INACTIVE:
           return t('Inactive');

@@ -543,6 +543,30 @@ interface JobItemInterface extends ContentEntityInterface {
   public function recalculateStatistics();
 
   /**
+   * Returns the current translator state.
+   *
+   * Translator states are expected to be exposed through
+   * hook_tmgmt_job_item_state_definitions_alter().
+   *
+   * @return string|null
+   *   The translator state or NULL if none is set.
+   */
+  public function getTranslatorState();
+
+  /**
+   * Sets the translator state.
+   *
+   * A translator state is only kept for a given job item state, if that changes
+   * then the translator state is reset.
+   *
+   * @param string|null $translator_state
+   *   Set the translator set, use NULL to reset.
+   *
+   * @return mixed
+   */
+  public function setTranslatorState($translator_state = NULL);
+
+  /**
    * Returns a labeled list of all available states.
    *
    * @return array

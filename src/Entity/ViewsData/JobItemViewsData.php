@@ -47,7 +47,7 @@ class JobItemViewsData extends EntityViewsData {
         'id' => 'tmgmt_job_item_state',
       ),
       'filter' => array(
-        'id' => 'numeric',
+        'id' => 'tmgmt_job_item_state_filter',
       ),
     );
 
