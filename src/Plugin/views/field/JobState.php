@@ -26,18 +26,16 @@ class JobState extends NumericField {
         break;
 
       case JobInterface::STATE_ACTIVE:
-        $needs_review = FALSE;
         /** @var JobItemInterface $item */
+        $highest_weight_icon = NULL;
         foreach ($values->_entity->getItems() as $item) {
-          if ($item->isNeedsReview()) {
-            $needs_review = TRUE;
-            break;
+          $job_item_icon = $item->getStateIcon();
+          if ($job_item_icon && (!$highest_weight_icon || $highest_weight_icon['#weight'] < $job_item_icon['#weight'])) {
+            $highest_weight_icon = $job_item_icon;
           }
         }
-        if ($needs_review) {
-          $label = t('Needs review');
-          $icon = drupal_get_path('module', 'tmgmt') . '/icons/ready.svg';
-          break;
+        if ($highest_weight_icon) {
+          return $highest_weight_icon;
         }
         $label = t('In progress');
         $icon = drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg';
@@ -57,15 +55,17 @@ class JobState extends NumericField {
         $icon = NULL;
         $label = NULL;
     }
-    $element = [
-      '#type' => 'inline_template',
-      '#template' => '{% if label %}<img src="{{ icon }}" title="{{ label }}"><span></span></img>{% endif %}',
-      '#context' => [
-        'icon' => file_create_url($icon),
-        'label' => $label,
-      ],
-    ];
-    return \Drupal::service('renderer')->render($element);
+
+    if ($icon && $label) {
+      return [
+        '#theme' => 'image',
+        '#uri' => file_create_url($icon),
+        '#title' => $label,
+        '#alt' => $label,
+        '#width' => 16,
+        '#height' => 16,
+      ];
+    }
   }
 
 }

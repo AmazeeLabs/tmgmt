@@ -146,7 +146,7 @@ class ContentEntitySourceListTest extends EntityTestBase {
     $job->requestTranslation();
 
     $this->drupalGet('admin/tmgmt/sources/content/node');
-    $langstatus_de = $this->xpath('//table[@id="edit-items"]/tbody/tr[1]/td[@class="langstatus-de"]/a');
+    $langstatus_de = $this->xpath('//table[@id="edit-items"]/tbody/tr[1]/td[@class="langstatus-de"]/a/img');
 
     $items = $job->getItems();
     $states = JobItem::getStates();

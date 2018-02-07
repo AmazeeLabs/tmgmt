@@ -567,6 +567,15 @@ interface JobItemInterface extends ContentEntityInterface {
   public function setTranslatorState($translator_state = NULL);
 
   /**
+   * Returns a render array to display a job item state icon.
+   *
+   * @return array|null
+   *   A render array for the icon or NULL if there is none for the current
+   *   state.
+   */
+  public function getStateIcon();
+
+  /**
    * Returns a labeled list of all available states.
    *
    * @return array

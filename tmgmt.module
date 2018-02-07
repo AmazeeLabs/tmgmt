@@ -964,16 +964,15 @@ function tmgmt_color_legend() {
     '#items' => $items,
   ];
 
-  $items = [
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/ready.svg'),
-      'legend' => t('Needs review'),
-    ],
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg'),
-      'legend' => t('In progress'),
-    ],
-  ];
+  $items = [];
+  foreach (JobItem::getStateDefinitions() as $state_definition) {
+    if (!empty($state_definition['icon'])) {
+      $items[] = [
+        'icon' => file_url_transform_relative(file_create_url($state_definition['icon'])),
+        'legend' => $state_definition['label'],
+      ];
+    }
+  }
 
   $output[] = [
     '#attached' => array('library' => ['tmgmt/admin.seven', 'tmgmt/admin']),
@@ -996,12 +995,8 @@ function tmgmt_color_legend() {
  *   Color legend render array.
  */
 function tmgmt_color_job_item_legend() {
-
-  $state_definitions = JobItem::getStateDefinitions();
-
   $items = [];
-
-  foreach ($state_definitions as $state_definition) {
+  foreach (JobItem::getStateDefinitions() as $state_definition) {
     if (!empty($state_definition['icon'])) {
       $items[] = [
         'icon' => file_url_transform_relative(file_create_url($state_definition['icon'])),
@@ -1034,15 +1029,16 @@ function tmgmt_color_job_legend() {
       'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/rejected.svg'),
       'legend' => t('Unprocessed'),
     ],
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg'),
-      'legend' => t('In progress'),
-    ],
-    [
-      'icon' => file_create_url(drupal_get_path('module', 'tmgmt') . '/icons/ready.svg'),
-      'legend' => t('Needs review'),
-    ],
   ];
+
+  foreach (JobItem::getStateDefinitions() as $state_definition) {
+    if (!empty($state_definition['icon'])) {
+      $items[] = [
+        'icon' => file_url_transform_relative(file_create_url($state_definition['icon'])),
+        'legend' => $state_definition['label'],
+      ];
+    }
+  }
 
   if (\Drupal::service('tmgmt.continuous')->hasContinuousJobs()) {
     $items[] = [

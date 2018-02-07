@@ -4,8 +4,6 @@ namespace Drupal\tmgmt;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginBase;
-use Drupal\metatag_dc\Plugin\metatag\Tag\Source;
-use Drupal\tmgmt\Entity\JobItem;
 use Drupal\tmgmt\Form\SourceOverviewForm;
 
 /**
@@ -323,36 +321,15 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
 
     // If we have an active job item, wrap it in a link.
     if ($job_item) {
-      $states_labels = JobItem::getStates();
-      $state_label = $states_labels[$job_item->getState()];
-      $label = t('Active job item: @state', array('@state' => $state_label));
       $url = $job_item->toUrl();
-      $job = $job_item->getJob();
-
-      switch ($job_item->getState()) {
-        case JobItem::STATE_ACTIVE:
-          if ($job->isUnprocessed()) {
-            $url = $job->toUrl();
-            $label = t('Active job item: @state', array('@state' => $state_label));
-          }
-          $icon = drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg';
-          break;
-
-        case JobItem::STATE_REVIEW:
-          $icon = drupal_get_path('module', 'tmgmt') . '/icons/ready.svg';
-          break;
+      if ($job_item->isActive() && $job_item->getJob() && $job_item->getJob()->isUnprocessed()) {
+        $url = $job_item->getJob()->toUrl();
       }
 
       $url->setOption('query', \Drupal::destination()->getAsArray());
-      $url->setOption('attributes', array('title' => $label));
 
-      $item_icon = [
-        '#theme' => 'image',
-        '#uri' => $icon,
-        '#title' => $label,
-        '#alt' => $label,
-      ];
-
+      $item_icon = $job_item->getStateIcon();
+      $item_icon['#title'] = $this->t('Active job item: @state', ['@state' => $item_icon['#title']]);
       $build['job_item'] = [
         '#type' => 'link',
         '#url' => $url,

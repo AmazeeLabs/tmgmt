@@ -884,6 +884,10 @@ class TMGMTUiTest extends EntityTestBase {
     $this->drupalGet('admin/tmgmt/jobs');
     $this->assertText('No jobs available.');
 
+    // Make sure the legend label is displayed for the test translator state.
+    $this->assertText('Translation is requested from the elders of the Internet');
+    $this->drupalGet('admin/tmgmt/sources');
+
     // Create Jobs.
     $job1 = $this->createJob();
     $job1->save();
@@ -989,7 +993,8 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertRaw('earth.svg"');
     $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'in_progress')));
     $this->assertJobProgress(1, 3, 1, 0, 0);
-    $this->assertJobStateIcon(1, 'In progress');
+    $this->assertJobStateIcon(1, 'Translation is requested from the elders of the Internet');
+    $this->assertRaw('earth.svg"');
 
     // Translate title of one item.
     $this->drupalGet('admin/tmgmt/items/' . $item1->id());

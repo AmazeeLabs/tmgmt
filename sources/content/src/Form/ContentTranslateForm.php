@@ -77,7 +77,7 @@ class ContentTranslateForm extends FormBase {
         $states = JobItem::getStates();
         $path = \Drupal::routeMatch()->getRouteName() ? Url::fromRouteMatch(\Drupal::routeMatch())->getInternalPath() : '';
         $destination = array('destination' => $path);
-        $additional = \Drupal::l($states[$item->getState()], $item->urlInfo()->setOption('query', $destination));
+        $additional = \Drupal::l($item->getStateIcon() ?: $states[$item->getState()], $item->urlInfo()->setOption('query', $destination));
         // Disable the checkbox for this row since there is already a translation
         // in progress that has not yet been finished. This way we make sure that
         // we don't stack multiple active translations for the same item on top

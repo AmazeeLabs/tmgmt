@@ -212,4 +212,20 @@ abstract class TMGMTTestBase extends WebTestBase {
     $this->assertEqual($existing, $actual_lang_codes);
   }
 
+  /**
+   * Clicks on an image link with the provided title attribute.
+   *
+   * @param string $title
+   *   The image title.
+   */
+  function clickLinkWithImageTitle($title) {
+    $urls = $this->xpath('//a[img[@title=:title]]', [':title' => 'Needs review']);
+    if (empty($urls)) {
+      $this->fail('No image link with title' . $title . ' found');
+      return;
+    }
+    $url_target = $this->getAbsoluteUrl($urls[0]['href']);
+    $this->drupalGet($url_target);
+  }
+
 }

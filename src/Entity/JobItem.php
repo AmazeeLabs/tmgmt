@@ -59,6 +59,13 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
   protected $unserializedData;
 
   /**
+   * Statically cached state definitions.
+   *
+   * @var
+   */
+  protected static $stateDefinitions;
+
+  /**
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
@@ -1099,6 +1106,34 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
   /**
    * {@inheritdoc}
    */
+  public function getStateIcon() {
+    $state_definitions = static::getStateDefinitions();
+
+    $state_definition = NULL;
+    $translator_state = $this->getTranslatorState();
+    if ($translator_state && isset($state_definitions[$translator_state]['icon'])) {
+      $state_definition = $state_definitions[$translator_state];
+    }
+    elseif (isset($state_definitions[$this->getState()]['icon'])) {
+      $state_definition = $state_definitions[$this->getState()];
+    }
+
+    if ($state_definition) {
+      return [
+        '#theme' => 'image',
+        '#uri' => $state_definition['icon'],
+        '#title' => $state_definition['label'],
+        '#alt' => $state_definition['label'],
+        '#width' => 16,
+        '#height' => 16,
+        '#weight' => $state_definition['weight'],
+      ];
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public static function getStates() {
     return array(
       static::STATE_ACTIVE => t('In progress'),
@@ -1113,39 +1148,52 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    * {@inheritdoc}
    */
   public static function getStateDefinitions() {
-    $definitions = array(
+    if (!empty(static::$stateDefinitions)) {
+      return static::$stateDefinitions;
+    }
+
+    static::$stateDefinitions = array(
       static::STATE_ACTIVE => [
         'label' => t('In progress'),
         'type' => 'state',
         'icon' => drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg',
+        'weight' => 0,
       ],
       static::STATE_REVIEW => [
         'label' => t('Needs review'),
         'type' => 'state',
         'icon' => drupal_get_path('module', 'tmgmt') . '/icons/ready.svg',
+        'weight' => 5,
       ],
       static::STATE_ACCEPTED => [
         'label' => t('Accepted'),
-        'type' => 'state'
+        'type' => 'state',
+        'weight' => 10,
       ],
       static::STATE_ABORTED => [
         'label' => t('Aborted'),
-        'type' => 'state'
+        'type' => 'state',
+        'weight' => 15,
       ],
       static::STATE_INACTIVE => [
         'label' => t('Inactive'),
-        'type' => 'state'
+        'type' => 'state',
+        'weight' => 20,
       ],
     );
 
-    \Drupal::moduleHandler()->alter('tmgmt_job_item_state_definitions', $definitions);
+    \Drupal::moduleHandler()->alter('tmgmt_job_item_state_definitions', static::$stateDefinitions);
 
-    // Ensure that all state definitions have a type and label key set.
-    foreach ($definitions as $key => $definition) {
+    foreach (static::$stateDefinitions as $key => &$definition) {
+      // Ensure that all state definitions have a type and label key set.
       assert(!empty($definition['type']) && !empty($definition['label']), "State definition $key is missing label or type.");
+      // Set the default weight to 25, after the default states.
+      $definition += [
+        'weight' => 25,
+      ];
     }
 
-    return $definitions;
+    return static::$stateDefinitions;
   }
 
 }

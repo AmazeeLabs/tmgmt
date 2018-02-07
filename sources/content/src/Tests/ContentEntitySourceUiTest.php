@@ -96,7 +96,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     )));
 
     // Verify that the pending translation is shown.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array(), t('Save as completed'));
 
     $node = Node::load($node->id());
@@ -214,7 +214,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->assertText(t('1 conflicting item has been dropped.'));
 
     $this->drupalGet('node/' . $deleted_node->id() . '/translations');
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
 
     // Delete the node and assert that the job can not be accepted.
     $deleted_node->delete();

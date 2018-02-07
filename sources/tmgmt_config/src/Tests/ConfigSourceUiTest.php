@@ -85,7 +85,7 @@ class ConfigSourceUiTest extends EntityTestBase {
     $this->assertRaw('<strong>Source</strong>');
 
     // Verify that the pending translation is shown.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array(), t('Save'));
 
     // Request a spanish translation.
@@ -107,7 +107,7 @@ class ConfigSourceUiTest extends EntityTestBase {
     $counter = 0;
     foreach ($rows as $value) {
       if ('Spanish' == (string) $value->td[1] || 'German' == (string) $value->td[1]) {
-        $this->assertEqual($value->td[2]->a, 'Needs review');
+        $this->assertEqual($value->td[2]->a->img['title'], 'Needs review');
         $counter++;
       }
     }
@@ -178,7 +178,7 @@ class ConfigSourceUiTest extends EntityTestBase {
     $counter = 0;
     foreach ($rows as $value) {
       if ('Spanish' == (string) $value->td[1] || 'German' == (string) $value->td[1]) {
-        $this->assertEqual($value->td[2]->a, 'Needs review');
+        $this->assertEqual($value->td[2]->a->img['title'], 'Needs review');
         $counter++;
       }
     }
@@ -221,12 +221,12 @@ class ConfigSourceUiTest extends EntityTestBase {
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $value) {
       if ('German' == (string) $value->td[1]) {
-        $this->assertEqual($value->td[2]->a, 'Needs review');
+        $this->assertEqual($value->td[2]->a->img['title'], 'Needs review');
       }
     }
 
     // Verify that the pending translation is shown.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array(), t('Save'));
 
     // Request a spanish translation.
@@ -248,14 +248,14 @@ class ConfigSourceUiTest extends EntityTestBase {
     $counter = 0;
     foreach ($rows as $value) {
       if ('Spanish' == (string) $value->td[1] || 'German' == (string) $value->td[1]) {
-        $this->assertEqual($value->td[2]->a, 'Needs review');
+        $this->assertEqual($value->td[2]->a->img['title'], 'Needs review');
         $counter++;
       }
     }
     $this->assertEqual($counter, 2);
 
     // Test that a job can not be accepted if the entity does not exist.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
 
     // Delete the view  and assert that the job can not be accepted.
     $view_content = View::load('content');
@@ -309,7 +309,7 @@ class ConfigSourceUiTest extends EntityTestBase {
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
 
     // Verify that the pending translation is shown.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array(), t('Save as completed'));
 
   }
@@ -368,15 +368,15 @@ class ConfigSourceUiTest extends EntityTestBase {
     // Translated languages should now be listed as Needs review.
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $value) {
-      if ($value->td[2]->a == 'Needs review') {
+      if ($value->td[2]->a->img['title'] == 'Needs review') {
         $this->assertEqual('German', (string) $value->td[1]);
       }
     }
 
     // Verify that the pending translation is shown.
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array('name[translation]' => 'de_Druplicon'), t('Save'));
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->assertText('de_Druplicon');
     $this->drupalPostForm(NULL, array(), t('Save'));
 
@@ -398,7 +398,7 @@ class ConfigSourceUiTest extends EntityTestBase {
     $rows = $this->xpath('//tbody/tr');
     $counter = 0;
     foreach ($rows as $value) {
-      if ($value->td[2]->a == 'Needs review') {
+      if ($value->td[2]->a->img['title'] == 'Needs review') {
         $this->assertEqual('Spanish' || 'German', (string) $value->td[1]);
         $counter++;
       }
@@ -412,11 +412,11 @@ class ConfigSourceUiTest extends EntityTestBase {
 
     // Submit.
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->drupalPostForm(NULL, array('user__settings|anonymous[translation]' => 'de_Druplicon'), t('Validate HTML tags'));
     $this->assertText('de_Druplicon');
     $this->drupalPostForm(NULL, array(), t('Save'));
-    $this->clickLink(t('Needs review'));
+    $this->clickLinkWithImageTitle('Needs review');
     $this->assertText('de_Druplicon');
   }
 

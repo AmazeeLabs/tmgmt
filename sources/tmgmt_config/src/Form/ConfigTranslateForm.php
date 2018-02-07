@@ -135,7 +135,7 @@ class ConfigTranslateForm extends FormBase {
       elseif (isset($items[$langcode])) {
         $item = $items[$langcode];
         $states = JobItem::getStates();
-        $additional = \Drupal::l($states[$item->getState()], $item->urlInfo()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())));
+        $additional = \Drupal::l($item->getStateIcon() ?: $states[$item->getState()], $item->urlInfo()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())));
         // Disable the checkbox for this row since there is already a translation
         // in progress that has not yet been finished. This way we make sure that
         // we don't stack multiple active translations for the same item on top
