@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tmgmt\MessageInterface;
+use Drupal\tmgmt\Entity\Job;
 
 /**
  * Entity class for the tmgmt_message entity.
@@ -102,14 +103,14 @@ class Message extends ContentEntityBase implements MessageInterface {
    * {@inheritdoc}
    */
   public function getJob() {
-    return $this->get('tjid')->entity;
+    return Job::load($this->get('tjid')->target_id);
   }
 
   /**
    * {@inheritdoc}
    */
   public function getJobItem() {
-    return $this->get('tjid')->entity;
+    return Job::load($this->get('tjid')->target_id);
   }
 
   /**

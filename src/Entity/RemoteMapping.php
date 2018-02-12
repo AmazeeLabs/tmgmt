@@ -6,6 +6,7 @@ use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\tmgmt\RemoteMappingInterface;
+use Drupal\tmgmt\Entity\Job;
 
 /**
  * Entity class for the tmgmt_remote entity.
@@ -78,7 +79,7 @@ class RemoteMapping extends ContentEntityBase implements RemoteMappingInterface 
    * {@inheritdoc}
    */
   public function getJob() {
-    return $this->get('tjid')->entity;
+    return Job::load($this->get('tjid')->target_id);
   }
 
   /**

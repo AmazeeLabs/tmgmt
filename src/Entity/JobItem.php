@@ -17,6 +17,7 @@ use Drupal\Core\Language\Language;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\TMGMTException;
 use Drupal\Core\Render\Element;
+use Drupal\tmgmt\Entity\Job;
 
 /**
  * Entity class for the tmgmt_job_item entity.
@@ -337,7 +338,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    * {@inheritdoc}
    */
   public function getJob() {
-    return $this->get('tjid')->entity;
+    return Job::load($this->get('tjid')->target_id);
   }
 
   /**

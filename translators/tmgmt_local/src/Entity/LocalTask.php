@@ -11,6 +11,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\user\UserInterface;
 use Drupal\tmgmt_local\LocalTaskInterface;
+use Drupal\tmgmt\Entity\Job;
 
 /**
  * Entity class for the local task entity.
@@ -182,7 +183,7 @@ class LocalTask extends ContentEntityBase implements LocalTaskInterface {
    * {@inheritdoc}
    */
   public function getJob() {
-    return $this->get('tjid')->entity;
+    return Job::load($this->get('tjid')->target_id);
   }
 
   /**
