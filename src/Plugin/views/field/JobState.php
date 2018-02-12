@@ -3,7 +3,6 @@
 namespace Drupal\tmgmt\Plugin\views\field;
 
 use Drupal\tmgmt\JobInterface;
-use Drupal\tmgmt\JobItemInterface;
 use Drupal\views\Plugin\views\field\NumericField;
 use Drupal\views\ResultRow;
 
@@ -18,17 +17,17 @@ class JobState extends NumericField {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    $value = parent::render($values);
-    switch ($value) {
+    /** @var \Drupal\tmgmt\JobInterface $job */
+    $job = $this->getEntity($values);
+    switch ($job->getState()) {
       case JobInterface::STATE_UNPROCESSED:
         $label = t('Unprocessed');
         $icon = drupal_get_path('module', 'tmgmt') . '/icons/rejected.svg';
         break;
 
       case JobInterface::STATE_ACTIVE:
-        /** @var JobItemInterface $item */
         $highest_weight_icon = NULL;
-        foreach ($values->_entity->getItems() as $item) {
+        foreach ($job->getItems() as $item) {
           $job_item_icon = $item->getStateIcon();
           if ($job_item_icon && (!$highest_weight_icon || $highest_weight_icon['#weight'] < $job_item_icon['#weight'])) {
             $highest_weight_icon = $job_item_icon;

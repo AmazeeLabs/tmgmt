@@ -13,7 +13,7 @@ use Drupal\views\ResultRow;
 class JobItemType extends FieldPluginBase {
 
   function render(ResultRow $values) {
-    if ($entity = $values->_entity) {
+    if ($entity = $this->getEntity($values)) {
       return $entity->getSourceType();
     }
   }

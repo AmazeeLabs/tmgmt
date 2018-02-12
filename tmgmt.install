@@ -131,3 +131,17 @@ function tmgmt_update_8009() {
     $config->save(TRUE);
   }
 }
+
+
+/**
+ * Update the job messages view to use a different pager id.
+ */
+function tmgmt_update_8010() {
+  $config = \Drupal::configFactory()->getEditable('views.view.tmgmt_job_messages');
+
+  // Set the pager id to 1 to avoid conflicts with the job items view.
+  if (!$config->isNew()) {
+    $config->set('display.default.display_options.pager.options.id', 1);
+    $config->save(TRUE);
+  }
+}

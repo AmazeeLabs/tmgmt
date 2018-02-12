@@ -15,7 +15,7 @@ class TagsCount extends StatisticsBase {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    $entity = $values->_entity;
+    $entity = $this->getEntity($values);
     return $entity->getTagsCount();
   }
 }

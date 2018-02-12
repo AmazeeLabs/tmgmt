@@ -17,8 +17,14 @@ class Progress extends StatisticsBase {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    $entity = $values->_entity;
-    if ($entity->getEntityTypeId() == 'tmgmt_job') {
+    $entity = $this->getEntity($values);
+
+    // If job is continuous we don't show anything.
+    if ($entity instanceof JobInterface && $entity->isContinuous()) {
+      return;
+    }
+
+    if ($entity instanceof JobInterface) {
       switch ($entity->getState()) {
         case JobInterface::STATE_UNPROCESSED:
           return t('Unprocessed');
@@ -37,7 +43,7 @@ class Progress extends StatisticsBase {
           break;
       }
     }
-    elseif ($entity->getEntityTypeId() == 'tmgmt_job_item') {
+    elseif ($entity instanceof JobItemInterface) {
       switch ($entity->getState()) {
         case JobItemInterface::STATE_INACTIVE:
           return t('Inactive');
@@ -51,10 +57,6 @@ class Progress extends StatisticsBase {
           return t('Aborted');
           break;
       }
-    }
-    // If job is continuous we don't show anything.
-    if ($entity->getEntityTypeId() == 'tmgmt_job' && $entity->isContinuous()) {
-      return;
     }
     $counts = array(
       '@pending' => $entity->getCountPending(),

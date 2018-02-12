@@ -17,7 +17,7 @@ class JobItemState extends NumericField {
    */
   public function render(ResultRow $values) {
     /** @var \Drupal\tmgmt\JobItemInterface $job_item */
-    $job_item = $values->_entity;
+    $job_item = $this->getEntity($values);
     return $job_item->getStateIcon();
   }
 

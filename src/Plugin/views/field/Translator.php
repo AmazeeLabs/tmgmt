@@ -17,7 +17,7 @@ class Translator extends FieldPluginBase {
    */
   public function render(ResultRow $values) {
     /** @var \Drupal\tmgmt\JobInterface $job */
-    if ($job = $values->_entity) {
+    if ($job = $this->getEntity($values)) {
       return $job->getTranslatorLabel();
     }
     return NULL;

@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt\Plugin\views\field;
 
+use Drupal\tmgmt\JobInterface;
 use Drupal\views\ResultRow;
 
 /**
@@ -15,8 +16,8 @@ class WordCount extends StatisticsBase {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    $entity = $values->_entity;
-    if ($entity->getEntityTypeId() == 'tmgmt_job' && $entity->isContinuous()) {
+    $entity = $this->getEntity($values);
+    if ($entity instanceof JobInterface && $entity->isContinuous()) {
       return;
     }
     return $entity->getWordCount();
