@@ -9,6 +9,7 @@ use Drupal\tmgmt\Entity\JobItem;
 use Drupal\tmgmt\Entity\Translator;
 use Drupal\filter\Entity\FilterFormat;
 use Drupal\tmgmt\Form\TmgmtFormBase;
+use Drupal\tmgmt\JobInterface;
 use Drupal\tmgmt\JobItemInterface;
 
 /**
@@ -557,7 +558,7 @@ class TMGMTUiTest extends EntityTestBase {
 
     // Go back to the job page.
     $this->drupalGet('admin/tmgmt/jobs', array('query' => array(
-      'state' => '4',
+      'state' => JobInterface::STATE_ABORTED,
     )));
 
     // Check that job is aborted now.
@@ -883,6 +884,9 @@ class TMGMTUiTest extends EntityTestBase {
     // Test that there are no jobs at the beginning.
     $this->drupalGet('admin/tmgmt/jobs');
     $this->assertText('No jobs available.');
+    $this->assertOptionByText('edit-state', 'Items - In progress');
+    $this->assertOptionByText('edit-state', 'Items - Needs review');
+    $this->assertOptionByText('edit-state', 'Items - Translation is requested from the elders of the Internet');
 
     // Make sure the legend label is displayed for the test translator state.
     $this->assertText('Translation is requested from the elders of the Internet');
@@ -921,22 +925,19 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertJobStateIcon(5, 'Finished');
 
     // Test the row amount for each state selected.
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'open_jobs')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'open_jobs']]);
     $this->assertEqual(count($this->xpath('//tbody/tr')), 3);
 
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => '0')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => JobInterface::STATE_UNPROCESSED]]);
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
 
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'in_progress')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => JobInterface::STATE_REJECTED]]);
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
 
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => '2')));
+    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => JobInterface::STATE_ABORTED)));
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
 
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => '4')));
-    $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
-
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => '5')));
+    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => JobInterface::STATE_FINISHED)));
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
 
     \Drupal::state()->set('tmgmt.test_source_data', array(
@@ -976,7 +977,7 @@ class TMGMTUiTest extends EntityTestBase {
     $this->drupalGet('admin/tmgmt/job_items', array('query' => array('state' => JobItemInterface::STATE_ACTIVE)));
     $this->assertEqual(count($this->xpath('//tbody/tr')), 2);
     $this->assertJobItemOverviewStateIcon(1, 'In progress');
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'in_progress')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'job_item_' . JobItemInterface::STATE_ACTIVE]]);
     // Check progress bar and icon.
     $this->assertJobProgress(1, 3, 1, 0, 0);
     $this->assertJobStateIcon(1, 'In progress');
@@ -991,10 +992,16 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
     $this->assertJobItemOverviewStateIcon(1, 'Translation is requested from the elders of the Internet');
     $this->assertRaw('earth.svg"');
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'in_progress')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'job_item_' . JobItemInterface::STATE_ACTIVE]]);
     $this->assertJobProgress(1, 3, 1, 0, 0);
     $this->assertJobStateIcon(1, 'Translation is requested from the elders of the Internet');
     $this->assertRaw('earth.svg"');
+    // Also check the translator state.
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'job_item_tmgmt_test_generating']]);
+    $this->assertJobProgress(1, 3, 1, 0, 0);
+    $this->assertJobStateIcon(1, 'Translation is requested from the elders of the Internet');
+    $this->assertRaw('earth.svg"');
+
 
     // Translate title of one item.
     $this->drupalGet('admin/tmgmt/items/' . $item1->id());
@@ -1006,7 +1013,7 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertJobItemOverviewStateIcon(1, 'Needs review');
 
     // Check exposed filter for needs review.
-    $this->drupalGet('admin/tmgmt/jobs', array('query' => array('state' => 'needs_review')));
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'job_item_' . JobItemInterface::STATE_REVIEW]]);
     $this->assertEqual(count($this->xpath('//tbody/tr')), 1);
     // Check progress bar and icon.
     $this->assertJobProgress(1, 2, 2, 0, 0);

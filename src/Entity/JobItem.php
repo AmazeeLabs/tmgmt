@@ -5,6 +5,7 @@ namespace Drupal\tmgmt\Entity;
 use Drupal\Component\Plugin\Exception\PluginException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Component\Utility\SortArray;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -1152,18 +1153,20 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       return static::$stateDefinitions;
     }
 
-    static::$stateDefinitions = array(
+    static::$stateDefinitions = [
       static::STATE_ACTIVE => [
         'label' => t('In progress'),
         'type' => 'state',
         'icon' => drupal_get_path('module', 'tmgmt') . '/icons/hourglass.svg',
         'weight' => 0,
+        'show_job_filter' => TRUE,
       ],
       static::STATE_REVIEW => [
         'label' => t('Needs review'),
         'type' => 'state',
         'icon' => drupal_get_path('module', 'tmgmt') . '/icons/ready.svg',
         'weight' => 5,
+        'show_job_filter' => TRUE,
       ],
       static::STATE_ACCEPTED => [
         'label' => t('Accepted'),
@@ -1180,7 +1183,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
         'type' => 'state',
         'weight' => 20,
       ],
-    );
+    ];
 
     \Drupal::moduleHandler()->alter('tmgmt_job_item_state_definitions', static::$stateDefinitions);
 
@@ -1192,6 +1195,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
         'weight' => 25,
       ];
     }
+    uasort(static::$stateDefinitions, [SortArray::class, 'sortByWeightElement']);
 
     return static::$stateDefinitions;
   }

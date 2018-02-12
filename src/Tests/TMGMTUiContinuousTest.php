@@ -4,6 +4,8 @@ namespace Drupal\tmgmt\Tests;
 
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\Translator;
+use Drupal\tmgmt\JobInterface;
+use Drupal\tmgmt\JobItemInterface;
 
 /**
  * Verifies continuous functionality of the user interface
@@ -54,10 +56,10 @@ class TMGMTUiContinuousTest extends EntityTestBase {
       'job_type' => 'continuous',
     ]);
 
-    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => '6']]);
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => JobInterface::STATE_CONTINUOUS]]);
     $this->assertText($continuous_job->label(), 'Continuous job is displayed on job overview page with status filter on continuous jobs.');
 
-    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'in_progress']]);
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => 'job_item_' . JobItemInterface::STATE_ACTIVE]]);
     $this->assertNoText($continuous_job->label(), 'Continuous job is not displayed on job overview page if status filter is on in progress jobs.');
 
     // Test that there are source items checkboxes on a continuous job form.
@@ -117,7 +119,7 @@ class TMGMTUiContinuousTest extends EntityTestBase {
     $this->assertText($continuous_job_label, 'Created continuous job is displayed on job overview page.');
     // Test that job overview page with status to continuous does not have
     // Submit link.
-    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => Job::STATE_CONTINUOUS]]);
+    $this->drupalGet('admin/tmgmt/jobs', ['query' => ['state' => JobInterface::STATE_CONTINUOUS]]);
     $this->assertNoLink('Submit', 'There is no Submit link on job overview with status to continuous.');
 
     // Test that all unnecessary fields and buttons do not exist on continuous

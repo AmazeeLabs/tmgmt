@@ -67,5 +67,6 @@ function tmgmt_test_tmgmt_job_item_state_definitions_alter(&$definitions) {
     'label' => t('Translation is requested from the elders of the Internet'),
     'type' => 'translator_state',
     'icon' => drupal_get_path('module', 'tmgmt') . '/icons/earth.svg',
+    'show_job_filter' => TRUE,
   ];
 }
