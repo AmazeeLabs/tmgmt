@@ -358,7 +358,7 @@ class TMGMTUiReviewTest extends EntityTestBase {
     $job2->set('translator', $translator2->id())->save();
 
     // Test that progress bar is being displayed.
-    $this->assertRaw('class="tmgmt-progress-pending" style="width: 50%"');
+    $this->assertRaw('class="tmgmt-progress tmgmt-progress-pending" style="width: 50%"');
 
     // Filter jobs by translator and assert values.
     $this->drupalGet('admin/tmgmt/jobs', array('query' => array('translator' => $translator1->id())));
@@ -405,7 +405,7 @@ class TMGMTUiReviewTest extends EntityTestBase {
     $this->assertRaw('class="tmgmt-color-legend clearfix"');
 
     // Test that progress bar is being displayed.
-    $this->assertRaw('class="tmgmt-progress-reviewed" style="width: 100%"');
+    $this->assertRaw('class="tmgmt-progress tmgmt-progress-reviewed" style="width: 100%"');
   }
 
   /**

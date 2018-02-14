@@ -67,24 +67,36 @@ class Progress extends StatisticsBase {
 
     $title = t('Pending: @pending, translated: @translated, reviewed: @reviewed, accepted: @accepted.', $counts);
 
-    $one_hundred_percent = array_sum($counts);
-    if ($one_hundred_percent == 0) {
+    $sum = array_sum($counts);
+    if ($sum == 0) {
       return [];
     }
 
-    $output = array(
+    $output = [
       '#theme' => 'tmgmt_progress_bar',
-      '#attached' => array('library' => 'tmgmt/admin'),
+      '#attached' => ['library' => 'tmgmt/admin'],
       '#title' => $title,
-      '#count_pending' => $counts['@pending'],
-      '#count_translated' => $counts['@translated'],
-      '#count_reviewed' => $counts['@reviewed'],
-      '#count_accepted' => $counts['@accepted'],
-      '#width_pending' => $counts['@pending'] / $one_hundred_percent * 100,
-      '#width_translated' => $counts['@translated'] / $one_hundred_percent * 100,
-      '#width_reviewed' => $counts['@reviewed'] / $one_hundred_percent * 100,
-      '#width_accepted' => $counts['@accepted'] / $one_hundred_percent * 100,
-    );
+      '#entity' => $entity,
+      '#total' => $sum,
+      '#parts' => [
+        'pending' => [
+          'count' => $counts['@pending'],
+          'width' => $counts['@pending'] / $sum * 100,
+        ],
+        'translated' => [
+          'count' => $counts['@translated'],
+          'width' => $counts['@translated'] / $sum * 100,
+        ],
+        'reviewed' => [
+          'count' => $counts['@reviewed'],
+          'width' => $counts['@reviewed'] / $sum * 100,
+        ],
+        'accepted' => [
+          'count' => $counts['@accepted'],
+          'width' => $counts['@accepted'] / $sum * 100,
+        ],
+      ],
+    ];
     return $output;
   }
 

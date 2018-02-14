@@ -183,8 +183,7 @@ table.tmgmt-ui-review tbody th {
   display: none;
 }
 
-.tmgmt-progress-pending, .tmgmt-progress-translated,
-.tmgmt-progress-reviewed, .tmgmt-progress-accepted {
+.tmgmt-progress {
   float: left;
   text-align: center;
   color: #fff;

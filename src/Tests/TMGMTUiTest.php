@@ -1129,31 +1129,31 @@ class TMGMTUiTest extends EntityTestBase {
     $result = $this->xpath('//table/tbody/tr[' . $row . ']/td[6]')[0];
     $div_number = 0;
     if ($pending > 0) {
-      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-pending');
+      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-pending');
       $div_number++;
     }
     else {
-      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-pending');
+      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-pending');
     }
     if ($translated > 0) {
-      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-translated');
+      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-translated');
       $div_number++;
     }
     else {
-      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-translated');
+      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-translated');
     }
     if ($reviewed > 0) {
-      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-reviewed');
+      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-reviewed');
       $div_number++;
     }
     else {
-      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-reviewed');
+      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-reviewed');
     }
     if ($accepted > 0) {
-      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-accepted');
+      $this->assertEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-accepted');
     }
     else {
-      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress-accepted');
+      $this->assertNotEqual($result->div->div[$div_number]['class'], 'tmgmt-progress tmgmt-progress-accepted');
     }
     $title = t('Pending: @pending, translated: @translated, reviewed: @reviewed, accepted: @accepted.', array(
       '@pending' => $pending,

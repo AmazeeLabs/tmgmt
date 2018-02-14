@@ -543,30 +543,25 @@ function tmgmt_translator_labels_flagged(JobInterface $job = NULL) {
  * Implements hook_theme().
  */
 function tmgmt_theme() {
-  return array(
-    'tmgmt_data_items_form' => array(
+  return [
+    'tmgmt_data_items_form' => [
       'render element' => 'element',
-    ),
-    'tmgmt_progress_bar' => array(
-      'variables' => array(
+    ],
+    'tmgmt_progress_bar' => [
+      'variables' => [
         'title' => NULL,
-        'count_pending' => NULL,
-        'count_translated' => NULL,
-        'count_reviewed' => NULL,
-        'count_accepted' => NULL,
-        'width_pending' => NULL,
-        'width_translated' => NULL,
-        'width_reviewed' => NULL,
-        'width_accepted' => NULL,
-      ),
-    ),
-    'tmgmt_legend' => array(
-      'variables' => array(
+        'entity' => NULL,
+        'total' => 0,
+        'parts' => [],
+      ],
+    ],
+    'tmgmt_legend' => [
+      'variables' => [
         'title' => NULL,
         'items' => NULL,
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 }
 
 /**
