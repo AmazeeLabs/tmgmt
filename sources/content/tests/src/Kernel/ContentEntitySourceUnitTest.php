@@ -120,11 +120,31 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     ))->setThirdPartySetting('tmgmt_content', 'excluded', TRUE)
       ->save();
 
+    // Add a translatable text field that should be checked after the translated
+    // entity has been created.
+    $field_storage = FieldStorageConfig::create(array(
+      'field_name' => 'later_addition',
+      'entity_type' => $this->entityTypeId,
+      'type' => 'text',
+      'cardinality' => 1,
+      'translatable' => TRUE,
+    ));
+    $field_storage->save();
+    FieldConfig::create(array(
+      'entity_type' => $this->entityTypeId,
+      'field_storage' => $field_storage,
+      'bundle' => $this->entityTypeId,
+      'label' => $this->later_addition_label = $this->randomMachineName(),
+    ))->setTranslatable(TRUE)
+      ->save();
+
     tmgmt_translator_auto_create(\Drupal::service('plugin.manager.tmgmt.translator')->getDefinition('test_translator'));
   }
 
+  /**
+   * Create an english test entity.
+   */
   public function testEntityTest() {
-    // Create an english test entity.
     $values = array(
       'langcode' => 'en',
       'user_id' => 1,
@@ -197,7 +217,7 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertEqual($data['field_test_text'][1]['value']['#text'], $entity_test->field_test_text[1]->value);
     $this->assertEqual($data['field_test_text'][1]['value']['#translate'], TRUE);
     $this->assertFalse(isset($data['field_test_text'][1]['format']['#label']));
-    $this->assertEqual($data['field_test_text'][0]['value']['#format'], 'text_plain');
+    $this->assertEqual($data['field_test_text'][1]['value']['#format'], 'text_plain');
     $this->assertEqual($data['field_test_text'][1]['format']['#text'], $entity_test->field_test_text[1]->format);
     $this->assertEqual($data['field_test_text'][1]['format']['#translate'], FALSE);
     $this->assertFalse(isset($data['field_test_text'][1]['processed']));
@@ -213,6 +233,7 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
 
     $this->assertEqual($data['field_test_text'][3]['#label'], 'Delta #3');
     $this->assertFalse(isset($data['field_test_text'][3]['value']['#label']));
+    $this->assertEqual($data['field_test_text'][3]['value']['#format'], 'text_plain');
     $this->assertEqual($data['field_test_text'][3]['value']['#text'], $entity_test->field_test_text[3]->value);
     $this->assertEqual($data['field_test_text'][3]['value']['#translate'], TRUE);
     $this->assertFalse(isset($data['field_test_text'][3]['format']['#label']));
@@ -256,9 +277,48 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertEqual($translation->field_test_text[0]->value, $data['field_test_text'][0]['value']['#translation']['#text']);
     $this->assertEqual($translation->field_test_text[1]->value, $data['field_test_text'][1]['value']['#translation']['#text']);
     $this->assertEqual($translation->field_test_text[2]->value, $data['field_test_text'][2]['value']['#text']);
+    $this->assertEqual($translation->field_test_text[3]->value, $data['field_test_text'][3]['value']['#translation']['#text']);
+
+    // Test adding data to the source and translating again.
+    $source = $entity_test->getTranslation('en');
+    $source->later_addition->appendItem([
+      'value' => 'This field data is added after the translation exists.',
+      'format' => 'text_plain',
+    ]);
+    $entity_test->save();
+
+    // Reset the job item.
+    $job_item->resetData();
+    $job_item->save();
+
+    // Test that the job item was updated correctly.
+    $source_plugin = $this->container->get('plugin.manager.tmgmt.source')->createInstance('content');
+    $data = $source_plugin->getData($job_item);
+
+    // Test the later addition field.
+    $this->assertEqual($data['later_addition']['#label'], $this->later_addition_label);
+    $this->assertFalse(isset($data['later_addition'][0]['value']['#label']));
+    $this->assertEqual($data['later_addition'][0]['value']['#text'], $entity_test->later_addition->value);
+    $this->assertEqual($data['later_addition'][0]['value']['#translate'], TRUE);
+    $this->assertFalse(isset($data['later_addition'][0]['format']['#label']));
+    $this->assertEqual($data['later_addition'][0]['value']['#format'], 'text_plain');
+    $this->assertEqual($data['later_addition'][0]['format']['#text'], $entity_test->later_addition->format);
+    $this->assertEqual($data['later_addition'][0]['format']['#translate'], FALSE);
+    $this->assertFalse(isset($data['later_addition'][0]['processed']));
+
+    // Now request a translation again and save it back.
+    $job->requestTranslation();
+    $items = $job->getItems();
+    $item = reset($items);
+    $item->acceptTranslation();
+    $data = $item->getData();
+
+    // Check that the new translation was saved correctly.
+    $entity_test = entity_load($this->entityTypeId, $entity_test->id());
+    $translation = $entity_test->getTranslation('de');
 
     // Ensure no item was created for the removed delta.
-    $this->assertFalse(isset($translation->field_test_text[3]));
+    $this->assertEqual($translation->later_addition[0]->value, $data['later_addition'][0]['value']['#translation']['#text']);
   }
 
   /**

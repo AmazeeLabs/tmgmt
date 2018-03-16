@@ -87,11 +87,20 @@ class DefaultFieldProcessor implements FieldProcessorInterface {
         // If there is translation data for the field property, save it.
         if (isset($property_data['#translation']['#text']) && $property_data['#translate']) {
 
-          // Only set the value if the offset currently exists on the entity.
-          // @todo: Should this create a new item instead?
-          if ($field->offsetExists($delta)) {
-            $field->offsetGet($delta)->set($property, $property_data['#translation']['#text']);
+          // If the offset does not exist, populate it with the current value
+          // from the source content, so that the translated field offset can be
+          // saved.
+          if (!$field->offsetExists(($delta))) {
+            $translation = $field->getEntity();
+            $source = $translation->getUntranslated();
+            $source_field = $source->get($field->getName());
+            $source_offset = $source_field->offsetGet($delta);
+            // Note that the source language value will be immediately
+            // overwritten.
+            $field->offsetSet($delta, $source_offset);
           }
+
+          $field->offsetGet($delta)->set($property, $property_data['#translation']['#text']);
         }
       }
     }
