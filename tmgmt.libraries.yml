@@ -18,3 +18,5 @@ source_search_form:
   css:
     theme:
       css/tmgmt.admin.source_search_form.css: {}
+  js:
+    js/tmgmt.admin.source_search_form.js: {}

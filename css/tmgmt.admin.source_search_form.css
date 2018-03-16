@@ -41,6 +41,14 @@
   flex-flow: row wrap;
 }
 
+.tmgmt-source-checkout-wrapper .details-wrapper .form-item-check-target-languages {
+  width: 100%;
+}
+
+.tmgmt-source-checkout-wrapper .details-wrapper .form-item-check-target-languages .check-control a {
+  cursor: pointer;
+}
+
 .tmgmt-source-checkout-wrapper fieldset.form-wrapper {
   margin-top: 1em;
 }

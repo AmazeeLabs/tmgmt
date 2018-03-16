@@ -188,6 +188,16 @@ class SourceOverviewForm extends FormBase {
       ],
     ];
 
+    $form['operations']['checkout']['check_target_languages'] = [
+      '#type' => 'item',
+      '#markup' => '<div class="check-control"><a class="check-all">' . $this->t('Check all / Uncheck All') . '</a></div>',
+      '#states' => [
+        'visible' => [
+          ':input[name=target_language]' => ['value' => static::MULTIPLE],
+        ],
+      ],
+    ];
+
     $form['operations']['operations'] = array(
       '#type' => 'details',
       '#title' => $this->t('Operations'),
