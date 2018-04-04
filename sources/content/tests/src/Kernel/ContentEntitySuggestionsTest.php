@@ -133,6 +133,14 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
     ]);
     $untranslatable_node->save();
 
+    // Create one node in a different language.
+    $different_language_node = Node::create([
+      'title' => $this->randomMachineName(),
+      'type' => $type->id(),
+      'langcode' => 'de',
+    ]);
+    $different_language_node->save();
+
     // Create a node with two translatable and two non-translatable references.
     $node = Node::create([
       'title' => $this->randomMachineName(),
@@ -146,6 +154,7 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
       $field2->getName() => [
         ['target_id' => $references[2]->id()],
         ['target_id' => $untranslatable_node->id()],
+        ['target_id' => $different_language_node->id()],
       ],
       $embedded_field->getName() => [
         ['target_id' => $references[3]->id()],
@@ -160,6 +169,15 @@ class ContentEntitySuggestionsTest extends TMGMTKernelTestBase {
     ]);
     $link->save();
     $node->link = $link;
+
+    // Create a second menu link that is in a different language.
+    $second_link = MenuLinkContent::create([
+      'link' => [['uri' => 'entity:node/' . $node->id()]],
+      'title' => 'German Node menu link',
+      'menu_name' => 'main',
+      'langcode' => 'de'
+    ]);
+    $second_link->save();
 
     return $node;
   }

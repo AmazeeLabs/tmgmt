@@ -80,7 +80,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
     }
 
     if (!$entity->hasTranslation($job_item->getJob()->getSourceLangcode())) {
-      throw new TMGMTException(t('The entity %id with translation %lang does not exist.', array('%id' => $entity->id(), '%lang' => $job_item->getJob()->getSourceLangcode())));
+      throw new TMGMTException(t('The %type entity %id with translation %lang does not exist.', array('%type' => $entity->getEntityTypeId(), '%id' => $entity->id(), '%lang' => $job_item->getJob()->getSourceLangcode())));
     }
 
     $translation = $entity->getTranslation($job_item->getJob()->getSourceLangcode());

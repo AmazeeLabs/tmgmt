@@ -13,6 +13,7 @@ use Drupal\field\FieldConfigInterface;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt_content\DefaultFieldProcessor;
 use Drupal\tmgmt_content\MetatagsFieldProcessor;
 use Drupal\tmgmt_content\Plugin\tmgmt\Source\ContentEntitySource;
@@ -24,26 +25,33 @@ function tmgmt_content_tmgmt_source_suggestions(array $items, JobInterface $job)
   $suggestions = array();
 
   foreach ($items as $item) {
-    if ($item instanceof \Drupal\tmgmt\JobItemInterface && $item->getPlugin() == 'content') {
-      // Load the entity and extract the bundle name to get all fields from the
-      // current entity.
-      $entity = entity_load($item->getItemType(), $item->getItemId());
+    if ($item instanceof JobItemInterface && $item->getPlugin() == 'content') {
+      // Load the entity, skip if it can't be loaded.
+      $entity = \Drupal::entityTypeManager()->getStorage($item->getItemType())->load($item->getItemId());
+      if (!$entity || !($entity instanceof ContentEntityInterface)) {
+        continue;
+      }
 
       // Load translatable menu items.
+      /** @var \Drupal\Core\Menu\MenuLinkManagerInterface $menu_link_manager */
       $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
       $entity_type = $entity->getEntityType()->id();
       $menu_items = $menu_link_manager->loadLinksByRoute(
         'entity.' . $entity_type . '.canonical',
-        array($entity_type => $entity->id())
+        [$entity_type => $entity->id()]
       );
+
       if (!empty($menu_items)) {
         foreach ($menu_items as $menu_item) {
-          $target = \Drupal::entityManager()->loadEntityByUuid($menu_item->getBaseId(), $menu_item->getDerivativeId());
-          $suggestions[] = array(
-            'job_item' => tmgmt_job_item_create('content', $menu_item->getBaseId(), $target->id()),
-            'reason' => t('Menu item @label', array('@label' => $target->label())),
-            'from_item' => $item->id(),
-          );
+          /** @var \Drupal\menu_link_content\MenuLinkContentInterface $target */
+          $target = \Drupal::service('entity.repository')->loadEntityByUuid($menu_item->getBaseId(), $menu_item->getDerivativeId());
+          if ($target->hasTranslation($job->getSourceLangcode())) {
+            $suggestions[] = [
+              'job_item' => tmgmt_job_item_create('content', $menu_item->getBaseId(), $target->id()),
+              'reason' => t('Menu item @label', ['@label' => $target->label()]),
+              'from_item' => $item->id(),
+            ];
+          }
         }
       }
 
@@ -67,7 +75,7 @@ function tmgmt_content_tmgmt_source_suggestions(array $items, JobInterface $job)
           foreach ($field_item->getProperties(TRUE) as $property) {
             if ($property instanceof EntityReference && $target = $property->getValue()) {
               $enabled = $content_translation_manager->isEnabled($target->getEntityTypeId(), $target->bundle());
-              if ($enabled) {
+              if ($enabled && $target->hasTranslation($job->getSourceLangcode())) {
                 // Add the translation as a suggestion.
                 $suggestions[] = array(
                   'job_item' => tmgmt_job_item_create('content', $target->getEntityTypeId(), $target->id()),
