@@ -184,7 +184,16 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
               // More than one item, add a label for the delta.
               $data[$field_name][$delta]['#label'] = t('Delta #@delta', array('@delta' => $delta));
             }
-            $data[$field_name][$delta][$property_key] = $this->extractTranslatableData($property->getValue());
+            // Get the referenced entity.
+            $referenced_entity = $property->getValue();
+            // Get the source language code.
+            $langcode = $entity->language()->getId();
+            // If the referenced entity is translatable and has a translation
+            // use it instead of the default entity translation.
+            if ($referenced_entity->hasTranslation($langcode)) {
+              $referenced_entity = $referenced_entity->getTranslation($langcode);
+            }
+            $data[$field_name][$delta][$property_key] = $this->extractTranslatableData($referenced_entity);
             // Use the ID of the entity to identify it later, do not rely on the
             // UUID as content entities are not required to have one.
             $data[$field_name][$delta][$property_key]['#id'] = $property->getValue()->id();

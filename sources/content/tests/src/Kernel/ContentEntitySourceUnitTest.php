@@ -561,11 +561,12 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       ->set('embedded_fields.' . $this->entityTypeId . '.field1', TRUE)
       ->save();
 
-    // Create a test entity that can be referenced.
+    // Create test entities that can be referenced, the first 5 with en
+    // then two with cs as source language.
     $referenced_entities = [];
-    for ($i = 0; $i < 5; $i++) {
+    for ($i = 0; $i < 7; $i++) {
       $referenced_values = [
-        'langcode' => 'en',
+        'langcode' => $i < 5 ? 'en' : 'cs',
         'user_id' => 1,
         'name' => 'Referenced entity #' . $i,
       ];
@@ -573,12 +574,16 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       $referenced_entities[$i]->save();
     }
 
+    // Add a translation for one of the cs entities.
+    $referenced_entities[5]->addTranslation('en', ['name' => 'EN entity #5']);
+    $referenced_entities[5]->save();
+
     // Create an english test entity.
     $values = array(
       'langcode' => 'en',
       'user_id' => 1,
       'name' => $this->randomString(),
-      'field1' => [$referenced_entities[0], $referenced_entities[1], $referenced_entities[2]],
+      'field1' => [$referenced_entities[0], $referenced_entities[1], $referenced_entities[2], $referenced_entities[5], $referenced_entities[6]],
       'field2' => $referenced_entities[4],
     );
     $entity_test = EntityTestMul::create($values);
@@ -600,31 +605,40 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->assertEquals('Field 1', $data['field1']['#label']);
     $this->assertEquals('Delta #0', $data['field1'][0]['#label']);
     $this->assertEquals('Name', $data['field1'][0]['entity']['name']['#label'], 'Name');
-    $this->assertEquals($data['field1'][0]['entity']['name'][0]['value']['#text'], $referenced_entities[0]->label());
-    $this->assertEquals($data['field1'][1]['entity']['name'][0]['value']['#text'], $referenced_entities[1]->label());
-    $this->assertEquals($data['field1'][2]['entity']['name'][0]['value']['#text'], $referenced_entities[2]->label());
+    $this->assertEquals($data['field1'][0]['entity']['name'][0]['value']['#text'], 'Referenced entity #0');
+    $this->assertEquals($data['field1'][1]['entity']['name'][0]['value']['#text'], 'Referenced entity #1');
+    $this->assertEquals($data['field1'][2]['entity']['name'][0]['value']['#text'], 'Referenced entity #2');
+    $this->assertEquals($data['field1'][3]['entity']['name'][0]['value']['#text'], 'EN entity #5');
+    $this->assertEquals($data['field1'][4]['entity']['name'][0]['value']['#text'], 'Referenced entity #6');
 
     // Now request a translation.
     $job->requestTranslation();
 
     // Mess with the source entity while the job is being translated. Remove
     // the second reference and switch positions.
-    $entity_test->set('field1', [$referenced_entities[2], $referenced_entities[0]]);
+    $entity_test->set('field1', [$referenced_entities[2], $referenced_entities[0], $referenced_entities[5], $referenced_entities[6]]);
     $entity_test->save();
 
     $items = $job->getItems();
     $item = reset($items);
     $item->acceptTranslation();
-    $data = $item->getData();
+
+    \Drupal::entityTypeManager()->getStorage('entity_test_mul')->resetCache();
 
     // Check that the translations were saved correctly, making sure that the
     // translations were attached to the correct referenced entities as far
     // as possible.
     $referenced_translation = EntityTestMul::load($referenced_entities[0]->id())->getTranslation('de');
-    $this->assertEquals($data['field1'][0]['entity']['name'][0]['value']['#translation']['#text'], $referenced_translation->name->value);
+    $this->assertEquals('de(de-ch): Referenced entity #0', $referenced_translation->get('name')->value);
 
     $referenced_translation = EntityTestMul::load($referenced_entities[2]->id())->getTranslation('de');
-    $this->assertEquals($data['field1'][2]['entity']['name'][0]['value']['#translation']['#text'], $referenced_translation->name->value);
+    $this->assertEquals('de(de-ch): Referenced entity #2', $referenced_translation->get('name')->value);
+
+    $referenced_translation = EntityTestMul::load($referenced_entities[5]->id())->getTranslation('de');
+    $this->assertEquals('de(de-ch): EN entity #5', $referenced_translation->get('name')->value);
+
+    $referenced_translation = EntityTestMul::load($referenced_entities[6]->id())->getTranslation('de');
+    $this->assertEquals('de(de-ch): Referenced entity #6', $referenced_translation->get('name')->value);
 
     $this->assertFalse(EntityTestMul::load($referenced_entities[1]->id())->hasTranslation('de'));
     $this->assertFalse(EntityTestMul::load($referenced_entities[3]->id())->hasTranslation('de'));
