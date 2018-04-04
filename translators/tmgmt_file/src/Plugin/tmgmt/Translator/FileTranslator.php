@@ -37,10 +37,13 @@ class FileTranslator extends TranslatorPluginBase {
 
     $path = $job->getSetting('scheme') . '://tmgmt_file/' . $name . '.' .  $job->getSetting('export_format');
     $dirname = dirname($path);
-    if (file_prepare_directory($dirname, FILE_CREATE_DIRECTORY)) {
+    if (file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
       $file = file_save_data($export->export($job), $path);
       \Drupal::service('file.usage')->add($file, 'tmgmt_file', 'tmgmt_job', $job->id());
       $job->submitted('Exported file can be downloaded <a href="@link" download>here</a>.', array('@link' => file_create_url($path)));
+    }
+    else {
+      $job->rejected('Failed to create writable directory @dirname, check file system permissions.', ['@dirname' => $dirname]);
     }
   }
 

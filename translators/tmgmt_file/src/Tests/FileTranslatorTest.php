@@ -57,6 +57,9 @@ class FileTranslatorTest extends TMGMTTestBase {
     $job->translator = $translator->id();
     $job->addItem('test_html_source', 'test', '1');
 
+    // Simulate an existing public://tmmgt_file directory that is not writable.
+    mkdir('public://tmgmt_file', 0555);
+
     // Requesting translation will mask the html.
     $job->requestTranslation();
     $content = $this->getTransUnitsContent($job);
