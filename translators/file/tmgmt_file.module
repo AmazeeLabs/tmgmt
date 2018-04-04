@@ -307,8 +307,11 @@ function _tmgmt_file_email_sending_parse_mapping($mapping) {
       if (!in_array($target_langcode, $langcodes)) {
         throw new Exception(t('"@langcode" langcode is unknown.', array('@langcode' => $target_langcode)));
       }
-      if (!valid_email_address($email_address)) {
-        throw new Exception(t('"@email" email address is not valid.', array('@email' => $email_address)));
+      $email_addresses = array_map('trim', explode(',', $email_address));
+      foreach ($email_addresses as $email_address_to_test) {
+        if (!valid_email_address($email_address_to_test)) {
+          throw new Exception(t('"@email" email address is not valid.', array('@email' => $email_address_to_test)));
+        }
       }
       $ret[$target_langcode] = $email_address;
     }
