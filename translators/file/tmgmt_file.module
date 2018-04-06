@@ -237,7 +237,13 @@ function tmgmt_file_mailbox($imap_path, $imap_username, $imap_password) {
   if (!class_exists('\PhpImap\Mailbox')) {
     throw new Exception('The php-imap/php-imap composer library is not installed.');
   }
-  $mailbox = new \PhpImap\Mailbox($imap_path, $imap_username, $imap_password, drupal_realpath(file_directory_temp()));
+
+  // See https://github.com/barbushin/php-imap/issues/184
+  $encoding = strpos($imap_path, '{outlook.office365.com') === 0
+    ? 'US-ASCII'
+    : 'UTF-8';
+
+  $mailbox = new \PhpImap\Mailbox($imap_path, $imap_username, $imap_password, drupal_realpath(file_directory_temp()), $encoding);
   $mailbox->setConnectionArgs(0, 1, array());
   $mailbox->getImapStream();
   return $mailbox;
