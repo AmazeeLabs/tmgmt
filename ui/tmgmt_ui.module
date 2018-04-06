@@ -356,7 +356,7 @@ function tmgmt_ui_add_cart_form(&$form, &$form_state, $plugin, $item_type, $item
       '#multiple' => TRUE,
       '#options' => array(
           TMGMT_ALL_NOT_TRANSLATED_LANGUAGES => t('All not translated languages'),
-      ) + tmgmt_available_languages(array('en', 'en-US')),
+      ) + tmgmt_available_languages(array('en', 'en-US', 'ko')),
       '#default_value' => array(TMGMT_ALL_NOT_TRANSLATED_LANGUAGES),
     );
   }
@@ -405,7 +405,7 @@ function tmgmt_ui_source_add_to_cart_submit($form, &$form_state) {
 
   $cart_info = $form_state['tmgmt_cart'];
   if (!empty($cart_info['plugin']) && !empty($cart_info['item_type']) && !empty($form_state['values']['items'])) {
-    $all_target_langcodes = array_keys(tmgmt_available_languages(array('en', 'en-US')));
+    $all_target_langcodes = array_keys(tmgmt_available_languages(array('en', 'en-US', 'ko')));
     $item_type = $cart_info['item_type'];
     $plugin = $cart_info['plugin'];
     $source_items = array_fill_keys(array_filter($form_state['values']['items']), array());

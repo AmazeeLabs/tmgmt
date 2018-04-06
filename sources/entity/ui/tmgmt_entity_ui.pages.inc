@@ -73,8 +73,8 @@ function tmgmt_entity_ui_translate_form($form, &$form_state, $build) {
       // There is no translation job / job item for this target language.
       $additional = t('None');
 
-      // Disable the Drupal English checkbox.
-      if ($langcode == 'en') {
+      // Disable the Drupal English and Korean checkboxes.
+      if ($langcode == 'en' || $langcode == 'ko') {
         $form['languages'][$langcode] = array(
           '#type' => 'checkbox',
           '#disabled' => TRUE,
