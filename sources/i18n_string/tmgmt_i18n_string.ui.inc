@@ -48,7 +48,7 @@ class TMGMTI18nStringDefaultSourceUIController extends TMGMTDefaultSourceUIContr
 
     $search_data = $this->getSearchFormSubmittedParams();
 
-    $i18n_strings = tmgmt_i18n_string_get_strings($type, $search_data['label'], $search_data['target_language'], $search_data['target_status']);
+    $i18n_strings = tmgmt_i18n_string_get_strings($type, $search_data['label'], $search_data['target_language'], $search_data['target_status'], $search_data['menu']);
 
     foreach ($this->getTranslationData($i18n_strings, $form_state['item_type']) as $id => $data) {
       $form['items']['#options'][$id] = $this->overviewRow($type, $data);
@@ -147,6 +147,15 @@ class TMGMTI18nStringDefaultSourceUIController extends TMGMTDefaultSourceUIContr
       '#default_value' => isset($default_values['label']) ? $default_values['label'] : NULL,
     );
 
+    if ($type === 'menu_link') {
+      $form['search_wrapper']['search']['menu'] = array(
+        '#type' => 'select',
+        '#title' => t('Menu'),
+        '#options' => array('' => t('- Any -')) + menu_get_menus(),
+        '#default_value' => isset($default_values['menu']) ? $default_values['menu'] : NULL,
+      );
+    }
+
     // Unset the source language as it should not be listed among target
     // languages.
     unset($options[i18n_string_source_language()]);
@@ -191,6 +200,7 @@ class TMGMTI18nStringDefaultSourceUIController extends TMGMTDefaultSourceUIContr
       'label' => NULL,
        'target_language' => NULL,
        'target_status' => NULL,
+      'menu' => NULL,
     );
 
     if (isset($_GET['label'])) {
@@ -201,6 +211,9 @@ class TMGMTI18nStringDefaultSourceUIController extends TMGMTDefaultSourceUIContr
     }
     if (isset($_GET['target_status'])) {
       $params['target_status'] = $_GET['target_status'];
+    }
+    if (isset($_GET['menu']) && is_scalar($_GET['menu']) && trim($_GET['menu']) !== '') {
+      $params['menu'] = $_GET['menu'];
     }
 
     return $params;

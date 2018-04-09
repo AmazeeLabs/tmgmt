@@ -35,11 +35,13 @@ function tmgmt_i18n_string_tmgmt_source_plugin_info() {
  *   Target language.
  * @param string $target_status
  *   Target status.
+ * @param string|null $menu
+ *   Menu name (if searching for menu links).
  *
  * @return array
  *   List of i18n strings data.
  */
-function tmgmt_i18n_string_get_strings($type, $search_label = NULL, $target_language = NULL, $target_status = 'untranslated_or_outdated') {
+function tmgmt_i18n_string_get_strings($type, $search_label = NULL, $target_language = NULL, $target_status = 'untranslated_or_outdated', $menu = NULL) {
   $info = i18n_object_info($type);
 
   $languages = drupal_map_assoc(array_keys(language_list()));
@@ -94,6 +96,11 @@ function tmgmt_i18n_string_get_strings($type, $search_label = NULL, $target_lang
 
   $select->groupBy('type');
   $select->groupBy('objectid');
+
+  if ($menu !== NULL) {
+    $select->innerJoin('menu_links', 'ml', 'ml.mlid = i18n_s.objectid');
+    $select->condition('ml.menu_name', $menu);
+  }
 
   $select = $select->extend('PagerDefault')->limit(variable_get('tmgmt_source_list_limit', 20));
 
