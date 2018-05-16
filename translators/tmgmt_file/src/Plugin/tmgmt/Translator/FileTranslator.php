@@ -33,7 +33,7 @@ class FileTranslator extends TranslatorPluginBase {
   public function requestTranslation(JobInterface $job) {
     $name = "JobID" . $job->id() . '_' . $job->getSourceLangcode() . '_' . $job->getTargetLangcode();
 
-    $export = \Drupal::service('plugin.manager.tmgmt_file.format')->createInstance($job->getSetting('export_format'));
+    $export = \Drupal::service('plugin.manager.tmgmt_file.format')->createInstance($job->getSetting('export_format'), $job->getSetting('format_configuration'));
 
     $path = $job->getSetting('scheme') . '://tmgmt_file/' . $name . '.' .  $job->getSetting('export_format');
     $dirname = dirname($path);
@@ -66,6 +66,7 @@ class FileTranslator extends TranslatorPluginBase {
       // need to make it FALSE due to backwards compatibility.
       'xliff_processing' => FALSE,
       'xliff_cdata' => FALSE,
+      'format_configuration' => [],
     );
   }
 

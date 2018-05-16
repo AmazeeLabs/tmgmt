@@ -16,3 +16,10 @@ tmgmt.translator.settings.file:
     xliff_cdata:
       type: boolean
       label: Xliff CDATA
+    format_configuration:
+      type: mapping
+      label: Format configuration
+      mapping:
+        target:
+          type: string
+          label: Target content

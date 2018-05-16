@@ -70,6 +70,27 @@ class Xliff extends \XMLWriter implements FormatInterface {
   protected $importedTransUnits;
 
   /**
+   * The Xliff configuration.
+   *
+   * @var array
+   */
+  protected $configuration;
+
+  /**
+   * Constructs an Xliff instance.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+    $this->configuration = $configuration;
+  }
+
+  /**
    * Adds a job item to the xml export.
    *
    * @param $item
@@ -111,27 +132,18 @@ class Xliff extends \XMLWriter implements FormatInterface {
     $this->startElement('source');
     $this->writeAttribute('xml:lang', $this->job->getRemoteSourceLanguage());
 
-    if ($job->getSetting('xliff_cdata')) {
-      $this->writeCdata(trim($element['#text']));
-    }
-    elseif ($job->getSetting('xliff_processing')) {
-      $this->writeRaw($this->processForExport($element['#text'], $key_array));
-    }
-    else {
-      $this->text($element['#text']);
-    }
+    $this->writeData($element['#text'], $key_array);
 
     $this->endElement();
     $this->startElement('target');
     $this->writeAttribute('xml:lang', $this->job->getRemoteTargetLanguage());
 
     if (!empty($element['#translation']['#text'])) {
-      if ($job->getSetting('xliff_processing')) {
-        $this->writeRaw($this->processForExport($element['#translation']['#text'], $key_array));
-      }
-      else {
-        $this->text($element['#translation']['#text']);
-      }
+      $this->writeData($element['#text'], $key_array);
+    }
+    // Fill the target translation data with the source content.
+    elseif (!empty($this->configuration['target']) && $this->configuration['target'] === 'source') {
+      $this->writeData($element['#text'], $key_array);
     }
 
     $this->endElement();
@@ -139,6 +151,29 @@ class Xliff extends \XMLWriter implements FormatInterface {
       $this->writeElement('note', $element['#label']);
     }
     $this->endElement();
+  }
+
+  /**
+   * Writes text according to the XLIFF export settings.
+   *
+   * @param string $text
+   *   The contents of the text.
+   * @param array $key_array
+   *   The source item data key.
+   *
+   * @return bool
+   *   TRUE on success or FALSE on failure.
+   */
+  protected function writeData($text, array $key_array) {
+    if ($this->job->getSetting('xliff_cdata')) {
+      return $this->writeCdata(trim($text));
+    }
+
+    if ($this->job->getSetting('xliff_processing')) {
+      return $this->writeRaw($this->processForExport($text, $key_array));
+    }
+
+    return $this->text($text);
   }
 
   /**

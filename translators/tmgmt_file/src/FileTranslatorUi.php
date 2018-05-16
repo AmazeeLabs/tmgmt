@@ -29,27 +29,45 @@ class FileTranslatorUi extends TranslatorPluginUiBase {
       '#description' => t('Please select the format you want to export data.'),
     );
 
-    $form['xliff_cdata'] = array(
+    $xliff_states = [
+      '#states' => [
+        'visible' => [
+          ':input[name="settings[export_format]"]' => ['value' => 'xlf'],
+        ],
+      ],
+    ];
+    $form['format_configuration']['target'] = [
+      '#type' => 'select',
+      '#title' => t('Target content'),
+      '#options' => [
+        'source' => t('Same as source'),
+      ],
+      '#empty_option' => t('Empty'),
+      '#default_value' => $translator->getSetting('format_configuration.target'),
+      '#description' => t('Defines what the &lt;target&gt; in the XLIFF file should contain, either empty or the same as the source text.'),
+    ] + $xliff_states;
+
+    $form['xliff_cdata'] = [
       '#type' => 'checkbox',
       '#title' => t('XLIFF CDATA'),
       '#description' => t('Check to use CDATA for import/export.'),
       '#default_value' => $translator->getSetting('xliff_cdata'),
-    );
+    ] + $xliff_states;
 
-    $form['xliff_processing'] = array(
+    $form['xliff_processing'] = [
       '#type' => 'checkbox',
       '#title' => t('Extended XLIFF processing'),
       '#description' => t('Check to further process content semantics and mask HTML tags instead just escaping it.'),
       '#default_value' => $translator->getSetting('xliff_processing'),
-    );
+    ] + $xliff_states;
 
-    $form['xliff_message'] = array(
+    $form['xliff_message'] = [
       '#type' => 'container',
       '#markup' => t('By selecting CDATA option, XLIFF processing will be ignored.'),
-      '#attributes' => array(
-        'class' => array('messages messages--warning'),
-      ),
-    );
+      '#attributes' => [
+        'class' => ['messages messages--warning'],
+      ],
+    ] + $xliff_states;
 
     $form['allow_override'] = array(
       '#type' => 'checkbox',

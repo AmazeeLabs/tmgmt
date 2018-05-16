@@ -42,7 +42,10 @@ class FileTranslatorTest extends TMGMTTestBase {
       'settings' => [
         'export_format' => 'xlf',
         'xliff_processing' => TRUE,
-      ]
+        'format_configuration' => [
+          'target' => '',
+        ],
+      ],
     ]);
 
     // Get the source text.
@@ -285,6 +288,7 @@ class FileTranslatorTest extends TMGMTTestBase {
     $translator = Translator::load('file');
     $translator
       ->setSetting('export_format', 'xlf')
+      ->setSetting('format_configuration', ['target' => 'source'])
       ->save();
 
     // Set multiple data items for the source.
@@ -326,8 +330,8 @@ class FileTranslatorTest extends TMGMTTestBase {
     foreach ($xml->file->body->children() as $group) {
       foreach ($group->children() as $transunit) {
         if ($transunit->getName() == 'trans-unit') {
-          // The target should be empty.
-          $this->assertEqual($transunit->target, '');
+          // The target should contain the source data.
+          $this->assertEqual($transunit->target, $transunit->source);
           $transunit->target = $xml->file['target-language'] . '_' . (string) $transunit->source;
           // Store the text to allow assertions later on.
           $translated_text[(string) $group['id']][(string) $transunit['id']] = (string) $transunit->target;
