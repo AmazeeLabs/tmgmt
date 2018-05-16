@@ -5,47 +5,26 @@ namespace Drupal\Tests\tmgmt_content\Kernel;
 use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
-use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Content entity Source unit tests.
  *
  * @group tmgmt
  */
-class ContentEntityMetatagTest extends EntityKernelTestBase {
+class ContentEntityMetatagTest extends ContentEntityTestBase {
 
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = array('tmgmt', 'tmgmt_content', 'tmgmt_test', 'language', 'content_translation', 'metatag', 'text', 'filter', 'options');
-
-  protected $entityTypeId = 'entity_test_mul';
-
-  protected $image_label;
+  public static $modules = ['metatag'];
 
   /**
    * {@inheritdoc}
    */
   public function setUp() {
     parent::setUp();
-
-    // Add the languages.
-    $this->installConfig(['language']);
-    ConfigurableLanguage::createFromLangcode('de')->save();
-    ConfigurableLanguage::createFromLangcode('cs')->save();
-
-    $this->installEntitySchema('tmgmt_job');
-    $this->installEntitySchema('tmgmt_job_item');
-    $this->installEntitySchema('tmgmt_remote');
-    $this->installEntitySchema('tmgmt_message');
-    $this->installEntitySchema('entity_test_mul');
-    $this->container->get('content_translation.manager')->setEnabled('entity_test_mul', 'entity_test_mul', TRUE);
-    $this->installSchema('system', array('router'));
-
-    \Drupal::service('router.builder')->rebuild();
 
     $field_storage = FieldStorageConfig::create(array(
       'field_name' => 'field_meta_tags',
@@ -61,10 +40,11 @@ class ContentEntityMetatagTest extends EntityKernelTestBase {
       'bundle' => $this->entityTypeId,
       'label' => 'Meta tags',
     ))->save();
-
-    tmgmt_translator_auto_create(\Drupal::service('plugin.manager.tmgmt.translator')->getDefinition('test_translator'));
   }
 
+  /**
+   * Tests the metatag integration.
+   */
   public function testMetatagsField() {
     // Create an english test entity.
     $values = [

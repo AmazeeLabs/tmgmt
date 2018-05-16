@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\tmgmt_content\MetatagsFieldProcessor.
- */
 
 namespace Drupal\tmgmt_content;
 

@@ -16,6 +16,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt_content\DefaultFieldProcessor;
 use Drupal\tmgmt_content\MetatagsFieldProcessor;
+use Drupal\tmgmt_content\PathFieldProcessor;
 use Drupal\tmgmt_content\Plugin\tmgmt\Source\ContentEntitySource;
 
 /**
@@ -372,6 +373,9 @@ function tmgmt_content_field_info_alter(&$info) {
 
   if (isset($info['metatag'])) {
     $info['metatag']['tmgmt_field_processor'] = MetatagsFieldProcessor::class;
+  }
+  if (isset($info['path'])) {
+    $info['path']['tmgmt_field_processor'] = PathFieldProcessor::class;
   }
 
   // Set a default processor class for all fields that do not have one yet.

@@ -142,31 +142,36 @@ class TestTranslator extends TranslatorPluginBase implements TranslatorRejectDat
    * {@inheritdoc}
    */
   public function requestJobItemsTranslation(array $job_items) {
+
+    $data_service = \Drupal::service('tmgmt.data');
+
     $group = [];
     /** @var JobItemInterface $job_item */
     foreach ($job_items as $job_item) {
+      $job = $job_item->getJob();
+      $target_langcode = $job->getTargetLangcode();
+      $remote_target_langcode = $job->getRemoteTargetLanguage();
       $group[] = ['item_id' => $job_item->id(), 'job_id' => $job_item->getJobId()];
       // Add a debug message.
       $job_item->active('Requested translation to the continuous translator.', [], 'debug');
 
       // The dummy translation prefixes strings with the target language.
-      $data = \Drupal::service('tmgmt.data')->filterTranslatable($job_item->getData());
+      $data = $data_service->filterTranslatable($job_item->getData());
       $tdata = [];
       foreach ($data as $key => $value) {
-        if ($job_item->getJob()->getTargetLangcode() != $job_item->getJob()
-            ->getRemoteTargetLanguage()
-        ) {
-          $tdata[$key]['#text'] = $job_item->getJob()
-              ->getTargetLangcode() . '(' . $job_item->getJob()
-              ->getRemoteTargetLanguage() . '): ' . $value['#text'];
+        // Special handling for path fields that start with the language
+        // prefix, keep them valid by just replacing the path prefix.
+        if (strpos($value['#text'], '/' . $job->getSourceLangcode()) === 0) {
+          $tdata[$key]['#text'] = str_replace('/' . $job->getSourceLangcode(), '/' . $job->getTargetLangcode(), $value['#text']);
+        }
+        elseif ($target_langcode != $remote_target_langcode) {
+          $tdata[$key]['#text'] = $target_langcode . '(' . $remote_target_langcode . '): ' . $value['#text'];
         }
         else {
-          $tdata[$key]['#text'] = $job_item->getJob()
-              ->getTargetLangcode() . ': ' . $value['#text'];
+          $tdata[$key]['#text'] = $target_langcode . ': ' . $value['#text'];
         }
       }
-      $job_item->addTranslatedData(\Drupal::service('tmgmt.data')
-        ->unflatten($tdata));
+      $job_item->addTranslatedData($data_service->unflatten($tdata));
     }
     $groups = \Drupal::state()->get('job_item_groups') ?: [];
     $groups[] = $group;

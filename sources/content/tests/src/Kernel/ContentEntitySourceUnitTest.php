@@ -8,8 +8,6 @@ use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\filter\Entity\FilterFormat;
-use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
-use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
 use Drupal\tmgmt\ContinuousTranslatorInterface;
@@ -23,16 +21,14 @@ use Drupal\tmgmt_test\EventSubscriber\TestContinuousEventSubscriber;
  *
  * @group tmgmt
  */
-class ContentEntitySourceUnitTest extends EntityKernelTestBase {
+class ContentEntitySourceUnitTest extends ContentEntityTestBase {
 
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = array('tmgmt', 'tmgmt_content', 'tmgmt_test', 'node', 'filter', 'file', 'image', 'language', 'content_translation', 'options', 'entity_reference', 'text');
-
-  protected $entityTypeId = 'entity_test_mul';
+  public static $modules = ['node', 'file', 'image', 'entity_reference'];
 
   protected $image_label;
 
@@ -42,11 +38,6 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
   public function setUp() {
     parent::setUp();
 
-    // Add the languages.
-    $this->installConfig(['language']);
-    ConfigurableLanguage::createFromLangcode('de')->save();
-    ConfigurableLanguage::createFromLangcode('cs')->save();
-
     $filter = FilterFormat::create(['format' => 'unallowed_format']);
     $filter->save();
 
@@ -54,16 +45,7 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       ->set('allowed_formats', ['text_plain'])
       ->save();
 
-    $this->installEntitySchema('tmgmt_job');
-    $this->installEntitySchema('tmgmt_job_item');
-    $this->installEntitySchema('tmgmt_remote');
-    $this->installEntitySchema('tmgmt_message');
-    $this->installEntitySchema('entity_test_rev');
-    $this->installEntitySchema('entity_test_mulrev');
-    $this->installEntitySchema('entity_test_mul');
-    $this->container->get('content_translation.manager')->setEnabled('entity_test_mul', 'entity_test_mul', TRUE);
-    $this->installSchema('system', array('router'));
-    $this->installSchema('node', array('node_access'));
+    $this->installSchema('node', ['node_access']);
     \Drupal::moduleHandler()->loadInclude('entity_test', 'install');
     entity_test_install();
 
@@ -80,8 +62,6 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
     $this->installSchema('file', array('file_usage'));
 
     $this->installConfig(array('node'));
-
-    \Drupal::service('router.builder')->rebuild();
 
     $field_storage = FieldStorageConfig::create(array(
       'field_name' => 'image_test',
@@ -137,8 +117,6 @@ class ContentEntitySourceUnitTest extends EntityKernelTestBase {
       'label' => $this->later_addition_label = $this->randomMachineName(),
     ))->setTranslatable(TRUE)
       ->save();
-
-    tmgmt_translator_auto_create(\Drupal::service('plugin.manager.tmgmt.translator')->getDefinition('test_translator'));
   }
 
   /**
