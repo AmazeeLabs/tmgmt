@@ -128,7 +128,8 @@ class ConfigSourceWebformTest extends TMGMTKernelTestBase {
 
     $webform_storage  = \Drupal::entityTypeManager()->getStorage('webform');
     $webform_storage->resetCache();
-    $webform = $webform_storage->load('contact');
+    $entities = $webform_storage->loadMultiple(['contact']);
+    $webform = reset($entities);
 
     $this->assertEquals('de(de-ch): Contact', $webform->label());
 
