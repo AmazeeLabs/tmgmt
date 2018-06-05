@@ -100,7 +100,7 @@ class ConfigSourceWebformTest extends TMGMTKernelTestBase {
     $this->assertEquals('Your Email', $data['elements']['email']['pound_title']['#text']);
     $this->assertTrue($data['elements']['email']['pound_title']['#translate']);
 
-    $this->assertEquals('[webform-authenticated-user:mail]', $data['elements']['email']['pound_default_value']['#text']);
+    $this->assertEquals('[current-user:mail]', $data['elements']['email']['pound_default_value']['#text']);
     $this->assertFalse($data['elements']['email']['pound_default_value']['#translate']);
 
     $this->assertEquals('#test', $data['elements']['subject']['pound_test']['#label']);
