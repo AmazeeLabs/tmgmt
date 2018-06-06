@@ -223,7 +223,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
   }
 
   /**
-   * Test the translate tab for a single checkout.
+   * Test the translate tab for a multiple checkout.
    */
   function testNodeTranslateTabMultipleCheckout() {
     // Allow auto-accept.
@@ -307,6 +307,67 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     foreach (Job::loadMultiple() as $job) {
       $this->assertEqual($job->label(), 'Customized label');
     }
+  }
+
+  /**
+   * Test the translate tab for a quick checkout.
+   */
+  function testNodeTranslateTabQuickCheckout() {
+    // Allow auto-accept and do not expose checkout settings.
+    $default_translator = Translator::load('test_translator');
+    $default_translator
+      ->setSetting('expose_settings', FALSE)
+      ->setAutoAccept(TRUE)
+      ->save();
+
+    $this->loginAsTranslator(['translate any entity', 'create content translations']);
+
+    // Create an english source node.
+    $node = $this->createTranslatableNode('page', 'en');
+
+    // Go to the translate tab.
+    $this->drupalGet($node->toUrl());
+    $this->clickLink('Translate');
+
+    // Request a translation for german, spanish and french.
+    $edit = [
+      'languages[de]' => TRUE,
+      'languages[es]' => TRUE,
+      'languages[it]' => TRUE,
+    ];
+    $this->drupalPostForm(NULL, $edit, 'Request translation');
+
+    // Assert messages.
+    $this->assertText('Test translation created.');
+    $this->assertText('The translation job has been finished.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as de(de-ch): ' . $node->label() . '.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as es: ' . $node->label() . '.');
+    $this->assertText('The translation for ' . $node->label() . ' has been accepted as it: ' . $node->label() . '.');
+
+    // Make sure that we're back on the translate tab.
+    $this->assertEqual($node->toUrl('drupal:content-translation-overview', ['absolute' => TRUE])->toString(), $this->getUrl());
+    $this->assertText('Test translation created.');
+    $this->assertNoText(t('The translation of @title to @language is finished and can now be reviewed.', array(
+      '@title' => $node->getTitle(),
+      '@language' => t('Spanish')
+    )));
+
+    $node = Node::load($node->id());
+    $translation = $node->getTranslation('es');
+    $this->assertText(t('The translation for @title has been accepted as @target.', ['@title' => $node->getTitle(), '@target' => $translation->label()]));
+
+    // Assert link is clickable.
+    $this->clickLink($node->getTitle());
+
+    // Translated nodes should now be listed and be clickable.
+    $this->clickLink('Translate');
+    $this->clickLink('de(de-ch): ' . $node->getTitle());
+    $this->assertText('de(de-ch): ' . $node->getTitle());
+    $this->assertText('de(de-ch): ' . $node->body->value);
+
+    $this->drupalGet('es/node/' . $node->id());
+    $this->assertText('es: ' . $node->getTitle());
+    $this->assertText('es: ' . $node->body->value);
   }
 
   /**

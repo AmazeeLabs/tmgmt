@@ -105,7 +105,7 @@ class JobCheckoutManager {
         foreach ($jobs_ready_for_checkout as $job) {
           $batch['operations'][] = [
             [JobCheckoutManager::class, 'batchSubmit'],
-            [$job->id()],
+            [$job->id(), NULL],
           ];
 
         }
@@ -231,7 +231,7 @@ class JobCheckoutManager {
    * @param int|null $template_job_id
    *   (optional) A template job to use for the translator and settings.
    */
-  static public function batchSubmit($job_id, $template_job_id = NULL) {
+  static public function batchSubmit($job_id, $template_job_id = NULL, &$context) {
     \Drupal::service('tmgmt.job_checkout_manager')->doBatchSubmit($job_id, $template_job_id);
   }
 
