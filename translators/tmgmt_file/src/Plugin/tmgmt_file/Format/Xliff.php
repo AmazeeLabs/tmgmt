@@ -148,7 +148,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
 
     $this->endElement();
     if (isset($element['#label'])) {
-      $this->writeElement('note', $element['#label']);
+      $this->writeElement('note', \Drupal::service('tmgmt.data')->itemLabel($element));
     }
     $this->endElement();
   }

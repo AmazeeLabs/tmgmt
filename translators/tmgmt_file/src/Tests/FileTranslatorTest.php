@@ -298,6 +298,7 @@ class FileTranslatorTest extends TMGMTTestBase {
           '#text' => file_get_contents(drupal_get_path('module', 'tmgmt') . '/tests/testing_html/sample.html') . ' @id.',
           '#label' => 'Label of deep nested item @id',
         ),
+        '#label' => 'Dummy item',
       ),
       'another_item' => array(
         '#text' => 'Text of another item @id.',
@@ -324,6 +325,14 @@ class FileTranslatorTest extends TMGMTTestBase {
     $dom->loadXML($xliff);
     $this->assertTrue($dom->schemaValidate(drupal_get_path('module', 'tmgmt_file') . '/xliff-core-1.2-strict.xsd'));
 
+    // Build a list of expected note labels.
+    $expected_notes = [
+      '1][dummy][deep_nesting' => 'Dummy item > Label of deep nested item @id',
+      '1][another_item' => 'Label of another item @id.',
+      '2][dummy][deep_nesting' => 'Dummy item > Label of deep nested item @id',
+      '2][another_item' => 'Label of another item @id.',
+    ];
+
     // "Translate" items.
     $xml = simplexml_import_dom($dom);
     $translated_text = array();
@@ -332,6 +341,8 @@ class FileTranslatorTest extends TMGMTTestBase {
         if ($transunit->getName() == 'trans-unit') {
           // The target should contain the source data.
           $this->assertEqual($transunit->target, $transunit->source);
+          // Assert that notes contain parent and non-parent labels.
+          $this->assertEqual($expected_notes[(string) $transunit['id']], (string) $transunit->note);
           $transunit->target = $xml->file['target-language'] . '_' . (string) $transunit->source;
           // Store the text to allow assertions later on.
           $translated_text[(string) $group['id']][(string) $transunit['id']] = (string) $transunit->target;
