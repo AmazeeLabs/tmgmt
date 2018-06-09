@@ -21,18 +21,23 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
    *   Label to search for.
    * @param string $missing_target_language
    *   Missing translation language.
+   * @param string $context
+   *   The translation context.
    *
    * @return array
    *   List of i18n strings data.
    */
-  function getStrings($search_label = NULL, $missing_target_language = NULL) {
+  function getStrings($search_label = NULL, $missing_target_language = NULL, $context = NULL) {
     $langcodes = array_keys( \Drupal::languageManager()->getLanguages());
     $languages = array_combine($langcodes, $langcodes);
     $select = db_select('locales_source', 'ls')
-      ->fields('ls', array('lid', 'source'));
+      ->fields('ls', array('lid', 'source', 'context'));
 
     if (!empty($search_label)) {
       $select->condition('ls.source', "%$search_label%", 'LIKE');
+    }
+    if (!empty($context)) {
+      $select->condition('ls.context', $context);
     }
     if (!empty($missing_target_language) && in_array($missing_target_language, $languages)) {
       $select->isNull("lt_$missing_target_language.language");
@@ -82,6 +87,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
 
     $header = array(
         'source' => array('data' => t('Source text')),
+        'context' => array('data' => t('Context')),
       ) + $languages;
 
     return $header;
@@ -96,7 +102,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
 
     $form['items']['#empty'] = $this->t('No strings matching given criteria have been found.');
 
-    $strings = $this->getStrings($search_data['label'], $search_data['missing_target_language']);
+    $strings = $this->getStrings($search_data['label'], $search_data['missing_target_language'], $search_data['context']);
 
     foreach ($this->getTranslationData($strings, $type) as $id => $data) {
       $form['items']['#options'][$id] = $this->overviewRow($type, $data);
@@ -134,6 +140,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
         'id' => $id,
         'object' => $string,
       );
+
       // Load entity translation specific data.
       foreach ($this->getLanguages() as $langcode => $language) {
 
@@ -166,6 +173,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     }
 
     $default_values = $this->getSearchFormSubmittedParams();
+    $contexts = $this->getContexts();
 
     $form['search_wrapper']['search']['label'] = array(
       '#type' => 'textfield',
@@ -184,6 +192,14 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
       '#default_value' => isset($default_values['missing_target_language']) ? $default_values['missing_target_language'] : NULL,
     );
 
+    $form['search_wrapper']['search']['context'] = [
+      '#type' => 'select',
+      '#title' => t('Context'),
+      '#empty_option' => '--',
+      '#options' => $contexts,
+      '#default_value' => isset($default_values['context']) ? $default_values['context'] : NULL,
+    ];
+
     return $form;
   }
 
@@ -196,6 +212,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     $params = array(
       'label' => NULL,
       'missing_target_language' => NULL,
+      'context' => NULL,
     );
 
     if (isset($_GET['label'])) {
@@ -204,8 +221,24 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     if (isset($_GET['missing_target_language'])) {
       $params['missing_target_language'] = $_GET['missing_target_language'];
     }
+    if (isset($_GET['context'])) {
+      $params['context'] = $_GET['context'];
+    }
 
     return $params;
+  }
+
+  /**
+   * Gets a list of contexts in the system.
+   *
+   * @return array
+   */
+  public function getContexts() {
+    $query = \Drupal::database()->select('locales_source', 'ls');
+    $query->fields('ls', ['context', 'context']);
+    $query->distinct();
+    $query->orderBy('ls.context');
+    return $query->execute()->fetchAllKeyed();
   }
 
   /**
@@ -225,8 +258,8 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     $row = array(
       'id' => $data['id'],
       'source' => $source->source,
+      'context' => $source->context,
     );
-
 
     foreach (\Drupal::languageManager()->getLanguages() as $langcode => $language) {
       $build = $this->buildTranslationStatus($data['translation_statuses'][$langcode], isset($data['current_job_items'][$langcode]) ? $data['current_job_items'][$langcode] : NULL);

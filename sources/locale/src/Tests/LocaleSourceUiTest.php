@@ -44,8 +44,9 @@ class LocaleSourceUiTest extends TMGMTTestBase {
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $row) {
       if ($row->td[1] == 'Hello World') {
-        $this->assertEqual((string) $row->td[3]->img['title'], t('Translation up to date'));
-        $this->assertEqual((string) $row->td[4]->img['title'], t('Not translated'));
+        $this->assertEqual((string) $row->td[2], 'tmgmt_locale');
+        $this->assertEqual((string) $row->td[4]->img['title'], t('Translation up to date'));
+        $this->assertEqual((string) $row->td[5]->img['title'], t('Not translated'));
       }
     }
 
@@ -88,8 +89,8 @@ class LocaleSourceUiTest extends TMGMTTestBase {
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $row) {
       if ($row->td[1] == 'Hello World') {
-        $this->assertEqual((string) $row->td[3]->img['title'], t('Translation up to date'));
         $this->assertEqual((string) $row->td[4]->img['title'], t('Translation up to date'));
+        $this->assertEqual((string) $row->td[5]->img['title'], t('Translation up to date'));
       }
     }
 
@@ -106,5 +107,12 @@ class LocaleSourceUiTest extends TMGMTTestBase {
     // Hello world is translated to "gsw-berne" therefore it must not show up
     // in the list.
     $this->assertNoText('Hello World');
+
+    // Filter on the tmgmt_locale context.
+    $this->drupalGet('admin/tmgmt/sources/locale/default');
+    $edit = array('search[context]' => 'tmgmt_locale');
+    $this->drupalPostForm(NULL, $edit, t('Search'));
+    $this->assertText('Hello World');
+    $this->assertNoText('Example');
   }
 }
