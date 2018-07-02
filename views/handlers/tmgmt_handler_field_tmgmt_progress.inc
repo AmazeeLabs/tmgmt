@@ -39,10 +39,13 @@ class tmgmt_handler_field_tmgmt_progress extends views_handler_field_entity {
       return t('N/A');
     }
 
+    $count_translated = $object->getCountTranslated();
     $counts = array(
       '@accepted' => $object->getCountAccepted(),
       '@reviewed' => $object->getCountReviewed(),
-      '@translated' => $object->getCountTranslated(),
+      '@translated' => $count_translated > 0
+        ? "<b>$count_translated</b>"
+        : $count_translated,
       '@pending' => $object->getCountPending(),
     );
     $id = $object->internalIdentifier();

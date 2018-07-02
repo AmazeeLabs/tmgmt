@@ -1548,3 +1548,32 @@ function tmgmt_word_count($text) {
   // That is what we need.
   return $count;
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function tmgmt_form_views_exposed_form_alter(&$form, &$form_state) {
+  $form['needs_review'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Needs review'),
+    '#description' => t('Has translated items which were not yet reviewed.'),
+    '#weight' => -100,
+  );
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function tmgmt_query_views_tmgmt_ui_job_overview_alter(QueryAlterableInterface $query) {
+  if (!empty($_GET['needs_review'])) {
+    if ($query instanceof SelectQuery) {
+      $query->having('
+        (
+          SELECT SUM(tmgmt_job_item.count_translated)
+          FROM tmgmt_job_item
+          WHERE tmgmt_job_item.tjid = tmgmt_job.tjid
+        ) > 0
+      ');
+    }
+  }
+}
