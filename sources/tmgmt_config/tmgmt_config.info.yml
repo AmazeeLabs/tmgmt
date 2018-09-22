@@ -5,6 +5,6 @@ core: 8.x
 type: module
 
 dependencies:
- - tmgmt
- - config_translation
- - block
+ - tmgmt:tmgmt
+ - drupal:config_translation
+ - drupal:block

@@ -4,6 +4,6 @@ package: 'Translation Management'
 core: 8.x
 type: module
 dependencies:
-  - tmgmt
-  - file
+  - tmgmt:tmgmt
+  - drupal:file
 configure: entity.tmgmt_translator.collection

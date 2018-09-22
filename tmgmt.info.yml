@@ -6,11 +6,11 @@ type: module
 configure: tmgmt.settings
 
 dependencies:
- - language
- - views
- - block
- - options
+ - drupal:language
+ - drupal:views
+ - drupal:block
+ - drupal:options
 
 simplytest_dependencies:
- - tmgmt_demo
+ - tmgmt:tmgmt_demo
 
