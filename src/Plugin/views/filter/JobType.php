@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt\Plugin\views\filter;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\tmgmt\ContinuousManager;
@@ -27,8 +28,8 @@ class JobType extends StringFilter {
   /**
    * Constructs a new Job Type filter plugin instance.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ContinuousManager $continuous_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Connection $connection, ContinuousManager $continuous_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $connection);
     $this->continuousManager = $continuous_manager;
   }
 
@@ -37,6 +38,7 @@ class JobType extends StringFilter {
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static($configuration, $plugin_id, $plugin_definition,
+      $container->get('database'),
       $container->get('tmgmt.continuous')
     );
   }
