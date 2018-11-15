@@ -291,6 +291,14 @@ function tmgmt_job_form($form, &$form_state, TMGMTJob $job, $op = 'edit') {
     '#suffix' => '</div>',
   );
 
+  $form['info']['id'] = array(
+    '#type' => 'item',
+    '#title' => t('Job ID'),
+    '#markup' => $job->tjid,
+    '#prefix' => '<div class="tmgmt-ui-word-count tmgmt-ui-info-item">',
+    '#suffix' => '</div>',
+  );
+
   // Make the source and target language flexible by showing either a select
   // dropdown or the plain string (if preselected).
   if (!empty($job->source_language) || !$job->isSubmittable()) {
