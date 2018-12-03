@@ -85,6 +85,10 @@ class TMGMTJobItemUIController extends EntityDefaultUIController {
    * {@inheritdoc}
    */
   public function applyOperation($op, $entity) {
+    if (!$entity) {
+      return FALSE;
+    }
+
     switch ($op) {
       case 'delete':
         $entity->delete();

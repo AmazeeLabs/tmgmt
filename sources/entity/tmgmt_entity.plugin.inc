@@ -41,26 +41,31 @@ class TMGMTEntitySourcePluginController extends TMGMTDefaultSourcePluginControll
    */
   public function saveTranslation(TMGMTJobItem $job_item) {
     $entity = entity_load_single($job_item->item_type, $job_item->item_id);
-    $job = tmgmt_job_load($job_item->tjid);
+    if ($entity) {
+      $job = tmgmt_job_load($job_item->tjid);
 
-    tmgmt_field_populate_entity($job_item->item_type, $entity, $job->target_language, $job_item->getData());
+      tmgmt_field_populate_entity($job_item->item_type, $entity, $job->target_language, $job_item->getData());
 
-    // Change the active language of the entity to the target language.
-    $handler = entity_translation_get_handler($job_item->item_type, $entity);
-    $handler->setFormLanguage($job_item->getJob()->target_language);
+      // Change the active language of the entity to the target language.
+      $handler = entity_translation_get_handler($job_item->item_type, $entity);
+      $handler->setFormLanguage($job_item->getJob()->target_language);
 
-    entity_save($job_item->item_type, $entity);
+      entity_save($job_item->item_type, $entity);
 
-    $translation = array(
-      // @todo Improve hardcoded values.
-      'translate' => 0,
-      'status' => TRUE,
-      'language' => $job_item->getJob()->target_language,
-      'source' => $job_item->getJob()->source_language,
-    );
-    $handler->setTranslation($translation);
-    $handler->saveTranslations();
-    $job_item->accepted();
+      $translation = array(
+        // @todo Improve hardcoded values.
+        'translate' => 0,
+        'status' => TRUE,
+        'language' => $job_item->getJob()->target_language,
+        'source' => $job_item->getJob()->source_language,
+      );
+      $handler->setTranslation($translation);
+      $handler->saveTranslations();
+      $job_item->accepted();
+    }
+    else {
+      $job_item->setState(TMGMT_JOB_ITEM_STATE_ABORTED, 'Entity no longer exists');
+    }
   }
 
   /**

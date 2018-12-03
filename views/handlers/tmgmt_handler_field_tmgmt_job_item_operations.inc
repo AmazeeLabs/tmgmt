@@ -11,11 +11,12 @@ class tmgmt_handler_field_tmgmt_job_item_operations extends views_handler_field_
 
   function render($values) {
     $item = $this->get_value($values);
+    $valid = (!empty($item->getSourceType()) && !empty($item->getSourceLabel()));
     $element = array();
     $element['#theme'] = 'links';
     $element['#attributes'] = array('class' => array('inline'));
     $uri = $item->uri();
-    if ($item->getCountTranslated() > 0 && entity_access('accept', 'tmgmt_job_item', $item)) {
+    if ($valid && $item->getCountTranslated() > 0 && entity_access('accept', 'tmgmt_job_item', $item)) {
       $element['#links']['review'] = array(
         'href' => $uri['path'],
         'query' => array('destination' => current_path()),
@@ -23,7 +24,7 @@ class tmgmt_handler_field_tmgmt_job_item_operations extends views_handler_field_
       );
     }
     // Do not display view on unprocessed jobs.
-    elseif (!$item->getJob()->isUnprocessed()) {
+    elseif ($valid && !$item->getJob()->isUnprocessed()) {
       $element['#links']['view'] = array(
         'href' => $uri['path'],
         'query' => array('destination' => current_path()),
