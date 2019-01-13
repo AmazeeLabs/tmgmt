@@ -597,7 +597,7 @@ class TMGMTUiTest extends EntityTestBase {
       'items[3]' => FALSE,
       'items[4]' => TRUE,
       'items[5]' => FALSE,
-    ], t('Remove selected'));
+    ], t('Remove selected item'));
     $this->assertText($job_items[2]->label());
     $this->assertText($job_items[3]->label());
     $this->assertText($job_items[5]->label());

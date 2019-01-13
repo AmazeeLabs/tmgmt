@@ -80,7 +80,7 @@ class CartForm extends FormBase {
     $form['remove_selected'] = array(
       '#type' => 'submit',
       '#button_type' => 'danger',
-      '#value' => t('Remove selected'),
+      '#value' => t('Remove selected item'),
       '#submit' => array('::submitRemoveSelected'),
       '#validate' => array('tmgmt_cart_source_overview_validate'),
     );
