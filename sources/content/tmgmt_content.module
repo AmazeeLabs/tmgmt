@@ -348,12 +348,20 @@ function tmgmt_content_form_field_config_edit_form_alter(&$form, FormStateInterf
 
   /** @var \Drupal\field\Entity\FieldConfig $field_config */
   $field_config = $form_state->getFormObject()->getEntity();
+  $bundle_is_translatable = \Drupal::service('content_translation.manager')->isEnabled($field_config->getTargetEntityTypeId(), $field_config->getTargetBundle());
 
   $form['tmgmt_content_excluded'] = array(
     '#type' => 'checkbox',
     '#title' => t('Exclude from translations'),
-    '#weight' => -8,
+    '#weight' => 0,
     '#default_value' => $field_config->getThirdPartySetting('tmgmt_content', 'excluded', 0),
+    '#description' => t('This field will no longer be exported and translated by Translation Management Tool but can still be translated manually.'),
+    '#states' => [
+      'visible' => [
+        ':input[name="translatable"]' => ['checked' => TRUE],
+      ],
+    ],
+    '#access' => $bundle_is_translatable,
   );
 
   $form['#entity_builders'][] = 'tmgmt_content_entity_builder';
