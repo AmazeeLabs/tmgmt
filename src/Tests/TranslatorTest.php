@@ -79,6 +79,8 @@ class TranslatorTest extends TMGMTTestBase {
     $job->translator = $translator;
     $item = $job->addItem('test_source', 'test', 2);
     $job->setState(Job::STATE_FINISHED);
+    $job->set('label', $job->label());
+    $job->save();
     $delete_url = '/admin/tmgmt/translators/manage/' . $translator->id() . '/delete';
     $this->drupalPostForm($delete_url, array(), 'Delete');
     $this->assertText(t('Add provider'));

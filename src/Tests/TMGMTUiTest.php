@@ -177,7 +177,7 @@ class TMGMTUiTest extends EntityTestBase {
     $this->assertEqual(2, count($this->xpath('//div[contains(@class, @view)]//tbody/tr', $args)));
 
     // Check that the author for each is the current user.
-    $message_authors = $this->xpath('////div[contains(@class, @view)]//td[contains(@class, @field)]/span', $args + array('@field' => 'views-field-name'));
+    $message_authors = $this->xpath('////div[contains(@class, @view)]//td[contains(@class, @field)]/*', $args + array('@field' => 'views-field-name'));
     $this->assertEqual(2, count($message_authors));
     foreach ($message_authors as $message_author) {
       $this->assertEqual((string)$message_author, $this->translator_user->getUsername());
@@ -237,7 +237,7 @@ class TMGMTUiTest extends EntityTestBase {
     $rows = $this->xpath('//table[@class="views-table views-view-table cols-10"]/tbody/tr');
     $found = FALSE;
     foreach ($rows as $row) {
-      if (trim($row->td[1]) == 'test_source:test:10 and 1 more') {
+      if (trim($row->td[1]) == 'test_source:test:10') {
         $found = TRUE;
         $this->assertEqual(8, (int) $row->td[7]);
       }
@@ -532,7 +532,7 @@ class TMGMTUiTest extends EntityTestBase {
       array(':url' => $resubmitted_job->url(), '@id' => $resubmitted_job->id())));
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->drupalPostForm(NULL, array(), t('Delete'));
-    $this->assertText('The translation job From English to Spanish has been deleted.');
+    $this->assertText('The translation job ' . $resubmitted_job->label() . ' has been deleted.');
     $this->drupalGet('admin/tmgmt/jobs/2/delete');
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->drupalGet('admin/tmgmt/jobs/');

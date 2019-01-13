@@ -651,6 +651,10 @@ class JobForm extends TmgmtFormBase {
     // button was clicked.
     if (isset($form['actions']['submit']) && $form_state->getTriggeringElement()['#value'] == $form['actions']['submit']['#value']) {
 
+      if ($this->entity->get('label')->isEmpty()) {
+        $this->entity->set('label', $this->entity->label());
+      }
+
       // Delete conflicting items.
       $storage = \Drupal::entityTypeManager()->getStorage('tmgmt_job_item');
       if ($existing_items_ids = $form_state->get('existing_item_ids')) {
