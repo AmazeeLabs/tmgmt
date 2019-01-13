@@ -146,7 +146,7 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
             // If an item fails for one target language, then it is also going
             // to fail for others, so remove it from the array.
             unset($job_items_by_source_language[$source_language][$id]);
-            drupal_set_message($e->getMessage(), 'error');
+            $this->messenger()->addError($e->getMessage());
           }
         }
         if (!$job_empty) {
@@ -159,10 +159,10 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
     if ($jobs) {
       if ($enforced_source_language) {
 
-        drupal_set_message($this->t('You have enforced the job source language which most likely resulted in having a translation of your original content as the job source text. You should review the job translation received from the translator carefully to prevent the content quality loss.'), 'warning');
+        $this->messenger()->addWarning($this->t('You have enforced the job source language which most likely resulted in having a translation of your original content as the job source text. You should review the job translation received from the translator carefully to prevent the content quality loss.'));
         if ($skipped_count) {
           $languages = \Drupal::languageManager()->getLanguages();
-          drupal_set_message(
+          $this->messenger()->addStatus(
             \Drupal::translation()->formatPlural(
               $skipped_count, 'One item skipped as for the language @language it was not possible to retrieve a translation.',
               '@count items skipped as for the language @language it was not possible to retrieve a translations.', ['@language' => $languages[$enforced_source_language]->getName()]
@@ -173,7 +173,7 @@ class SourcePluginUiBase extends PluginBase implements SourcePluginUiInterface {
       \Drupal::service('tmgmt.job_checkout_manager')->checkoutAndRedirect($form_state, $jobs);
     }
     else {
-      drupal_set_message($this->t('From the selection you made it was not possible to create any translation job.'), 'error');
+      $this->messenger()->addError($this->t('From the selection you made it was not possible to create any translation job.'));
     }
   }
 

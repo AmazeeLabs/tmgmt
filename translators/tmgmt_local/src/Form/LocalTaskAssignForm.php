@@ -21,8 +21,8 @@ class LocalTaskAssignForm extends ContentEntityForm {
 
     $roles = tmgmt_local_translator_roles();
     if (empty($roles)) {
-      drupal_set_message(t('No user role has the "provide translation services" permission. <a href="@url">Configure permissions</a> for the Drupal user module.',
-        array('@url' => URL::fromRoute('user.admin_permissions'))), 'warning');
+      $this->messenger()->addWarning(t('No user role has the "provide translation services" permission. <a href="@url">Configure permissions</a> for the Drupal user module.',
+        array('@url' => URL::fromRoute('user.admin_permissions'))));
     }
 
     $form['tuid'] = array(
@@ -56,7 +56,7 @@ class LocalTaskAssignForm extends ContentEntityForm {
     $task->assign($assignee);
     $task->save();
 
-    drupal_set_message(t('Assigned @label to user @assignee_name.', array('@label' => $task->label(), '@assignee_name' => $assignee->getAccountName())));
+    $this->messenger()->addStatus(t('Assigned @label to user @assignee_name.', array('@label' => $task->label(), '@assignee_name' => $assignee->getAccountName())));
 
     $view = Views::getView('tmgmt_local_task_overview');
     $view->initDisplay();

@@ -19,14 +19,14 @@ class LocalTaskItemListBuilder extends EntityListBuilder {
     if ($entity->access('view', \Drupal::currentUser()) && $entity->getTask()->getAssignee() && $entity->getTask()->getAssignee()->id() == \Drupal::currentUser()->id()) {
       if ($entity->isPending()) {
         $operations['translate'] = [
-          'url' => $entity->urlInfo(),
+          'url' => $entity->toUrl(),
           'title' => t('Translate'),
           'weight' => 0,
         ];
       }
       else {
         $operations['view'] = [
-          'url' => $entity->urlInfo(),
+          'url' => $entity->toUrl(),
           'title' => t('View'),
           'weight' => 0,
         ];

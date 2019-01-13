@@ -164,7 +164,7 @@ function tmgmt_available_languages($exclude = array()) {
  *   An array of job entities.
  */
 function tmgmt_job_item_load_latest($plugin, $item_type, $item_id, $source_language) {
-  $query = db_select('tmgmt_job_item', 'tji');
+  $query = \Drupal::database()->select('tmgmt_job_item', 'tji');
   $query->innerJoin('tmgmt_job', 'tj', 'tj.tjid = tji.tjid');
   $result = $query->condition('tj.source_language', $source_language)
     // Only query for jobs that are currently active.
@@ -207,7 +207,7 @@ function tmgmt_job_item_load_latest($plugin, $item_type, $item_id, $source_langu
  *   An array of job item entities.
  */
 function tmgmt_job_item_load_all_latest($plugin, $item_type, $item_id, $source_language) {
-  $query = db_select('tmgmt_job_item', 'tji');
+  $query = \Drupal::database()->select('tmgmt_job_item', 'tji');
   $query->innerJoin('tmgmt_job', 'tj', 'tj.tjid = tji.tjid');
   $result = $query->condition('tj.source_language', $source_language)
     ->condition('tji.state', JobItem::STATE_ACCEPTED, '<>')
@@ -331,7 +331,7 @@ function tmgmt_job_statistics_load(array $tjids) {
   // If there are remaining jobs, build a query to fetch them.
   if (!empty($tjids_to_load)) {
     // Build the query to fetch the statistics.
-    $query = db_select('tmgmt_job_item', 'tji')
+    $query = \Drupal::database()->select('tmgmt_job_item', 'tji')
       ->fields('tji', array('tjid'));
     $query->addExpression('SUM(word_count)', 'word_count');
     $query->addExpression('SUM(tags_count)', 'tags_count');
@@ -613,7 +613,7 @@ function tmgmt_job_checkout_multiple(array $jobs) {
         continue;
       }
 
-      $redirects[] = $job->urlInfo()->getInternalPath();
+      $redirects[] = $job->toUrl()->getInternalPath();
     }
     else {
       // @todo this is dangerous because we don't catch request fails at all.
@@ -633,7 +633,7 @@ function tmgmt_job_checkout_multiple(array $jobs) {
 
   // Display message for created jobs that can not be checked out.
   if ($denied) {
-    drupal_set_message(\Drupal::translation()->formatPlural($denied, 'One job has been created.', '@count jobs have been created.'));
+    \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural($denied, 'One job has been created.', '@count jobs have been created.'));
   }
 
   return $redirects;
@@ -717,7 +717,7 @@ function tmgmt_write_request_messages($entity) {
       $errors = TRUE;
     }
     if ($text = $message->getMessage()) {
-      drupal_set_message($text, $message->getType());
+      \Drupal::messenger()->addMessage($text, $message->getType());
     }
   }
   return !$errors;
@@ -758,7 +758,7 @@ function tmgmt_translation_review_form_revert(array $form, FormStateInterface $f
     $item->save();
   }
   else {
-    drupal_set_message(t('No past revision found, translation was not reverted.'), 'warning');
+    \Drupal::messenger()->addWarning(t('No past revision found, translation was not reverted.'));
   }
   $form_state->setRebuild();
 }
@@ -1124,7 +1124,7 @@ function tmgmt_job_checkout_and_redirect(FormStateInterface $form_state, array $
     $form_state->setRedirectUrl(Url::fromUri('base:' . tmgmt_redirect_queue_dequeue()));
 
     // Count of the job messages is one less due to the final redirect.
-    drupal_set_message(\Drupal::translation()->formatPlural(count($redirects), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
+    \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural(count($redirects), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
   }
 }
 
@@ -1243,7 +1243,7 @@ function tmgmt_source_add_to_cart_submit(array $form, FormStateInterface $form_s
     $plugin = $cart_info['plugin'];
   }
   else {
-    drupal_set_message(t('Unable to add the content into the cart.'), 'error');
+    \Drupal::messenger()->addError(t('Unable to add the content into the cart.'));
     return;
   }
 
@@ -1254,7 +1254,7 @@ function tmgmt_source_add_to_cart_submit(array $form, FormStateInterface $form_s
     }
   }
 
-  drupal_set_message(\Drupal::translation()->formatPlural($i, '@count content source was added into the <a href="@url">cart</a>.',
+  \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural($i, '@count content source was added into the <a href="@url">cart</a>.',
     '@count content sources were added into the <a href="@url">cart</a>.', array('@url' => Url::fromRoute('tmgmt.cart')->toString())));
 }
 

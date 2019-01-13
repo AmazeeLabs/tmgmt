@@ -49,7 +49,7 @@ class LocalTranslatorUi extends TranslatorPluginUiBase {
       $form['job_status'] = array(
         '#type' => 'item',
         '#title' => t('Job status'),
-        '#markup' => t('Translation job is assigned to %name.', array('%name' => $translator->getUsername())),
+        '#markup' => t('Translation job is assigned to %name.', array('%name' => $translator->getDisplayName())),
       );
     }
     else {

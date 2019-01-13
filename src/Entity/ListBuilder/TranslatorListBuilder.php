@@ -79,7 +79,7 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
     $header['logo'] = t('Provider');
     $installed_translators = $this->translatorManager->getLabels();
     if (empty($installed_translators)) {
-      drupal_set_message(t("There are no provider plugins available. Please install a provider plugin."), 'error');
+      $this->messenger()->addError(t("There are no provider plugins available. Please install a provider plugin."));
     }
     return $header + parent::buildHeader();
   }
@@ -90,7 +90,7 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
   public function getDefaultOperations(EntityInterface $entity) {
     $operations = parent::getDefaultOperations($entity);
     $operations['clone'] = array(
-      'url' => $entity->urlInfo('clone-form'),
+      'url' => $entity->toUrl('clone-form'),
       'title' => t('Clone'),
       'weight' => 50,
     );
@@ -135,7 +135,7 @@ class TranslatorListBuilder extends DraggableListBuilder implements EntityListBu
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
-    drupal_set_message(t('The order of the translators has been saved.'));
+    $this->messenger()->addStatus(t('The order of the translators has been saved.'));
   }
 
 }

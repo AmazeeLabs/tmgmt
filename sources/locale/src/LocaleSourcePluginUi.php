@@ -30,7 +30,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
   function getStrings($search_label = NULL, $missing_target_language = NULL, $context = NULL) {
     $langcodes = array_keys( \Drupal::languageManager()->getLanguages());
     $languages = array_combine($langcodes, $langcodes);
-    $select = db_select('locales_source', 'ls')
+    $select = \Drupal::database()->select('locales_source', 'ls')
       ->fields('ls', array('lid', 'source', 'context'));
 
     if (!empty($search_label)) {
@@ -50,7 +50,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
     // later.
     $langcode_to_filed_alias_map = array();
     foreach ($languages as $langcode) {
-      $table_alias = $select->leftJoin('locales_target', db_escape_table("lt_$langcode"), "ls.lid = %alias.lid AND %alias.language = '$langcode'");
+      $table_alias = $select->leftJoin('locales_target', \Drupal::database()->escapeTable("lt_$langcode"), "ls.lid = %alias.lid AND %alias.language = '$langcode'");
       $langcode_to_filed_alias_map[$langcode] = $select->addField($table_alias, 'language');
     }
     unset($field_alias);

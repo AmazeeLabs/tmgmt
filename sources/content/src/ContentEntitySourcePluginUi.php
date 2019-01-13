@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt_content;
 
+use Drupal\Core\Database\Query\Condition;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\tmgmt\SourcePluginUiBase;
@@ -66,7 +67,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     // In case entity translation is not enabled for any of bundles
     // display appropriate message.
     elseif (count($bundle_options) == 0) {
-      drupal_set_message($this->t('Entity translation is not enabled for any of existing content types. To use this functionality go to Content types administration and enable entity translation for desired content types.'), 'warning');
+      $this->messenger()->addWarning($this->t('Entity translation is not enabled for any of existing content types. To use this functionality go to Content types administration and enable entity translation for desired content types.'));
       unset($form['search_wrapper']);
       return $form;
     }
@@ -267,10 +268,10 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       }
 
       if ($job_items !== 0) {
-        drupal_set_message(\Drupal::translation()->formatPlural($job_items, '1 continuous job item has been created.', '@count continuous job items have been created.'));
+        \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural($job_items, '1 continuous job item has been created.', '@count continuous job items have been created.'));
       }
       else {
-        drupal_set_message(t('None of the selected sources can be added to continuous jobs.'), 'warning');
+        \Drupal::messenger()->addWarning(t('None of the selected sources can be added to continuous jobs.'));
       }
     }
   }
@@ -385,7 +386,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     $label_key = $entity_type->getKey('label');
 
     $id_key = $entity_type->getKey('id');
-    $query = db_select($entity_type->getBaseTable(), 'e');
+    $query = \Drupal::database()->select($entity_type->getBaseTable(), 'e');
     $query->addTag('tmgmt_entity_get_translatable_entities');
     $query->addField('e', $id_key);
 
@@ -399,7 +400,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     // Searching for sources with missing translation.
     if (!empty($property_conditions['target_status']) && !empty($property_conditions['target_language']) && in_array($property_conditions['target_language'], $languages)) {
 
-      $translation_table_alias = db_escape_table('translation_' . $property_conditions['target_language']);
+      $translation_table_alias = \Drupal::database()->escapeTable('translation_' . $property_conditions['target_language']);
       $query->leftJoin($data_table, $translation_table_alias, "%alias.$id_key= e.$id_key AND %alias.langcode = :language",
         array(':language' => $property_conditions['target_language']));
 
@@ -408,7 +409,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       $query->condition($langcode_table_alias . '.langcode', $property_conditions['target_language'], '<>');
 
       if ($property_conditions['target_status'] == 'untranslated_or_outdated') {
-        $or = db_or();
+        $or = new Condition('OR');
         $or->isNull("$translation_table_alias.langcode");
         $or->condition("$translation_table_alias.content_translation_outdated", 1);
         $query->condition($or);
@@ -428,7 +429,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     // Searching for the source label.
     if (!empty($label_key) && isset($property_conditions[$label_key])) {
       $search_tokens = explode(' ', $property_conditions[$label_key]);
-      $or = db_or();
+      $or = new Condition('OR');
 
       foreach ($search_tokens as $search_token) {
         $search_token = trim($search_token);

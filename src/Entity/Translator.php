@@ -383,7 +383,7 @@ class Translator extends ConfigEntityBase implements TranslatorInterface {
     }
     return AvailableResult::no(t('@translator is not available. Make sure it is properly <a href=:configured>configured</a>.', [
       '@translator' => $this->label(),
-      ':configured' => $this->url()
+      ':configured' => $this->toUrl()->toString()
     ]));
   }
 

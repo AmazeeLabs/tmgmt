@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt_file\Plugin\tmgmt_file\Format;
 
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\JobItem;
 use Drupal\tmgmt\JobInterface;
@@ -58,6 +59,7 @@ use Drupal\tmgmt_file\RecursiveDOMIterator;
  * )
  */
 class Xliff extends \XMLWriter implements FormatInterface {
+  use MessengerTrait;
 
   /**
    * Contains a reference to the currently being exported job.
@@ -259,7 +261,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
 
     $xml = $this->getImportedXML($imported_file, $is_file);
     if ($xml === FALSE) {
-      drupal_set_message(t('The imported file is not a valid XML.'), 'error');
+      $this->messenger()->addError(t('The imported file is not a valid XML.'));
       return FALSE;
     }
     // Check if our phase information is there.
@@ -268,22 +270,22 @@ class Xliff extends \XMLWriter implements FormatInterface {
       $phase = reset($phase);
     }
     else {
-      drupal_set_message(t('The imported file is missing required XLIFF phase information.'), 'error');
+      $this->messenger()->addError(t('The imported file is missing required XLIFF phase information.'));
       return FALSE;
     }
 
     // Check if the job has a valid job reference.
     if (!isset($phase['job-id'])) {
-      drupal_set_message(t('The imported file does not contain a job reference.'), 'error');
+      $this->messenger()->addError(t('The imported file does not contain a job reference.'));
       return FALSE;
     }
 
     // Attempt to load the job if none passed.
     $job = (Job::load((int) $phase['job-id']));
     if (empty($job)) {
-      drupal_set_message(t('The imported file job id @file_tjid is not available.', array(
+      $this->messenger()->addError(t('The imported file job id @file_tjid is not available.', array(
         '@file_tjid' => $phase['job-id'],
-      )), 'error');
+      )));
       return FALSE;
     }
 
@@ -365,7 +367,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
 
       $this->importedXML = simplexml_load_string($imported_file);
       if ($this->importedXML === FALSE) {
-        drupal_set_message(t('The imported file is not a valid XML.'), 'error');
+        $this->messenger()->addError(t('The imported file is not a valid XML.'));
         return FALSE;
       }
       // Register the XLIFF namespace, required for xpath.

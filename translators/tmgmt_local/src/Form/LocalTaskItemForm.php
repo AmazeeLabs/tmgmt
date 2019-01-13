@@ -325,14 +325,14 @@ class LocalTaskItemForm extends ContentEntityForm {
     $task_item->save();
 
     if ($form_state->getTriggeringElement()['#value'] == $form['actions']['save']['#value']) {
-      drupal_set_message(t('The translation for <a href=:task_item>@task_item_title</a> has been saved.', [
-        ':task_item' => $task_item->urlInfo()->toString(),
+      $this->messenger()->addStatus(t('The translation for <a href=:task_item>@task_item_title</a> has been saved.', [
+        ':task_item' => $task_item->toUrl()->toString(),
         '@task_item_title' => $task_item->label(),
       ]));
     }
 
     $task = $task_item->getTask();
-    $uri = $task->urlInfo();
+    $uri = $task->toUrl();
     $form_state->setRedirect($uri->getRouteName(), $uri->getRouteParameters());
   }
 
@@ -368,7 +368,7 @@ class LocalTaskItemForm extends ContentEntityForm {
     }
     else {
       // If there are more task items, redirect back to the task.
-      $uri = $task->urlInfo();
+      $uri = $task->toUrl();
       $form_state->setRedirect($uri->getRouteName(), $uri->getRouteParameters());
     }
 
@@ -377,8 +377,8 @@ class LocalTaskItemForm extends ContentEntityForm {
 
     // Add the translations to the job item.
     $job_item->addTranslatedData($this->prepareData($task_item->getData()), [], TMGMT_DATA_ITEM_STATE_TRANSLATED);
-    drupal_set_message(t('The translation for <a href=:task_item>@task_item_title</a> has been saved as completed.', [
-      ':task_item' => $task_item->urlInfo()->toString(),
+    $this->messenger()->addStatus(t('The translation for <a href=:task_item>@task_item_title</a> has been saved as completed.', [
+      ':task_item' => $task_item->toUrl()->toString(),
       '@task_item_title' => $task_item->label(),
     ]));
   }

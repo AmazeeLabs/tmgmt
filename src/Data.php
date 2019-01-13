@@ -230,7 +230,7 @@ class Data {
             $labels[] = Unicode::truncate($label_part, $current_max_length, FALSE, TRUE);
           }
           $label = implode(t(' > '), $labels);
-        } while (Unicode::strlen($label) > $max_length);
+        } while (mb_strlen($label) > $max_length);
         return $label;
       }
       else {

@@ -135,7 +135,7 @@ class ConfigTranslateForm extends FormBase {
       elseif (isset($items[$langcode])) {
         $item = $items[$langcode];
         $states = JobItem::getStates();
-        $additional = \Drupal::l($item->getStateIcon() ?: $states[$item->getState()], $item->urlInfo()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())));
+        $additional = \Drupal::l($item->getStateIcon() ?: $states[$item->getState()], $item->toUrl()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())));
         // Disable the checkbox for this row since there is already a translation
         // in progress that has not yet been finished. This way we make sure that
         // we don't stack multiple active translations for the same item on top
@@ -208,7 +208,7 @@ class ConfigTranslateForm extends FormBase {
         watchdog_exception('tmgmt', $e);
         $languages = \Drupal::languageManager()->getLanguages();
         $target_lang_name = $languages[$langcode]->language;
-        drupal_set_message(t('Unable to add job item for target language %name. Make sure the source content is not empty.', array('%name' => $target_lang_name)), 'error');
+        $this->messenger()->addError(t('Unable to add job item for target language %name. Make sure the source content is not empty.', array('%name' => $target_lang_name)));
       }
     }
     \Drupal::service('tmgmt.job_checkout_manager')->checkoutAndRedirect($form_state, $jobs);

@@ -2,12 +2,11 @@
 
 namespace Drupal\tmgmt_local\Form;
 
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\TempStore\PrivateTempStoreFactory;
 use Drupal\Core\Url;
 use Drupal\user\Entity\User;
-use Drupal\user\PrivateTempStoreFactory;
 use Drupal\views\Views;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -26,28 +25,18 @@ class AssignMultiple extends FormBase {
   /**
    * The tempstore factory.
    *
-   * @var \Drupal\user\PrivateTempStoreFactory
+   * @var \Drupal\Core\TempStore\PrivateTempStoreFactory
    */
   protected $tempStoreFactory;
 
   /**
-   * The task storage.
-   *
-   * @var \Drupal\Core\Entity\EntityStorageInterface
-   */
-  protected $manager;
-
-  /**
    * Constructs a DeleteMultiple form object.
    *
-   * @param \Drupal\user\PrivateTempStoreFactory $temp_store_factory
+   * @param \Drupal\Core\TempStore\PrivateTempStoreFactory $temp_store_factory
    *   The tempstore factory.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $manager
-   *   The entity manager.
    */
-  public function __construct(PrivateTempStoreFactory $temp_store_factory, EntityManagerInterface $manager) {
+  public function __construct(PrivateTempStoreFactory $temp_store_factory) {
     $this->tempStoreFactory = $temp_store_factory;
-    $this->storage = $manager->getStorage('tmgmt_local_task');
   }
 
   /**
@@ -55,8 +44,7 @@ class AssignMultiple extends FormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('user.private_tempstore'),
-      $container->get('entity.manager')
+      $container->get('tempstore.private')
     );
   }
 
@@ -76,8 +64,8 @@ class AssignMultiple extends FormBase {
 
     $roles = tmgmt_local_translator_roles();
     if (empty($roles)) {
-      drupal_set_message(t('No user role has the "provide translation services" permission. <a href="@url">Configure permissions</a> for the Drupal user module.',
-        array('@url' => URL::fromRoute('user.admin_permissions'))), 'warning');
+      $this->messenger()->addWarning(t('No user role has the "provide translation services" permission. <a href="@url">Configure permissions</a> for the Drupal user module.',
+        array('@url' => URL::fromRoute('user.admin_permissions'))));
     }
 
     $form['tuid'] = array(
@@ -114,7 +102,7 @@ class AssignMultiple extends FormBase {
       }
     }
 
-    drupal_set_message(t('Assigned @how_many to user @assignee_name.', array('@how_many' => $how_many, '@assignee_name' => $assignee->getAccountName())));
+    $this->messenger()->addStatus(t('Assigned @how_many to user @assignee_name.', array('@how_many' => $how_many, '@assignee_name' => $assignee->getAccountName())));
 
     $view = Views::getView('tmgmt_local_task_overview');
     $view->initDisplay();

@@ -117,7 +117,7 @@ class CartForm extends FormBase {
     $job_item_ids = array_filter($form_state->getValue('items'));
     tmgmt_cart_get()->removeJobItems($job_item_ids);
     entity_delete_multiple('tmgmt_job_item', $job_item_ids);
-    drupal_set_message(t('Job items were removed from the cart.'));
+    $this->messenger()->addStatus(t('Job items were removed from the cart.'));
   }
 
   /**
@@ -126,7 +126,7 @@ class CartForm extends FormBase {
   function submitEmptyCart(array $form, FormStateInterface $form_state) {
     entity_delete_multiple('tmgmt_job_item', array_keys(tmgmt_cart_get()->getJobItemsFromCart()));
     tmgmt_cart_get()->emptyCart();
-    drupal_set_message(t('All job items were removed from the cart.'));
+    $this->messenger()->addStatus(t('All job items were removed from the cart.'));
   }
 
   /**
@@ -176,11 +176,11 @@ class CartForm extends FormBase {
             $remove_job_item_ids[$job_item->id()] = $job_item->id();
             $job_empty = FALSE;
           }
-          catch (Exception $e) {
+          catch (\Exception $e) {
             // If an item fails for one target language, then it is also going
             // to fail for others, so remove it from the array.
             unset($job_items_by_source_language[$source_language][$id]);
-            drupal_set_message($e->getMessage(), 'error');
+            $this->messenger()->addStatus($e->getMessage(), 'error');
           }
         }
 
@@ -200,11 +200,11 @@ class CartForm extends FormBase {
     if ($jobs) {
       if ($enforced_source_language) {
 
-        drupal_set_message(t('You have enforced the job source language which most likely resulted in having a translation of your original content as the job source text. You should review the job translation received from the translator carefully to prevent the content quality loss.'), 'warning');
+        $this->messenger()->addWarning(t('You have enforced the job source language which most likely resulted in having a translation of your original content as the job source text. You should review the job translation received from the translator carefully to prevent the content quality loss.'));
 
         if ($skipped_count) {
           $languages = \Drupal::languageManager()->getLanguages();
-          drupal_set_message(\Drupal::translation()->formatPlural($skipped_count, 'One item skipped as for the language @language it was not possible to retrieve a translation.',
+          $this->messenger()->addStatus(\Drupal::translation()->formatPlural($skipped_count, 'One item skipped as for the language @language it was not possible to retrieve a translation.',
             '@count items skipped as for the language @language it was not possible to retrieve a translations.', array('@language' => $languages[$enforced_source_language]->getName())));
         }
       }
@@ -212,7 +212,7 @@ class CartForm extends FormBase {
       \Drupal::service('tmgmt.job_checkout_manager')->checkoutAndRedirect($form_state, $jobs);
     }
     else {
-      drupal_set_message(t('From the selection you made it was not possible to create any translation job.'));
+      $this->messenger()->addError(t('From the selection you made it was not possible to create any translation job.'));
     }
   }
 

@@ -5,8 +5,7 @@
  * Theme file stub for tmgmt.
  */
 
-use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Render\Element;
+use Drupal\Component\Render\FormattableMarkup;
 
 /**
  * Render one single data item as a table row.
@@ -71,5 +70,5 @@ function theme_tmgmt_local_translation_form_element_status($variables) {
       $icon = drupal_get_path('module', 'tmgmt') . '/icons/ready.svg';
       break;
   }
-  return SafeMarkup::format('<div class="@c"><img src="@s" alt="@t"/><span></span></div>', array("@c" => implode(' ', $classes), "@s" => file_create_url($icon), "@t" => $title));
+  return new FormattableMarkup('<div class="@c"><img src="@s" alt="@t"/><span></span></div>', array("@c" => implode(' ', $classes), "@s" => file_create_url($icon), "@t" => $title));
 }

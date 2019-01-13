@@ -140,7 +140,7 @@ class LocaleSourceTest extends TMGMTKernelTestBase {
    * Verifies that strings that need escaping are correctly identified.
    */
   function testEscaping() {
-    $lid = db_insert('locales_source')
+    $lid = \Drupal::database()->insert('locales_source')
       ->fields(array(
         'source' => '@place-holders need %to be !esc_aped.',
         'context' => '',
@@ -161,7 +161,7 @@ class LocaleSourceTest extends TMGMTKernelTestBase {
     $this->assertEqual($data['singular']['#escape'], $expected_escape);
 
     // Invalid patterns that should be ignored.
-    $lid = db_insert('locales_source')
+    $lid = \Drupal::database()->insert('locales_source')
       ->fields(array(
         'source' => '@ % ! example',
         'context' => '',
@@ -199,7 +199,7 @@ class LocaleSourceTest extends TMGMTKernelTestBase {
 
     // Try to translate a source string without translation from german to
     // spanish.
-    $lid = db_insert('locales_source')
+    $lid = \Drupal::database()->insert('locales_source')
       ->fields(array(
         'source' => 'No translation',
         'context' => '',

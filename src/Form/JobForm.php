@@ -5,18 +5,13 @@ namespace Drupal\tmgmt\Form;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
-use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Url;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\Entity\JobItem;
 use Drupal\tmgmt\JobCheckoutManager;
 use Drupal\tmgmt\JobInterface;
-use Drupal\tmgmt\JobQueue;
-use Drupal\tmgmt\SourceManager;
-use Drupal\tmgmt\TranslatorManager;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
 use Drupal\tmgmt\ContinuousSourceInterface;
@@ -45,35 +40,13 @@ class JobForm extends TmgmtFormBase {
   protected $jobCheckoutManager;
 
   /**
-   * Constructs an EntityForm object.
-   *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager service.
-   * @param \Drupal\tmgmt\TranslatorManager $translator_manager
-   *   The translator plugin manager.
-   * @param \Drupal\tmgmt\SourceManager $source_manager
-   *   The translation source manager.
-   * @param \Drupal\Core\Render\RendererInterface $renderer
-   *   The renderer.
-   */
-  public function __construct(EntityManagerInterface $entity_manager, TranslatorManager $translator_manager, SourceManager $source_manager, RendererInterface $renderer, JobQueue $job_queue, JobCheckoutManager $job_checkout_manager) {
-    parent::__construct($entity_manager, $translator_manager, $source_manager, $renderer);
-    $this->jobQueue = $job_queue;
-    $this->jobCheckoutManager = $job_checkout_manager;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('entity.manager'),
-      $container->get('plugin.manager.tmgmt.translator'),
-      $container->get('plugin.manager.tmgmt.source'),
-      $container->get('renderer'),
-      $container->get('tmgmt.queue'),
-      $container->get('tmgmt.job_checkout_manager')
-    );
+    $form = parent::create($container);
+    $form->jobQueue = $container->get('tmgmt.queue');
+    $form->jobCheckoutManager = $container->get('tmgmt.job_checkout_manager');
+    return $form;
   }
 
   /**
@@ -312,7 +285,7 @@ class JobForm extends TmgmtFormBase {
       $form['info']['created'] = array(
         '#type' => 'item',
         '#title' => t('Created'),
-        '#markup' => format_date($job->getCreatedTime()),
+        '#markup' => $this->dateFormatter->format($job->getCreatedTime()),
         '#prefix' => '<div class="tmgmt-ui-created tmgmt-ui-info-item">',
         '#suffix' => '</div>',
         '#value' => $job->getCreatedTime(),
@@ -428,7 +401,7 @@ class JobForm extends TmgmtFormBase {
       // Show a list of translators tagged by availability for the selected source
       // and target language combination.
       if (!$translators = tmgmt_translator_labels_flagged($job)) {
-        drupal_set_message(t('There are no providers available. Before you can checkout you need to @configure at least one provider.', array('@configure' => \Drupal::l(t('configure'), Url::fromRoute('entity.tmgmt_translator.collection')))), 'warning');
+        $this->messenger()->addWarning(t('There are no providers available. Before you can checkout you need to @configure at least one provider.', array('@configure' => \Drupal::l(t('configure'), Url::fromRoute('entity.tmgmt_translator.collection')))));
       }
       $preselected_translator = $job->getTranslatorId() && isset($translators[$job->getTranslatorId()]) ? $job->getTranslatorId() : key($translators);
       $job->translator = $form_state->getValue('translator') ?: $preselected_translator;
@@ -660,7 +633,7 @@ class JobForm extends TmgmtFormBase {
       if ($existing_items_ids = $form_state->get('existing_item_ids')) {
         $storage->delete($storage->loadMultiple($existing_items_ids));
         $num_of_items = count($existing_items_ids);
-        drupal_set_message(\Drupal::translation()->formatPlural($num_of_items, '1 conflicting item has been dropped.', '@count conflicting items have been dropped.'), 'warning');
+        $this->messenger()->addWarning(\Drupal::translation()->formatPlural($num_of_items, '1 conflicting item has been dropped.', '@count conflicting items have been dropped.'));
       }
 
       if ($form_state->getValue('submit_all')) {
@@ -757,7 +730,7 @@ class JobForm extends TmgmtFormBase {
    * {@inheritdoc}
    */
   public function delete(array $form, FormStateInterface $form_state) {
-    $form_state->setRedirectUrl($this->entity->urlInfo('delete-form'));
+    $form_state->setRedirectUrl($this->entity->toUrl('delete-form'));
   }
 
   /**

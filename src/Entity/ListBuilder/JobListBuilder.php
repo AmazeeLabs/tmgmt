@@ -19,21 +19,21 @@ class JobListBuilder extends EntityListBuilder {
     $operations = parent::getDefaultOperations($entity);
     if ($entity->isSubmittable() && $entity->access('submit')) {
       $operations['submit'] = array(
-        'url' => $entity->urlInfo()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
+        'url' => $entity->toUrl()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
         'title' => t('Submit'),
         'weight' => -10,
       );
     }
     else {
       $operations['manage'] = array(
-        'url' => $entity->urlInfo()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
+        'url' => $entity->toUrl()->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
         'title' => t('Manage'),
         'weight' => -10,
       );
     }
     if ($entity->isAbortable() && $entity->access('submit')) {
       $operations['abort'] = array(
-        'url' => $entity->urlInfo('abort-form')->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
+        'url' => $entity->toUrl('abort-form')->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
         'title' => t('Abort'),
         'weight' => 10,
       );

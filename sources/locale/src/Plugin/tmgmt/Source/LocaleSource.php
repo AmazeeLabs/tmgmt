@@ -46,7 +46,7 @@ class LocaleSource extends SourcePluginBase {
       return FALSE;
     }
 
-    $exists = db_query("SELECT COUNT(lid) FROM {locales_target} WHERE lid = :lid AND language = :language", array(
+    $exists = \Drupal::database()->query("SELECT COUNT(lid) FROM {locales_target} WHERE lid = :lid AND language = :language", array(
       ':lid' => $lid,
       ':language' => $target_language
     ))
@@ -61,7 +61,7 @@ class LocaleSource extends SourcePluginBase {
         'translation' => $translation,
         'customized' => LOCALE_CUSTOMIZED,
       );
-      db_insert('locales_target')
+      \Drupal::database()->insert('locales_target')
         ->fields($fields)
         ->execute();
     }
@@ -70,7 +70,7 @@ class LocaleSource extends SourcePluginBase {
         'translation' => $translation,
         'customized' => LOCALE_CUSTOMIZED,
       );
-      db_update('locales_target')
+      \Drupal::database()->update('locales_target')
         ->fields($fields)
         ->condition('lid', $lid)
         ->condition('language', $target_language)
@@ -94,7 +94,7 @@ class LocaleSource extends SourcePluginBase {
     $locale_lid = $job_item->getItemId();
 
     // Check existence of assigned lid.
-    $exists = db_query("SELECT COUNT(lid) FROM {locales_source} WHERE lid = :lid", array(':lid' => $locale_lid))->fetchField();
+    $exists = \Drupal::database()->query("SELECT COUNT(lid) FROM {locales_source} WHERE lid = :lid", array(':lid' => $locale_lid))->fetchField();
     if (!$exists) {
       throw new TMGMTException(t('Unable to load locale with id %id', array('%id' => $job_item->getItemId())));
     }
@@ -109,7 +109,7 @@ class LocaleSource extends SourcePluginBase {
     }
 
     if ($source_language == 'en') {
-      $query = db_select('locales_source', 'ls');
+      $query = \Drupal::database()->select('locales_source', 'ls');
       $query
         ->fields('ls')
         ->condition('ls.lid', $locale_lid);
@@ -126,7 +126,7 @@ class LocaleSource extends SourcePluginBase {
       $locale_object->origin = 'source';
     }
     else {
-      $query = db_select('locales_target', 'lt');
+      $query = \Drupal::database()->select('locales_target', 'lt');
       $query->join('locales_source', 'ls', 'ls.lid = lt.lid');
       $query
         ->fields('lt')
@@ -233,7 +233,7 @@ class LocaleSource extends SourcePluginBase {
    * {@inheritdoc}
    */
   public function getExistingLangCodes(JobItemInterface $job_item) {
-    $query = db_select('locales_target', 'lt');
+    $query = \Drupal::database()->select('locales_target', 'lt');
     $query->fields('lt', array('language'));
     $query->condition('lt.lid', $job_item->getItemId());
 

@@ -88,7 +88,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
 
     // Make sure that we're back on the translate tab.
-    $this->assertEqual($node->url('canonical', array('absolute' => TRUE)) . '/translations', $this->getUrl());
+    $this->assertEqual($node->toUrl('canonical', array('absolute' => TRUE))->toString() . '/translations', $this->getUrl());
     $this->assertText(t('Test translation created.'));
     $this->assertText(t('The translation of @title to @language is finished and can now be reviewed.', array(
       '@title' => $node->getTitle(),
@@ -144,7 +144,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
 
     // Make sure that we're back on the originally defined destination URL.
-    $this->assertEqual($node->url('canonical', array('absolute' => TRUE)), $this->getUrl());
+    $this->assertEqual($node->toUrl('canonical', array('absolute' => TRUE))->toString(), $this->getUrl());
 
     // Test the missing translation filter.
     $this->drupalGet('admin/tmgmt/sources/content/node');
@@ -279,7 +279,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->assertText('The translation for ' . $node->label() . ' has been accepted as it: ' . $node->label() . '.');
 
     // Make sure that we're back on the translate tab.
-    $this->assertEqual($node->url('canonical', array('absolute' => TRUE)) . '/translations', $this->getUrl());
+    $this->assertEqual($node->toUrl('canonical', array('absolute' => TRUE))->toString() . '/translations', $this->getUrl());
     $this->assertText(t('Test translation created.'));
     $this->assertNoText(t('The translation of @title to @language is finished and can now be reviewed.', array(
       '@title' => $node->getTitle(),
@@ -513,7 +513,7 @@ class ContentEntitySourceUiTest extends EntityTestBase {
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
 
     // Make sure that we're back on the translate tab.
-    $this->assertUrl($comment->url('canonical', array('absolute' => TRUE)) . '/translations');
+    $this->assertUrl($comment->toUrl('canonical', array('absolute' => TRUE))->toString() . '/translations');
     $this->assertText(t('Test translation created.'));
     $this->assertNoText(t('The translation of @title to @language is finished and can now be reviewed.', array(
       '@title' => $comment->getSubject(),

@@ -181,7 +181,7 @@ function tmgmt_rules_job_checkout(JobInterface $job) {
     drupal_goto(tmgmt_redirect_queue_dequeue());
 
     // Count of the job messages is one less due to the final redirect.
-    drupal_set_message(\Drupal::translation()->formatPlural(count($redirects), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
+    \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural(count($redirects), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
   }
 }
 
@@ -203,7 +203,7 @@ function tmgmt_rules_job_add_item(JobInterface $job, $plugin, $item_type, $item_
   }
   catch (TMGMTException $e) {
     watchdog_exception('tmgmt', $e);
-    drupal_set_message(t('Unable to add job item of type %type with id %id. Make sure the source content is not empty.',
+    \Drupal::messenger()->addStatus(t('Unable to add job item of type %type with id %id. Make sure the source content is not empty.',
       array('%type' => $item_type, '%id' => $item_id)), 'error');
   }
 }

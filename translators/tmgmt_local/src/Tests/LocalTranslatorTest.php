@@ -116,9 +116,9 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->assertEqual(
       tmgmt_local_get_assignees_for_tasks(array($local_task1->id())),
       array(
-        $assignee1->id() => $assignee1->getUsername(),
-        $assignee2->id() => $assignee2->getUsername(),
-        $assignee3->id() => $assignee3->getUsername(),
+        $assignee1->id() => $assignee1->getDisplayName(),
+        $assignee2->id() => $assignee2->getDisplayName(),
+        $assignee3->id() => $assignee3->getDisplayName(),
       )
     );
 
@@ -126,8 +126,8 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->assertEqual(
       tmgmt_local_get_assignees_for_tasks(array($local_task1->id(), $local_task2->id())),
       array(
-        $assignee2->id() => $assignee2->getUsername(),
-        $assignee3->id() => $assignee3->getUsername(),
+        $assignee2->id() => $assignee2->getDisplayName(),
+        $assignee3->id() => $assignee3->getDisplayName(),
       )
     );
 
@@ -139,7 +139,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
         $local_task3->id(),
       )),
       array(
-        $assignee3->id() => $assignee3->getUsername(),
+        $assignee3->id() => $assignee3->getDisplayName(),
       )
     );
   }
@@ -232,8 +232,8 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $xpath = $this->xpath('//*[@id="edit-translator"]')[0];
     $this->assertEqual($xpath->option[0], 'Drupal user');
     $this->assertText(t('Assign job to'));
-    $this->assertText($other_assignee_same->getUsername());
-    $this->assertNoText($this->assignee->getUsername());
+    $this->assertText($other_assignee_same->getDisplayName());
+    $this->assertNoText($this->assignee->getDisplayName());
 
     $this->drupalLogin($this->assignee);
     // Configure language abilities.
@@ -246,7 +246,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     // Check that the translator is now listed.
     $this->loginAsAdmin();
     $this->drupalGet($job->toUrl());
-    $this->assertText($this->assignee->getUsername());
+    $this->assertText($this->assignee->getDisplayName());
 
     // Test assign task while submitting job.
     $job_comment = 'Dummy job comment';
@@ -628,7 +628,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $all_assignees = array();
 
     $assignee1 = $this->drupalCreateUser($this->localTranslatorPermissions);
-    $all_assignees[$assignee1->id()] = $assignee1->getUsername();
+    $all_assignees[$assignee1->id()] = $assignee1->getDisplayName();
     $this->drupalLogin($assignee1);
     $edit = array(
       'tmgmt_translation_skills[0][language_from]' => 'en',
@@ -637,7 +637,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->drupalPostForm('user/' . $assignee1->id() . '/edit', $edit, t('Save'));
 
     $assignee2 = $this->drupalCreateUser($this->localTranslatorPermissions);
-    $all_assignees[$assignee2->id()] = $assignee2->getUsername();
+    $all_assignees[$assignee2->id()] = $assignee2->getDisplayName();
     $this->drupalLogin($assignee2);
     $edit = array(
       'tmgmt_translation_skills[0][language_from]' => 'en',
@@ -656,7 +656,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->drupalPostForm('user/' . $assignee2->id() . '/edit', $edit, t('Save'));
 
     $assignee3 = $this->drupalCreateUser($this->localTranslatorPermissions);
-    $all_assignees[$assignee3->id()] = $assignee3->getUsername();
+    $all_assignees[$assignee3->id()] = $assignee3->getDisplayName();
     $this->drupalLogin($assignee3);
     $edit = array(
       'tmgmt_translation_skills[0][language_from]' => 'fr',

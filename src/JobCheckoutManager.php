@@ -3,10 +3,10 @@
 namespace Drupal\tmgmt;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class JobCheckoutManager {
 
   use StringTranslationTrait;
+  use MessengerTrait;
 
   /**
    * @var \Symfony\Component\HttpFoundation\RequestStack
@@ -116,7 +117,7 @@ class JobCheckoutManager {
       }
 
       // Count of the job messages is one less due to the final redirect.
-      drupal_set_message($this->getStringTranslation()->formatPlural(count($checkout_jobs), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
+      $this->messenger()->addStatus($this->getStringTranslation()->formatPlural(count($checkout_jobs), t('One job needs to be checked out.'), t('@count jobs need to be checked out.')));
     }
   }
 
@@ -181,7 +182,7 @@ class JobCheckoutManager {
 
     // Display message for created jobs that can not be checked out.
     if ($denied) {
-      drupal_set_message($this->getStringTranslation()->formatPlural($denied, 'One job has been created.', '@count jobs have been created.'));
+      $this->messenger()->addStatus($this->getStringTranslation()->formatPlural($denied, 'One job has been created.', '@count jobs have been created.'));
     }
 
     return $remaining_jobs;
@@ -254,12 +255,12 @@ class JobCheckoutManager {
     if ($existing_items_ids = $job->getConflictingItemIds()) {
       $item_storage = $this->entityTypeManager->getStorage('tmgmt_job_item');
       if (count($existing_items_ids) == $job->getItems()) {
-        drupal_set_message($this->t('All job items for job @label are conflicting, the job can not be submitted.', ['@label' => $job->label()]));
+        $this->messenger()->addStatus($this->t('All job items for job @label are conflicting, the job can not be submitted.', ['@label' => $job->label()]));
         return;
       }
       $item_storage->delete($item_storage->loadMultiple($existing_items_ids));
       $num_of_items = count($existing_items_ids);
-      drupal_set_message($this->getStringTranslation()->formatPlural($num_of_items, '1 conflicting item has been dropped for job @label.', '@count conflicting items have been dropped for job @label.', ['@label' => $job->label()]), 'warning');
+      $this->messenger()->addWarning($this->getStringTranslation()->formatPlural($num_of_items, '1 conflicting item has been dropped for job @label.', '@count conflicting items have been dropped for job @label.', ['@label' => $job->label()]));
     }
 
     if ($template_job_id && $job_id != $template_job_id) {
@@ -280,7 +281,7 @@ class JobCheckoutManager {
     // Check translator availability.
     $translatable_status = $translator->checkTranslatable($job);
     if (!$translatable_status->getSuccess()) {
-      drupal_set_message($this->t('Job @label is not translatable with the chosen settings: @reason', ['@label' => $job->label(), '@reason' => $translatable_status->getReason()]), 'error');
+      $this->messenger()->addError($this->t('Job @label is not translatable with the chosen settings: @reason', ['@label' => $job->label(), '@reason' => $translatable_status->getReason()]));
       return;
     }
 

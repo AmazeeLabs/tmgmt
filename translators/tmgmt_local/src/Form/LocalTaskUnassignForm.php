@@ -46,7 +46,7 @@ class LocalTaskUnassignForm extends ContentEntityConfirmFormBase {
     $entity->unassign();
     $entity->save();
 
-    drupal_set_message(t('Unassigned from translation local task @label.', array('@label' => $entity->label())));
+    $this->messenger()->addStatus(t('Unassigned from translation local task @label.', array('@label' => $entity->label())));
 
     $view = Views::getView('tmgmt_local_task_overview');
     $view->initDisplay();

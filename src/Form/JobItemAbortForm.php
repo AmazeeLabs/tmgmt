@@ -44,9 +44,9 @@ class JobItemAbortForm extends ContentEntityConfirmFormBase {
       }
     }
     catch(TMGMTException $e) {
-      drupal_set_message(t('Job item cannot be aborted: %error.', array(
+      $this->messenger()->addError(t('Job item cannot be aborted: %error.', array(
         '%error' => $e->getMessage(),
-      )), 'error');
+      )));
     }
     $form_state->setRedirectUrl($this->entity->toUrl());
   }

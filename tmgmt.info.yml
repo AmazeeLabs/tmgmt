@@ -6,7 +6,7 @@ type: module
 configure: tmgmt.settings
 
 dependencies:
- - drupal:language
+ - drupal:language (>=8.5)
  - drupal:views
  - drupal:block
  - drupal:options

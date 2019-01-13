@@ -360,7 +360,7 @@ function tmgmt_local_task_statistics_load(array $tltids) {
   // If there are remaining jobs, build a query to fetch them.
   if (!empty($tltids_to_load)) {
     // Build the query to fetch the statistics.
-    $query = db_select('tmgmt_local_task_item', 'tlti');
+    $query = \Drupal::database()->select('tmgmt_local_task_item', 'tlti');
     $query->join('tmgmt_local_task', 'tlt', 'tlt.tltid = tlti.tltid');
     $query->join('tmgmt_job_item', 'tji', 'tji.tjiid = tlti.tjiid');
     $query->fields('tlt', array('tltid'));
@@ -410,7 +410,7 @@ function tmgmt_local_task_statistic(LocalTask $task, $key) {
  *   Array of involved languages.
  */
 function tmgmt_local_tasks_languages($tasks) {
-  $query = db_select('tmgmt_local_task', 't');
+  $query = \Drupal::database()->select('tmgmt_local_task', 't');
   $query->condition('tltid', $tasks, 'IN');
   $query->join('tmgmt_job', 'j', 't.tjid = j.tjid');
   $result = $query
@@ -645,7 +645,7 @@ function tmgmt_local_assignees($source_language = NULL, array $target_languages 
   $assignees[$key] = array();
   if (!empty($assignees_uids)) {
     foreach (User::loadMultiple($assignees_uids) as $account) {
-      $assignees[$key][$account->id()] = $account->getUsername();
+      $assignees[$key][$account->id()] = $account->getDisplayName();
     }
   }
 
@@ -679,7 +679,7 @@ function tmgmt_local_abilities($source_language = NULL, $target_language = NULL,
     return array();
   }
 
-  $query = db_select('user__tmgmt_translation_skills', 'ts')
+  $query = \Drupal::database()->select('user__tmgmt_translation_skills', 'ts')
     ->fields('ts', array('tmgmt_translation_skills_language_from', 'tmgmt_translation_skills_language_to'))
     ->condition('ts.deleted', 0);
 

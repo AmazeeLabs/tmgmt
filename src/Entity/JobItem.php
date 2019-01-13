@@ -729,7 +729,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
             );
             // Add a message if the translation update is from remote.
             if ($translation['#origin'] == 'remote') {
-              $diff = Unicode::strlen($translation['#text']) - Unicode::strlen($data['#translation']['#text']);
+              $diff = mb_strlen($translation['#text']) - mb_strlen($data['#translation']['#text']);
               $this->addMessage('Updated translation for key @key, size difference: @diff characters.', array('@key' => $data_service->ensureStringKey($key), '@diff' => $diff));
             }
           }
@@ -855,11 +855,11 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
         else {
           // Otherwise, create a message that contains source label, target
           // language and links to the review form.
-          $job_url = $this->getJob()->url();
+          $job_url = $this->getJob()->toUrl()->toString();
           $variables = array(
             '@source' => $this->getSourceLabel(),
             '@language' => $this->getJob()->getTargetLanguage()->getName(),
-            ':review_url' => $this->url('canonical', array('query' => array('destination' => $job_url))),
+            ':review_url' => $this->toUrl('canonical', array('query' => array('destination' => $job_url)))->toString(),
           );
           (!$this->getSourceUrl()) ? $variables[':source_url'] = (string) $job_url : $variables[':source_url'] = $this->getSourceUrl()->toString();
           $this->needsReview('The translation of <a href=":source_url">@source</a> to @language is finished and can now be <a href=":review_url">reviewed</a>.', $variables);

@@ -297,10 +297,10 @@ function tmgmt_content_create_continuous_job_items(ContentEntityInterface $entit
 function tmgmt_content_create_continuous_job_items_batch_finished($success, $results, $operations) {
   if ($success) {
     if ($results['job_items'] !== 0) {
-      drupal_set_message(\Drupal::translation()->formatPlural($results['job_items'], '1 continuous job item has been created.', '@count continuous job items have been created.'));
+      \Drupal::messenger()->addStatus(\Drupal::translation()->formatPlural($results['job_items'], '1 continuous job item has been created.', '@count continuous job items have been created.'));
     }
     else {
-      drupal_set_message(t('None of the selected sources can be added to continuous jobs.'), 'warning');
+      \Drupal::messenger()->addWarning(t('None of the selected sources can be added to continuous jobs.'));
     }
   }
   else {
@@ -310,7 +310,7 @@ function tmgmt_content_create_continuous_job_items_batch_finished($success, $res
       '%error_operation' => $error_operation[0],
       '@arguments' => print_r($error_operation[1], TRUE),
     ));
-    drupal_set_message($message, 'error');
+    \Drupal::messenger()->addError($message);
   }
 
 }

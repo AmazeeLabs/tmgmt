@@ -13,14 +13,14 @@ class JobItemDeleteForm extends ContentEntityDeleteForm {
    * {@inheritdoc}
    */
   public function getCancelUrl() {
-    return $this->getEntity()->urlInfo();
+    return $this->getEntity()->toUrl();
   }
 
   /**
    * {@inheritdoc}
    */
   protected function getRedirectUrl() {
-    return $this->getEntity()->getJob()->urlInfo();
+    return $this->getEntity()->getJob()->toUrl();
   }
 
 }

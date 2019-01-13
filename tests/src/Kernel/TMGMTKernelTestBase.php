@@ -26,13 +26,11 @@ abstract class TMGMTKernelTestBase extends KernelTestBase {
   public static $modules = array('user', 'system', 'field', 'text', 'entity_test', 'language', 'locale', 'tmgmt', 'tmgmt_test', 'options');
 
   /**
-   * Overrides DrupalUnitTestBase::setUp().
+   * {@inheritdoc}
    */
   function setUp() {
     parent::setUp();
 
-    // @todo: Try to get rid of these.
-    $this->installSchema('system', array('url_alias', 'router'));
     $this->installEntitySchema('user');
     $this->installEntitySchema('tmgmt_job');
     $this->installEntitySchema('tmgmt_job_item');

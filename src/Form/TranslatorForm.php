@@ -70,7 +70,7 @@ class TranslatorForm extends EntityForm {
     $entity = $this->entity;
     // Check if the translator is currently in use.
     if ($busy = !$entity->isNew() ? tmgmt_translator_busy($entity->id()) : FALSE) {
-      drupal_set_message(t("This provider is currently in use. It cannot be deleted. The chosen provider Plugin cannot be changed."), 'warning');
+      \Drupal::messenger()->addWarning(t("This provider is currently in use. It cannot be deleted. The chosen provider Plugin cannot be changed."));
     }
     $available = $this->translatorManager->getLabels();
     // If the translator plugin is not set, pick the first available plugin as the
@@ -244,10 +244,10 @@ class TranslatorForm extends EntityForm {
     $status = $entity->save();
 
     if ($status === SAVED_UPDATED) {
-      drupal_set_message(format_string('%label configuration has been updated.', array('%label' => $entity->label())));
+      \Drupal::messenger()->addStatus(format_string('%label configuration has been updated.', array('%label' => $entity->label())));
     }
     else {
-      drupal_set_message(format_string('%label configuration has been created.', array('%label' => $entity->label())));
+      \Drupal::messenger()->addStatus(format_string('%label configuration has been created.', array('%label' => $entity->label())));
     }
 
     $form_state->setRedirect('entity.tmgmt_translator.collection');
@@ -257,7 +257,7 @@ class TranslatorForm extends EntityForm {
    * {@inheritdoc}
    */
   public function delete(array $form, FormStateInterface $form_state) {
-    $form_state->setRedirectUrl($this->entity->urlInfo('delete-form'));
+    $form_state->setRedirectUrl($this->entity->toUrl('delete-form'));
   }
 
   /**

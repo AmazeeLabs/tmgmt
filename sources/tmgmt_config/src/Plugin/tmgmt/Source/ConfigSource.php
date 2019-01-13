@@ -5,8 +5,6 @@ namespace Drupal\tmgmt_config\Plugin\tmgmt\Source;
 use Drupal\config_translation\ConfigMapperManagerInterface;
 use Drupal\config_translation\Form\ConfigTranslationFormBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Config\Schema\Mapping;
-use Drupal\Core\Config\Schema\Sequence;
 use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -16,7 +14,6 @@ use Drupal\language\ConfigurableLanguageManagerInterface;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\SourcePluginBase;
 use Drupal\tmgmt\TMGMTException;
-use Drupal\Core\Render\Element;
 use Drupal\tmgmt_config\DefaultConfigProcessor;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -192,9 +189,9 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
       return Url::fromRoute($config_mapper->getBaseRouteName(), $config_mapper->getBaseRouteParameters());
     }
     catch (TMGMTException $e) {
-      drupal_set_message(t('Url can not be displayed, the entity does not exist: %error.', array(
+      $this->messenger()->addError(t('Url can not be displayed, the entity does not exist: %error.', array(
         '%error' => $e->getMessage(),
-      )), 'error');
+      )));
     }
     return NULL;
   }

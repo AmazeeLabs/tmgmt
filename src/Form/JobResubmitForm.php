@@ -25,7 +25,7 @@ class JobResubmitForm extends ContentEntityConfirmFormBase {
    * {@inheritdoc}
    */
   public function getCancelUrl() {
-    return $this->entity->urlInfo();
+    return $this->entity->toUrl();
 
   }
 
@@ -43,12 +43,12 @@ class JobResubmitForm extends ContentEntityConfirmFormBase {
     }
 
     $this->entity->addMessage('Job has been duplicated as a new job <a href=":url">#@id</a>.',
-      array(':url' => $new_job->url(), '@id' => $new_job->id()));
+      array(':url' => $new_job->toUrl()->toString(), '@id' => $new_job->id()));
     $new_job->addMessage('This job is a duplicate of the previously aborted job <a href=":url">#@id</a>',
-      array(':url' => $this->entity->url(), '@id' => $this->entity->id()));
+      array(':url' => $this->entity->toUrl()->toString(), '@id' => $this->entity->id()));
 
-    drupal_set_message(t('The aborted job has been duplicated. You can resubmit it now.'));
-    $form_state->setRedirectUrl($new_job->urlInfo());
+    $this->messenger()->addStatus(t('The aborted job has been duplicated. You can resubmit it now.'));
+    $form_state->setRedirectUrl($new_job->toUrl());
   }
 
 }

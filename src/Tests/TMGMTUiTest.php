@@ -180,7 +180,7 @@ class TMGMTUiTest extends EntityTestBase {
     $message_authors = $this->xpath('////div[contains(@class, @view)]//td[contains(@class, @field)]/*', $args + array('@field' => 'views-field-name'));
     $this->assertEqual(2, count($message_authors));
     foreach ($message_authors as $message_author) {
-      $this->assertEqual((string)$message_author, $this->translator_user->getUsername());
+      $this->assertEqual((string)$message_author, $this->translator_user->getDisplayName());
     }
 
     // Make sure that rejected jobs can be re-submitted.
@@ -353,7 +353,7 @@ class TMGMTUiTest extends EntityTestBase {
     // Translated languages should now be listed as Needs review.
     $start_rows = $this->xpath('//tbody/tr');
     $this->assertEqual(count($start_rows), 5);
-    $this->drupalGet($job4->urlInfo('delete-form'));
+    $this->drupalGet($job4->toUrl('delete-form'));
     $this->assertText('Are you sure you want to delete the translation job test_source:test:11 and 2 more?');
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->drupalGet('admin/tmgmt/jobs', array('query' => array(
@@ -490,7 +490,7 @@ class TMGMTUiTest extends EntityTestBase {
     $this->drupalPostForm(NULL, array(), t('Confirm'));
     // Test for the log message.
     $this->assertRaw(t('This job is a duplicate of the previously aborted job <a href=":url">#@id</a>',
-      array(':url' => $job->url(), '@id' => $job->id())));
+      array(':url' => $job->toUrl()->toString(), '@id' => $job->id())));
 
     // Load the resubmitted job and check for its status and values.
     $url_parts = explode('/', $this->getUrl());
@@ -529,7 +529,7 @@ class TMGMTUiTest extends EntityTestBase {
     $element = (array) $this->xpath('//div[@class="view-content"]/table[@class="views-table views-view-table cols-8"]/tbody//tr[1]')[0];
     $this->assertEqual(trim((string) $element['td'][3]), t('Aborted'));
     $this->assertRaw(t('Job has been duplicated as a new job <a href=":url">#@id</a>.',
-      array(':url' => $resubmitted_job->url(), '@id' => $resubmitted_job->id())));
+      array(':url' => $resubmitted_job->toUrl()->toString(), '@id' => $resubmitted_job->id())));
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->assertText('The translation job ' . $resubmitted_job->label() . ' has been deleted.');

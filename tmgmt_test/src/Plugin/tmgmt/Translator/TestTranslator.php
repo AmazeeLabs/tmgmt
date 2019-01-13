@@ -106,7 +106,7 @@ class TestTranslator extends TranslatorPluginBase implements TranslatorRejectDat
     if ($translator->getSetting('action') == 'not_available') {
       return AvailableResult::no(t('@translator is not available. Make sure it is properly <a href=:configured>configured</a>.', [
         '@translator' => $translator->label(),
-        ':configured' => $translator->url()
+        ':configured' => $translator->toUrl()->toString(),
       ]));
     }
     return parent::checkAvailable($translator);

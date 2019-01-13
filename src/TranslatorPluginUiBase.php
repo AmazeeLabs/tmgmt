@@ -2,7 +2,7 @@
 
 namespace Drupal\tmgmt;
 
-use Drupal\Component\Plugin\PluginBase as ComponentPluginBase;
+use Drupal\Core\Plugin\PluginBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\tmgmt\Form\TranslatorForm;
@@ -12,7 +12,7 @@ use Drupal\tmgmt\Form\TranslatorForm;
  *
  * @ingroup tmgmt_translator
  */
-class TranslatorPluginUiBase extends ComponentPluginBase implements TranslatorPluginUiInterface {
+class TranslatorPluginUiBase extends PluginBase implements TranslatorPluginUiInterface {
 
   /**
    * {@inheritdoc}
@@ -94,7 +94,7 @@ class TranslatorPluginUiBase extends ComponentPluginBase implements TranslatorPl
   public function submitConnect(array $form, FormStateInterface $form_state) {
     // When this method is called the form already passed validation and we can
     // assume that credentials are valid.
-    drupal_set_message(t('Successfully connected!'));
+    $this->messenger()->addStatus(t('Successfully connected!'));
   }
 
   /**

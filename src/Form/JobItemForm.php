@@ -3,9 +3,9 @@
 namespace Drupal\tmgmt\Form;
 
 use Drupal\Component\Diff\Diff;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Xss;
 use Drupal\filter\Entity\FilterFormat;
 use \Drupal\Core\Diff\DiffFormatter;
@@ -81,7 +81,7 @@ class JobItemForm extends TmgmtFormBase {
       '#type' => 'item',
       '#title' => t('Last change'),
       '#value' => $item->getChangedTime(),
-      '#markup' => format_date($item->getChangedTime()),
+      '#markup' => $this->dateFormatter->format($item->getChangedTime()),
       '#prefix' => '<div class="tmgmt-ui-changed tmgmt-ui-info-item">',
       '#suffix' => '</div>',
     );
@@ -95,7 +95,7 @@ class JobItemForm extends TmgmtFormBase {
       '#value' => $item->getState(),
     );
     $job = $item->getJob();
-    $url = $job->urlInfo();
+    $url = $job->toUrl();
     $form['info']['job'] = array(
       '#type' => 'item',
       '#title' => t('Job'),
@@ -294,7 +294,7 @@ class JobItemForm extends TmgmtFormBase {
       $segmenter->validateFormTranslation($form_state, $form['review'][$group_key][$parent_key][$key]['translation'], $this->getEntity());
     }
     if (!$form_state->hasAnyErrors()) {
-      drupal_set_message(t('Validation completed successfully.'));
+      $this->messenger()->addStatus(t('Validation completed successfully.'));
     }
   }
 
@@ -367,7 +367,7 @@ class JobItemForm extends TmgmtFormBase {
           continue;
         }
         if ($text = $message->getMessage()) {
-          drupal_set_message(SafeMarkup::format($text, []), $message->getType());
+          $this->messenger()->addMessage(new FormattableMarkup($text, []), $message->getType());
         }
       }
     }
@@ -381,10 +381,10 @@ class JobItemForm extends TmgmtFormBase {
       else {
         $message = t('The translation has been saved successfully.');
       }
-      drupal_set_message($message);
+      $this->messenger()->addStatus($message);
     }
     $item->save();
-    $item->getJob()->isContinuous() ? $form_state->setRedirect('entity.tmgmt_job_item.canonical', ['tmgmt_job_item' => $item->id()]) : $form_state->setRedirectUrl($item->getJob()->urlInfo());
+    $item->getJob()->isContinuous() ? $form_state->setRedirect('entity.tmgmt_job_item.canonical', ['tmgmt_job_item' => $item->id()]) : $form_state->setRedirectUrl($item->getJob()->toUrl());
   }
 
   /**
@@ -586,14 +586,14 @@ class JobItemForm extends TmgmtFormBase {
       }
     }
     if($field_count > 0){
-      drupal_set_message(t('HTML tag validation failed for @count field(s).', array('@count' => $field_count)), 'error');
+      $this->messenger()->addError(t('HTML tag validation failed for @count field(s).', array('@count' => $field_count)));
     }
     else {
-      drupal_set_message(t('Validation completed successfully.'));
+      $this->messenger()->addStatus(t('Validation completed successfully.'));
     }
     $form_state->set('validation_messages', $validation_messages);
     $request = \Drupal::request();
-    $url = $this->entity->urlInfo('canonical');
+    $url = $this->entity->toUrl('canonical');
     if ($request->query->has('destination')) {
       $destination = $request->query->get('destination');
       $request->query->remove('destination');
@@ -696,7 +696,7 @@ class JobItemForm extends TmgmtFormBase {
           $new_data = \Drupal::service('tmgmt.data')->flatten($item->getSourceData());
         }
         catch (TMGMTException $e) {
-          drupal_set_message(t('The source does not exist any more.'), 'error');
+          $this->messenger()->addError(t('The source does not exist any more.'));
           return;
         }
         $current_data = $item->getData($key_array);
@@ -1010,7 +1010,7 @@ class JobItemForm extends TmgmtFormBase {
       foreach ($data_item['#translation']['#text_revisions'] as $revision) {
         $revisions[] = t('Origin: %origin, Created: %created<br />%text', array(
           '%origin' => $revision['#origin'],
-          '%created' => format_date($revision['#timestamp']),
+          '%created' => $this->dateFormatter->format($revision['#timestamp']),
           '%text' => Xss::filter($revision['#text']),
         ));
       }

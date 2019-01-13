@@ -2,6 +2,7 @@
 
 namespace Drupal\tmgmt\Plugin\views\filter;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\views\Plugin\views\filter\StringFilter;

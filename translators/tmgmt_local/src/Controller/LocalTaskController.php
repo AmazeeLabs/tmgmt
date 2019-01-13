@@ -30,7 +30,7 @@ class LocalTaskController extends ControllerBase {
     $tmgmt_local_task->assign(\Drupal::currentUser());
     $tmgmt_local_task->save();
 
-    drupal_set_message(t('The task has been assigned to you.'));
+    $this->messenger()->addStatus(t('The task has been assigned to you.'));
 
     // If the request is via AJAX, return the rendered list as JSON.
     if ($request->request->get('js')) {

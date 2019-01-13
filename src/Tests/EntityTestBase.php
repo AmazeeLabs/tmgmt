@@ -114,7 +114,7 @@ abstract class EntityTestBase extends TMGMTTestBase {
 
     for ($i = 0 ; $i <= 5; $i++) {
       $field_type = $field_types[array_rand($field_types, 1)];
-      $field_name = Unicode::strtolower($this->randomMachineName());
+      $field_name = mb_strtolower($this->randomMachineName());
 
       // Create a field.
       $field_storage = FieldStorageConfig::create(array(

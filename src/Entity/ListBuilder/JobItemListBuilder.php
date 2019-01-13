@@ -18,21 +18,21 @@ class JobItemListBuilder extends EntityListBuilder {
     $operations = parent::getDefaultOperations($entity);
     if ($entity->getCountTranslated() > 0 && $entity->access('accept')) {
       $operations['review'] = array(
-        'url' => $entity->urlInfo(),
+        'url' => $entity->toUrl(),
         'title' => t('Review'),
       );
     }
     // Do not display view on unprocessed jobs.
     elseif (!$entity->getJob()->isUnprocessed()) {
       $operations['view'] = array(
-        'url' => $entity->urlInfo(),
+        'url' => $entity->toUrl(),
         'title' => t('View'),
       );
     }
     // Display abort button on active or needs review job items.
     if ($entity->isActive() || $entity->isNeedsReview()) {
       $operations['abort'] = array(
-        'url' => $entity->urlInfo('abort-form')->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
+        'url' => $entity->toUrl('abort-form')->setOption('query', array('destination' => Url::fromRoute('<current>')->getInternalPath())),
         'title' => t('Abort'),
         'weight' => 10,
       );

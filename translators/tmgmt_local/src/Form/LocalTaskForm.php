@@ -156,12 +156,12 @@ class LocalTaskForm extends ContentEntityForm {
       $assignee = User::load($form_state->getValue('tuid'));
       $task->assign($assignee);
 
-      drupal_set_message(t('Assigned to user @assignee_name.', ['@assignee_name' => $assignee->getAccountName()]));
+      $this->messenger()->addStatus(t('Assigned to user @assignee_name.', ['@assignee_name' => $assignee->getAccountName()]));
     }
     else {
       $task->setStatus(LocalTaskInterface::STATUS_UNASSIGNED);
 
-      drupal_set_message(t('Unassigned from translation local task @label.', array('@label' => $task->label())));
+      $this->messenger()->addStatus(t('Unassigned from translation local task @label.', array('@label' => $task->label())));
     }
     $this->entity->save();
 

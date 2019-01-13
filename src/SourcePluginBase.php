@@ -2,8 +2,7 @@
 
 namespace Drupal\tmgmt;
 
-use Drupal\Component\Plugin\PluginBase;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\Plugin\PluginBase;
 
 /**
  * Default controller class for source plugins.
@@ -11,8 +10,6 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
  * @ingroup tmgmt_source
  */
 abstract class SourcePluginBase extends PluginBase implements SourcePluginInterface {
-
-  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}

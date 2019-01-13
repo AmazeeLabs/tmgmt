@@ -2,6 +2,8 @@
 
 namespace Drupal\tmgmt_local\Plugin\tmgmt\Translator;
 
+use Drupal\Core\Database\Query\Condition;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\tmgmt\ContinuousTranslatorInterface;
 use Drupal\tmgmt\JobInterface;
 use Drupal\tmgmt\TranslatorInterface;
@@ -86,7 +88,7 @@ class LocalTranslator extends TranslatorPluginBase implements ContinuousTranslat
 
     $roles = user_roles(TRUE, 'provide translation services');
 
-    $query = db_select('field_data_tmgmt_translation_skills', 'ts');
+    $query = \Drupal::database()->select('field_data_tmgmt_translation_skills', 'ts');
 
     $query->join('users', 'u', 'u.uid = ts.entity_id AND u.status = 1');
 
@@ -96,9 +98,9 @@ class LocalTranslator extends TranslatorPluginBase implements ContinuousTranslat
     $query->condition('ts.deleted', 0);
     $query->condition('ts.entity_type', 'user');
 
-    if (!in_array(DRUPAL_AUTHENTICATED_RID, array_keys($roles))) {
+    if (!in_array(AccountInterface::AUTHENTICATED_ROLE, array_keys($roles))) {
       $query->join('users_roles', 'ur', 'ur.uid = u.uid AND ur.rid');
-      $or_conditions = db_or()->condition('ur.rid', array_keys($roles), 'IN')
+      $or_conditions = (new Condition('OR'))->condition('ur.rid', array_keys($roles), 'IN')
         ->condition('u.uid', 1);
       $query->condition($or_conditions);
     }

@@ -2,11 +2,10 @@
 
 namespace Drupal\tmgmt_file\Plugin\tmgmt_file\Format;
 
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\tmgmt\JobInterface;
-use Drupal\tmgmt_file\Format\DOMDocument;
 use Drupal\tmgmt_file\Format\FormatInterface;
-use Drupal\tmgmt_file\Format\type;
 
 /**
  * Export into HTML.
@@ -17,6 +16,7 @@ use Drupal\tmgmt_file\Format\type;
  * )
  */
 class Html implements FormatInterface {
+  use MessengerTrait;
 
   /**
    * Returns base64 encoded data that is safe for use in xml ids.
@@ -99,9 +99,9 @@ class Html implements FormatInterface {
 
     // Attempt to load the job.
     if (!$job = Job::load($meta['JobID'])) {
-      drupal_set_message(t('The imported file job id @file_id is not available.', array(
+      \Drupal::messenger()->addError(t('The imported file job id @file_id is not available.', array(
         '@file_id' => $meta['JobID'],
-      )), 'error');
+      )));
       return FALSE;
     }
 

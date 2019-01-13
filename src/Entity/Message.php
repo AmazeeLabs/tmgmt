@@ -70,7 +70,7 @@ class Message extends ContentEntityBase implements MessageInterface {
    * {@inheritdoc}
    */
   public function defaultLabel() {
-    $created = format_date($this->created->value);
+    $created = \Drupal::service('date.formatter')->format($this->get('created')->value);
     switch ($this->type->value) {
       case 'error':
         return t('Error message from @time', array('@time' => $created));

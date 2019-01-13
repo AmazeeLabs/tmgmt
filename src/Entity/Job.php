@@ -325,7 +325,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
    */
   public function addItem($plugin, $item_type, $item_id) {
 
-    $transaction = db_transaction();
+    $transaction = \Drupal::database()->startTransaction();
     $is_new = FALSE;
 
     if ($this->isNew()) {
