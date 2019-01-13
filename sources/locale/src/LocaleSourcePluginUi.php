@@ -34,7 +34,7 @@ class LocaleSourcePluginUi extends SourcePluginUiBase {
       ->fields('ls', array('lid', 'source', 'context'));
 
     if (!empty($search_label)) {
-      $select->condition('ls.source', "%$search_label%", 'LIKE');
+      $select->condition('ls.source', '%' . db_like($search_label) . '%', 'LIKE');
     }
     if (!empty($context)) {
       $select->condition('ls.context', $context);
