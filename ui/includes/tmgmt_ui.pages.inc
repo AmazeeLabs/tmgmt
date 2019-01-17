@@ -1133,6 +1133,20 @@ function tmgmt_ui_cart_request_translation_form_submit($form, &$form_state) {
           $job->addItem($job_item->plugin, $job_item->item_type, $job_item->item_id);
           $remove_job_item_ids[$job_item->tjiid] = $job_item->tjiid;
           $job_empty = FALSE;
+
+          // Do a first round of loading suggestions.
+          $suggestions = $job->getSuggestions();
+          $job->cleanSuggestionsList($suggestions);
+
+          // Process all valid entries.
+          foreach ($suggestions as $k => $result) {
+            if (is_array($result) && isset($result['job_item']) && ($result['job_item'] instanceof TMGMTJobItem)) {
+              // Filter files out of the suggestions.
+              if (!in_array($result['job_item']->item_type, array('file'))) {
+                $job->addExistingItem($result['job_item']);
+              }
+            }
+          }
         }
         catch (Exception $e) {
           // If an item fails for one target language, then it is also going
