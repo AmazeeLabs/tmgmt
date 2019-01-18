@@ -490,9 +490,6 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
       $ids[] = (string) $translate_element->getAttribute('id');
     }
 
-
-    $this->assertSession()->elementExists('css', '...')
-
     $this->assertEqual($ids[0], 'tmgmt-local-element-dummy-deep-nesting');
     $this->assertEqual($ids[1], 'tmgmt-local-element-second');
     $this->assertEqual($ids[2], 'tmgmt-local-element-third');
