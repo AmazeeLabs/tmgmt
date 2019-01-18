@@ -434,7 +434,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       foreach ($search_tokens as $search_token) {
         $search_token = trim($search_token);
         if (strlen($search_token) > 2) {
-          $or->condition($label_key, '%' . db_like($search_token) . '%', 'LIKE');
+          $or->condition($label_key, '%' . \Drupal::database()->escapeLike($search_token) . '%', 'LIKE');
         }
       }
 

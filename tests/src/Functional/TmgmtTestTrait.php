@@ -1,34 +1,27 @@
 <?php
 
-namespace Drupal\tmgmt\Tests;
+namespace Drupal\Tests\tmgmt\Functional;
 
 use Drupal\language\Entity\ConfigurableLanguage;
-use Drupal\simpletest\WebTestBase;
 use Drupal\tmgmt\Entity\Translator;
 use Drupal\tmgmt\JobItemInterface;
 
-@trigger_error('The ' . __NAMESPACE__ . '\TMGMTTestBase is deprecated. Instead, use Drupal\tmgmt\Tests\TMGMTTestBase. See https://www.drupal.org/node/2971931.', E_USER_DEPRECATED);
-
 /**
  * Base class for tests.
- *
- * @deprecated
  */
-abstract class TMGMTTestBase extends WebTestBase {
-
-  /**
-   * A default translator using the test translator.
-   *
-   * @var Translator
-   */
-  protected $default_translator;
+trait TmgmtTestTrait {
 
   /**
    * List of permissions used by loginAsAdmin().
    *
    * @var array
    */
-  protected $admin_permissions = array();
+  protected $admin_permissions = array(
+    'administer languages',
+    'access administration pages',
+    'administer content types',
+    'administer tmgmt',
+  );
 
   /**
    * Drupal user object created by loginAsAdmin().
@@ -42,7 +35,11 @@ abstract class TMGMTTestBase extends WebTestBase {
    *
    * @var array
    */
-  protected $translator_permissions = array();
+  protected $translator_permissions = array(
+      'create translation jobs',
+      'submit translation jobs',
+      'accept translation jobs',
+    );
 
   /**
    * Drupal user object created by loginAsTranslator().
@@ -57,45 +54,6 @@ abstract class TMGMTTestBase extends WebTestBase {
    * @var int
    */
   protected $languageWeight = 1;
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = array(
-    'tmgmt',
-    'tmgmt_test',
-    'node',
-    'block',
-    'locale',
-  );
-
-  /**
-   * Overrides DrupalWebTestCase::setUp()
-   */
-  function setUp() {
-    parent::setUp();
-    $this->default_translator = Translator::load('test_translator');
-    $this->drupalPlaceBlock('local_tasks_block');
-    $this->drupalPlaceBlock('local_actions_block');
-    $this->drupalPlaceBlock('page_title_block');
-
-    // Load default admin permissions.
-    $this->admin_permissions = array(
-      'administer languages',
-      'access administration pages',
-      'administer content types',
-      'administer tmgmt',
-    );
-
-    // Load default translator user permissions.
-    $this->translator_permissions = array(
-      'create translation jobs',
-      'submit translation jobs',
-      'accept translation jobs',
-    );
-  }
 
   /**
    * Will create a user with admin permissions and log it in.
@@ -228,7 +186,7 @@ abstract class TMGMTTestBase extends WebTestBase {
       $this->fail('No image link with title' . $title . ' found');
       return;
     }
-    $url_target = $this->getAbsoluteUrl($urls[0]['href']);
+    $url_target = $this->getAbsoluteUrl($urls[0]->getAttribute('href'));
     $this->drupalGet($url_target);
   }
 

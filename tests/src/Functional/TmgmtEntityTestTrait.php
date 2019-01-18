@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\tmgmt\Tests;
+namespace Drupal\Tests\tmgmt\Functional;
 
 use Drupal\comment\Tests\CommentTestTrait;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
@@ -10,16 +10,13 @@ use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\VocabularyInterface;
 
-@trigger_error('The ' . __NAMESPACE__ . '\EntityTestBase is deprecated. Instead, use Drupal\tmgmt\Tests\EntityTestBase. See https://www.drupal.org/node/2971931.', E_USER_DEPRECATED);
 
 /**
  * Utility test case class with helper methods to create entities and their
  * fields with populated translatable content. Extend this class if you create
  * tests in which you need Drupal entities and/or fields.
- *
- * @deprecated
  */
-abstract class EntityTestBase extends TMGMTTestBase {
+trait TmgmtEntityTestTrait {
 
   use CommentTestTrait;
 
