@@ -293,7 +293,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
     if (!isset($xml->file['source-language']) || $job->getRemoteSourceLanguage() != $xml->file['source-language']) {
       $job->addMessage('The imported file source language @file_language does not match the job source language @job_language.', array(
         '@file_language' => empty($xml->file['source-language']) ? t('none') : $xml->file['source-language'],
-        '@job_language' => $job->source_language,
+        '@job_language' => $job->getRemoteSourceLanguage(),
       ), 'error');
       return FALSE;
     }
@@ -302,7 +302,7 @@ class Xliff extends \XMLWriter implements FormatInterface {
     if (!isset($xml->file['target-language']) || $job->getRemoteTargetLanguage() != $xml->file['target-language']) {
       $job->addMessage('The imported file target language @file_language does not match the job target language @job_language.', array(
         '@file_language' => empty($xml->file['target-language']) ? t('none') : $xml->file['target-language'],
-        '@job_language' => $job->target_language,
+        '@job_language' => $job->getRemoteTargetLanguage(),
       ), 'error');
       return FALSE;
     }
