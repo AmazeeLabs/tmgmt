@@ -46,6 +46,11 @@ use Drupal\tmgmt\Entity\Job;
  *     "canonical" = "/admin/tmgmt/items/{tmgmt_job_item}",
  *     "abort-form" = "/admin/tmgmt/items/{tmgmt_job_item}/abort",
  *     "delete-form" = "/admin/tmgmt/items/{tmgmt_job_item}/delete",
+ *   },
+ *   serialized_field_property_names = {
+ *     "data" = {
+ *       "value"
+ *     }
  *   }
  * )
  *

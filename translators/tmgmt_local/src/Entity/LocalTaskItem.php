@@ -35,6 +35,11 @@ use Drupal\tmgmt_local\LocalTaskItemInterface;
  *   },
  *   links = {
  *     "canonical" = "/translate/items/{tmgmt_local_task_item}",
+ *   },
+ *   serialized_field_property_names = {
+ *     "data" = {
+ *       "value"
+ *     }
  *   }
  * )
  *
