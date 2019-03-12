@@ -46,14 +46,27 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
       ->save();
 
     $this->installSchema('node', ['node_access']);
-    \Drupal::moduleHandler()->loadInclude('entity_test', 'install');
-    entity_test_install();
+
+    // Auto-create fields for testing.
+    FieldStorageConfig::create([
+      'entity_type' => $this->entityTypeId,
+      'field_name' => 'field_test_text',
+      'type' => 'text',
+      'cardinality' => 1,
+    ])->save();
+    FieldConfig::create([
+      'entity_type' => $this->entityTypeId,
+      'field_name' => 'field_test_text',
+      'bundle' => $this->entityTypeId,
+      'label' => 'Test text-field',
+      'translatable' => FALSE,
+    ])->save();
 
     // Make the test field translatable.
-    $field_storage = FieldStorageConfig::loadByName('entity_test_mul', 'field_test_text');
+    $field_storage = FieldStorageConfig::loadByName($this->entityTypeId, 'field_test_text');
     $field_storage->setCardinality(4);
     $field_storage->save();
-    $field = FieldConfig::loadByName('entity_test_mul', 'entity_test_mul', 'field_test_text');
+    $field = FieldConfig::loadByName($this->entityTypeId, $this->entityTypeId, 'field_test_text');
     $field->setTranslatable(TRUE);
     $field->save();
 

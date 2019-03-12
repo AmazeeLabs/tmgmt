@@ -275,17 +275,10 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    * {@inheritdoc}
    */
   public function label($langcode = NULL) {
-    if ($plugin = $this->getSourcePlugin()) {
-      $label = $plugin->getLabel($this);
-    }
-    else {
-      $label = parent::Label();
-    }
-
+    $label = $this->getSourceLabel() ?: parent::label();
     if (strlen($label) > Job::LABEL_MAX_LENGTH) {
       $label = Unicode::truncate($label, Job::LABEL_MAX_LENGTH, TRUE);
     }
-
     return $label;
   }
 
@@ -314,7 +307,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    */
   public function getSourceLabel() {
     if ($plugin = $this->getSourcePlugin()) {
-      return $plugin->getLabel($this);
+      return (string) $plugin->getLabel($this);
     }
     return FALSE;
   }

@@ -91,7 +91,7 @@ class Message extends ContentEntityBase implements MessageInterface {
    */
   public function getMessage() {
     $text = $this->message->value;
-    if ($this->variables->first()->toArray()) {
+    if ($this->variables->first() && $this->variables->first()->toArray()) {
       return new TranslatableMarkup($text, $this->variables->first()->toArray());
     }
     else {
