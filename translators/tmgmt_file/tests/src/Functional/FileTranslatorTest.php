@@ -91,8 +91,8 @@ class FileTranslatorTest extends TMGMTTestBase {
     );
     $this->drupalPostForm($job->toUrl(), $edit, t('Import'));
     // Reset caches and reload job.
-    \Drupal::entityManager()->getStorage('tmgmt_job')->resetCache();
-    \Drupal::entityManager()->getStorage('tmgmt_job_item')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->resetCache();
     $job = Job::load($job->id());
 
     // Do the comparison of the translation text and the source. It must be the
@@ -123,8 +123,8 @@ class FileTranslatorTest extends TMGMTTestBase {
       'files[file]' => $translated_file,
     );
     $this->drupalPostForm($job->toUrl(), $edit, t('Import'));
-    \Drupal::entityManager()->getStorage('tmgmt_job')->resetCache();
-    \Drupal::entityManager()->getStorage('tmgmt_job_item')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->resetCache();
     $job = Job::load($job->id());
 
     $this->assertIntegrityCheck($job);
@@ -204,8 +204,8 @@ class FileTranslatorTest extends TMGMTTestBase {
     $this->drupalPostForm($job->toUrl(), $edit, t('Import'));
 
     // Reset caches and reload job.
-    \Drupal::entityManager()->getStorage('tmgmt_job')->resetCache();
-    \Drupal::entityManager()->getStorage('tmgmt_job_item')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->resetCache();
     $job = Job::load($job->id());
 
     $item_data = $job->getData(array(1, 'dummy', 'deep_nesting'));

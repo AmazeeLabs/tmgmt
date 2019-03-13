@@ -8,6 +8,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\taxonomy\VocabularyInterface;
 
 
@@ -50,8 +51,6 @@ trait TmgmtEntityTestTrait {
       $content_translation_manager->setEnabled('node', $machine_name, TRUE);
     }
 
-    $this->applySchemaUpdates();
-
     if ($attach_fields) {
       $this->attachFields('node', $machine_name, $translation);
     }
@@ -82,9 +81,10 @@ trait TmgmtEntityTestTrait {
    *   Created vocabulary object.
    */
   function createTaxonomyVocab($machine_name, $human_name, $fields_translatable = TRUE) {
-    $vocabulary = entity_create('taxonomy_vocabulary', array(
+    $vocabulary = Vocabulary::create([
       'name' => $human_name,
-      'vid' => $machine_name));
+      'vid' => $machine_name,
+    ]);
     $vocabulary->save();
 
     $this->attachFields('taxonomy_term', $vocabulary->id(), $fields_translatable);
@@ -222,13 +222,4 @@ trait TmgmtEntityTestTrait {
     return $term;
   }
 
-  /**
-   * Resets caches and applies schema updates.
-   */
-  protected function applySchemaUpdates() {
-    drupal_static_reset();
-    \Drupal::entityManager()->clearCachedDefinitions();
-    \Drupal::service('router.builder')->rebuild();
-    \Drupal::service('entity.definition_update_manager')->applyUpdates();
-  }
 }

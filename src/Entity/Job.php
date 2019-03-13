@@ -262,27 +262,32 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
    */
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
     parent::postDelete($storage, $entities);
+    $entity_type_manager = \Drupal::entityTypeManager();
+
     // Since we are deleting one or multiple jobs here we also need to delete
     // the attached job items and messages.
     $tjiids = \Drupal::entityQuery('tmgmt_job_item')
       ->condition('tjid', array_keys($entities), 'IN')
       ->execute();
     if (!empty($tjiids)) {
-      entity_delete_multiple('tmgmt_job_item', $tjiids);
+      $job_items = $entity_type_manager->getStorage('tmgmt_job_item')->loadMultiple($tjiids);
+      $entity_type_manager->getStorage('tmgmt_job_item')->delete($job_items);
     }
 
     $mids = \Drupal::entityQuery('tmgmt_message')
       ->condition('tjid', array_keys($entities), 'IN')
       ->execute();
     if (!empty($mids)) {
-      entity_delete_multiple('tmgmt_message', $mids);
+      $messages = $entity_type_manager->getStorage('tmgmt_message')->loadMultiple($mids);
+      $entity_type_manager->getStorage('tmgmt_message')->delete($messages);
     }
 
     $trids = \Drupal::entityQuery('tmgmt_remote')
       ->condition('tjid', array_keys($entities), 'IN')
       ->execute();
     if (!empty($trids)) {
-      entity_delete_multiple('tmgmt_remote', $trids);
+      $remotes = $entity_type_manager->getStorage('tmgmt_remote')->loadMultiple($trids);
+      $entity_type_manager->getStorage('tmgmt_remote')->delete($remotes);
     }
   }
 
@@ -439,7 +444,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     }
     $results = $query->execute();
     if (!empty($results)) {
-      return entity_load_multiple('tmgmt_message', $results);
+      return Message::loadMultiple($results);
     }
     return array();
   }
@@ -794,7 +799,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     $data = array();
     if (!empty($key)) {
       $tjiid = array_shift($key);
-      $item = entity_load('tmgmt_job_item', $tjiid);
+      $item = JobItem::load($tjiid);
       if ($item) {
         $data[$tjiid] = $item->getData($key, $index);
         // If not set, use the job item label as the data label.
@@ -897,7 +902,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
       ->execute();
 
     if (!empty($trids)) {
-      return entity_load_multiple('tmgmt_remote', $trids);
+      return RemoteMapping::loadMultiple($trids);
     }
 
     return array();

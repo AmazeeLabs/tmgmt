@@ -85,7 +85,7 @@ class ConfigSourceUnitTest extends TMGMTKernelTestBase {
     // Check that the translations were saved correctly.
     $language_manager = \Drupal::languageManager();
     $language_manager->setConfigOverrideLanguage($language_manager->getLanguage('de'));
-    $node_type = entity_load('node_type', $node_type->id());
+    $node_type = NodeType::load($node_type->id());
 
     $this->assertEqual($node_type->label(), $data['name']['#translation']['#text']);
     $this->assertEqual($node_type->getDescription(), $data['description']['#translation']['#text']);

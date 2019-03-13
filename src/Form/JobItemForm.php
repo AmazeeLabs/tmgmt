@@ -16,6 +16,7 @@ use Drupal\tmgmt\TranslatorRejectDataInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Url;
+use Drupal\views\Entity\View;
 
 /**
  * Form controller for the job item edit forms.
@@ -144,7 +145,7 @@ class JobItemForm extends TmgmtFormBase {
       );
     }
 
-    if ($view = entity_load('view', 'tmgmt_job_item_messages')) {
+    if ($view = View::load('tmgmt_job_item_messages')) {
       $form['messages'] = array(
         '#type' => 'details',
         '#title' => $view->label(),

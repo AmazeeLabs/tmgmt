@@ -9,6 +9,7 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\tmgmt\ContinuousTranslatorInterface;
 use Drupal\tmgmt\Entity\Job;
+use Drupal\tmgmt\Entity\Message;
 use Drupal\tmgmt\Entity\Translator;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
@@ -75,12 +76,14 @@ function tmgmt_cron() {
   if ($offset != '_never') {
     // Delete all finished translation jobs that haven't been changed for a
     // time span longer than the given offset.
-    $tjid = \Drupal::entityQuery('tmgmt_job')
+    $ids = \Drupal::entityQuery('tmgmt_job')
       ->condition('state', Job::STATE_FINISHED)
-      ->condition('changed', REQUEST_TIME - $offset, '<=')
+      ->condition('changed', \Drupal::time()->getRequestTime() - $offset, '<=')
       ->execute();
-    if (!empty($tjid)) {
-      entity_delete_multiple('tmgmt_job', $tjid);
+    if (!empty($ids)) {
+      $storage = \Drupal::entityTypeManager()->getStorage('tmgmt_job');
+      $entities = $storage->loadMultiple($ids);
+      $storage->delete($entities);
     }
   }
 
@@ -293,7 +296,7 @@ function tmgmt_job_check_finished($tjid) {
  *   The job entity.
  */
 function tmgmt_job_create($source_language, $target_language, $uid = 0, array $values = array()) {
-  return entity_create('tmgmt_job', array_merge($values, array(
+  return Job::create(array_merge($values, array(
     'source_language' => $source_language,
     'target_language' => $target_language,
     'uid' => $uid,
@@ -386,7 +389,7 @@ function tmgmt_job_statistic(JobInterface $job, $key) {
  *   The created, not yet saved, job item entity.
  */
 function tmgmt_job_item_create($plugin, $item_type, $item_id, array $values = array()) {
-  return entity_create('tmgmt_job_item', array_merge($values, array(
+  return JobItem::create(array_merge($values, array(
     'plugin' => $plugin,
     'item_type' => $item_type,
     'item_id' => $item_id,
@@ -403,11 +406,11 @@ function tmgmt_job_item_create($plugin, $item_type, $item_id, array $values = ar
  * @param $values
  *   (Optional) An array of additional entity values to be set.
  *
- * @return \Drupal\tmgmt\JobItemInterface
- *   The created, not yet saved, job item entity.
+ * @return \Drupal\tmgmt\MessageInterface
+ *   The created, not yet saved, message entity.
  */
 function tmgmt_message_create($message = '', $variables = array(), $values = array()) {
-  return entity_create('tmgmt_message', array_merge($values, array(
+  return Message::create(array_merge($values, array(
     'message' => $message,
     'variables' => $variables,
     'uid' => \Drupal::currentUser()->id(),

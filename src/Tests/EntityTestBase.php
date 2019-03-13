@@ -8,6 +8,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\taxonomy\VocabularyInterface;
 
 @trigger_error('The ' . __NAMESPACE__ . '\EntityTestBase is deprecated. Instead, use Drupal\tmgmt\Tests\EntityTestBase. See https://www.drupal.org/node/2971931.', E_USER_DEPRECATED);
@@ -85,9 +86,10 @@ abstract class EntityTestBase extends TMGMTTestBase {
    *   Created vocabulary object.
    */
   function createTaxonomyVocab($machine_name, $human_name, $fields_translatable = TRUE) {
-    $vocabulary = entity_create('taxonomy_vocabulary', array(
+    $vocabulary = Vocabulary::create([
       'name' => $human_name,
-      'vid' => $machine_name));
+      'vid' => $machine_name,
+    ]);
     $vocabulary->save();
 
     $this->attachFields('taxonomy_term', $vocabulary->id(), $fields_translatable);
@@ -230,7 +232,7 @@ abstract class EntityTestBase extends TMGMTTestBase {
    */
   protected function applySchemaUpdates() {
     drupal_static_reset();
-    \Drupal::entityManager()->clearCachedDefinitions();
+    \Drupal::entityTypeManager()->clearCachedDefinitions();
     \Drupal::service('router.builder')->rebuild();
     \Drupal::service('entity.definition_update_manager')->applyUpdates();
   }

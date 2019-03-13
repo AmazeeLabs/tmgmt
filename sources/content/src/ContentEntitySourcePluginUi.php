@@ -31,8 +31,8 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
   public function overviewSearchFormPart(array $form, FormStateInterface $form_state, $type) {
     $form = parent::overviewSearchFormPart($form, $form_state, $type);
 
-    $entity_type = \Drupal::entityManager()->getDefinition($type);
-    $field_definitions = \Drupal::entityManager()->getBaseFieldDefinitions($type);
+    $entity_type = \Drupal::entityTypeManager()->getDefinition($type);
+    $field_definitions = \Drupal::service('entity_field.manager')->getBaseFieldDefinitions($type);
 
     $label_key = $entity_type->getKey('label');
     if (!empty($label_key)) {
@@ -104,7 +104,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
    *   Header array definition as expected by theme_tablesort().
    */
   public function overviewFormHeader($type) {
-    $entity_type = \Drupal::entityManager()->getDefinition($type);
+    $entity_type = \Drupal::entityTypeManager()->getDefinition($type);
 
     $header = array(
       'title' => array('data' => $this->t('Title (in source language)')),
@@ -195,7 +195,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     $form = parent::overviewForm($form, $form_state, $type);
 
     // Build a list of allowed search conditions and get their values from the request.
-    $entity_type = \Drupal::entityManager()->getDefinition($type);
+    $entity_type = \Drupal::entityTypeManager()->getDefinition($type);
     $whitelist = array('langcode', 'target_language', 'target_status');
     if ($entity_type->hasKey('bundle')) {
       $whitelist[] = $entity_type->getKey('bundle');
@@ -240,7 +240,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
   public function overviewSubmitToContinuousJobs(FormStateInterface $form_state, $item_type) {
     if ($form_state->getValue('add_all_to_continuous_jobs')) {
       // Build a list of allowed search conditions and get their values from the request.
-      $entity_type = \Drupal::entityManager()->getDefinition($item_type);
+      $entity_type = \Drupal::entityTypeManager()->getDefinition($item_type);
       $whitelist = array('langcode', 'target_language', 'target_status');
       $whitelist[] = $entity_type->getKey('bundle');
       $whitelist[] = $entity_type->getKey('label');
@@ -260,7 +260,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       batch_set($batch);
     }
     else {
-      $entities = entity_load_multiple($item_type, array_filter($form_state->getValue('items')));
+      $entities = \Drupal::entityTypeManager()->getStorage($item_type)->loadMultiple(array_filter($form_state->getValue('items')));
       $job_items = 0;
       // Loop through entities and add them to continuous jobs.
       foreach ($entities as $entity) {
@@ -299,7 +299,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
 
     $translatable_bundle_types = array();
     $content_translation_manager = \Drupal::service('content_translation.manager');
-    foreach (\Drupal::entityManager()->getBundleInfo($entity_type) as $bundle_type => $bundle_definition) {
+    foreach (\Drupal::service('entity_type.bundle.info')->getBundleInfo($entity_type) as $bundle_type => $bundle_definition) {
       if ($content_translation_manager->isEnabled($entity_type, $bundle_type)) {
         $translatable_bundle_types[$bundle_type] = $bundle_definition['label'];
       }
@@ -347,7 +347,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
       $entities = array();
 
       if (!empty($entity_ids)) {
-        $entities = entity_load_multiple($entity_type_id, $entity_ids);
+        $entities = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple($entity_ids);
       }
       return $entities;
     }
@@ -382,7 +382,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     $langcodes = array_keys(\Drupal::languageManager()->getLanguages());
     $languages = array_combine($langcodes, $langcodes);
 
-    $entity_type = \Drupal::entityManager()->getDefinition($entity_type_id);
+    $entity_type = \Drupal::entityTypeManager()->getDefinition($entity_type_id);
     $label_key = $entity_type->getKey('label');
 
     $id_key = $entity_type->getKey('id');
@@ -448,7 +448,7 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     if ($bundle_key = $entity_type->getKey('bundle')) {
       $bundles = array();
       $content_translation_manager = \Drupal::service('content_translation.manager');
-      foreach (array_keys(\Drupal::entityManager()->getBundleInfo($entity_type_id)) as $bundle) {
+      foreach (array_keys(\Drupal::service('entity_type.bundle.info')->getBundleInfo($entity_type_id)) as $bundle) {
         if ($content_translation_manager->isEnabled($entity_type_id, $bundle)) {
           $bundles[] = $bundle;
         }

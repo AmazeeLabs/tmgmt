@@ -4,6 +4,7 @@ namespace Drupal\Tests\tmgmt\Kernel;
 
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\tmgmt\Entity\Translator;
 use Drupal\tmgmt\JobItemInterface;
 
 /**
@@ -36,7 +37,11 @@ abstract class TMGMTKernelTestBase extends KernelTestBase {
     $this->installEntitySchema('tmgmt_job_item');
     $this->installEntitySchema('tmgmt_message');
 
-    $this->default_translator = entity_create('tmgmt_translator', array('name' => 'test_translator', 'plugin' => 'test_translator', 'remote_languages_mappings' => []));
+    $this->default_translator = Translator::create([
+      'name' => 'test_translator',
+      'plugin' => 'test_translator',
+      'remote_languages_mappings' => [],
+    ]);
     $this->default_translator->save();
 
     $this->addLanguage('de');
@@ -48,17 +53,17 @@ abstract class TMGMTKernelTestBase extends KernelTestBase {
    * @return \Drupal\tmgmt\TranslatorInterface
    */
   function createTranslator() {
-    $translator = entity_create('tmgmt_translator', array(
+    $translator = Translator::create([
       'name' => strtolower($this->randomMachineName()),
       'label' => $this->randomMachineName(),
       'plugin' => 'test_translator',
       'remote_languages_mappings' => [],
-      'settings' => array(
+      'settings' => [
         'key' => $this->randomMachineName(),
         'another_key' => $this->randomMachineName(),
-      )
-    ));
-    $this->assertEqual(SAVED_NEW, $translator->save());
+      ],
+    ]);
+    $this->assertEquals(SAVED_NEW, $translator->save());
     return $translator;
   }
 

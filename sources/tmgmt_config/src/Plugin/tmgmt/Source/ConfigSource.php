@@ -6,7 +6,7 @@ use Drupal\config_translation\ConfigMapperManagerInterface;
 use Drupal\config_translation\Form\ConfigTranslationFormBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\TypedConfigManagerInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\TypedData\TraversableTypedDataInterface;
 use Drupal\Core\Url;
@@ -44,11 +44,11 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
   protected $configMapperManager;
 
   /**
-   * The injected entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * Configuration factory manager
@@ -78,8 +78,8 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    *   The plugin implementation definition.
    * @param \Drupal\config_translation\ConfigMapperManagerInterface $config_mapper_manager
    *   The configuration mapper manager.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    * @param  \Drupal\Core\Config\TypedConfigManagerInterface $typedConfigManagerInterface
    *   The typed config.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -87,10 +87,10 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    * @param \Drupal\language\ConfigurableLanguageManagerInterface
    *   Configurable language manager.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ConfigMapperManagerInterface $config_mapper_manager, EntityManagerInterface $entity_manager, TypedConfigManagerInterface $typedConfigManagerInterface, ConfigFactoryInterface $config_factory, ConfigurableLanguageManagerInterface $language_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ConfigMapperManagerInterface $config_mapper_manager, EntityTypeManagerInterface $entity_type_manager, TypedConfigManagerInterface $typedConfigManagerInterface, ConfigFactoryInterface $config_factory, ConfigurableLanguageManagerInterface $language_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->configMapperManager = $config_mapper_manager;
-    $this->entityManager = $entity_manager;
+    $this->entityTypeManager = $entity_type_manager;
     $this->typedConfig = $typedConfigManagerInterface;
     $this->configFactoryManager = $config_factory;
     $this->languageManager = $language_manager;
@@ -100,7 +100,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition, $container->get('plugin.manager.config_translation.mapper'), $container->get('entity.manager'), $container->get('config.typed'), $container->get('config.factory'), $container->get('language_manager'));
+    return new static($configuration, $plugin_id, $plugin_definition, $container->get('plugin.manager.config_translation.mapper'), $container->get('entity_type.manager'), $container->get('config.typed'), $container->get('config.factory'), $container->get('language_manager'));
   }
 
   /**
@@ -148,7 +148,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
 
     if ($job_item->getItemType() != static::SIMPLE_CONFIG) {
       /** @var \Drupal\Core\Config\Entity\ConfigEntityTypeInterface $entity_type */
-      $entity_type = $this->entityManager->getDefinition($config_mapper->getType());
+      $entity_type = $this->entityTypeManager->getDefinition($config_mapper->getType());
 
       $pos = strpos($job_item->getItemId(), $entity_type->getConfigPrefix());
       if (($pos !== FALSE)) {
@@ -158,7 +158,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
         throw new TMGMTException(t('Item ID does not contain the full config object name.'));
       }
 
-      $entity = $this->entityManager->getStorage($config_mapper->getType())->load($entity_id);
+      $entity = $this->entityTypeManager->getStorage($config_mapper->getType())->load($entity_id);
       if (!$entity) {
         throw new TMGMTException(t('Unable to load entity %type with id %id', array('%type' => $job_item->getItemType(), '%id' => $entity_id)));
       }
@@ -307,7 +307,7 @@ class ConfigSource extends SourcePluginBase implements ContainerFactoryPluginInt
   public function getItemTypes() {
     // Only entity types are exposed as their own item type, all others are
     // grouped together in simple config.
-    $entity_types = $this->entityManager->getDefinitions();
+    $entity_types = $this->entityTypeManager->getDefinitions();
     $definitions = $this->configMapperManager->getDefinitions();
     $types = array();
     foreach ($definitions as $definition_name => $definition) {

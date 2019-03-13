@@ -7,6 +7,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\file\Entity\File;
 use Drupal\filter\Entity\FilterFormat;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
@@ -91,9 +92,9 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
       'label' => $this->image_label = $this->randomMachineName(),
     ))->save();
     file_unmanaged_copy(DRUPAL_ROOT . '/core/misc/druplicon.png', 'public://example.jpg');
-    $this->image = entity_create('file', array(
+    $this->image = File::create([
       'uri' => 'public://example.jpg',
-    ));
+    ]);
     $this->image->save();
 
     // Add a translatable text field that should be ignored.
@@ -261,7 +262,7 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
     $data = $item->getData();
 
     // Check that the translations were saved correctly.
-    $entity_test = entity_load($this->entityTypeId, $entity_test->id());
+    $entity_test = \Drupal::entityTypeManager()->getStorage($this->entityTypeId)->load($entity_test->id());
     $translation = $entity_test->getTranslation('de');
 
     $this->assertEqual($translation->name->value, $data['name'][0]['value']['#translation']['#text']);
@@ -305,7 +306,7 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
     $data = $item->getData();
 
     // Check that the new translation was saved correctly.
-    $entity_test = entity_load($this->entityTypeId, $entity_test->id());
+    $entity_test = \Drupal::entityTypeManager()->getStorage($this->entityTypeId)->load($entity_test->id());
     $translation = $entity_test->getTranslation('de');
 
     // Ensure no item was created for the removed delta.
@@ -385,12 +386,12 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
     $this->assertFalse(isset($data['body'][1]['processed']));
 
     // Test if language neutral entities can't be added to a translation job.
-    $node = entity_create('node', array(
+    $node = Node::create([
       'title' => $this->randomMachineName(),
       'uid' => $account->id(),
       'type' => $type->id(),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $node->save();
     try {
       $job = tmgmt_job_create(LanguageInterface::LANGCODE_NOT_SPECIFIED, 'de');
@@ -503,11 +504,11 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
       'has_body' => 1,
     );
 
-    $type = entity_create('node_type', $values);
+    $type = NodeType::create($values);
     $saved = $type->save();
     node_add_body_field($type);
 
-    $this->assertEqual($saved, SAVED_NEW, t('Created content type %type.', array('%type' => $type->id())));
+    $this->assertEquals(SAVED_NEW, $saved);
 
     return $type;
   }
@@ -711,7 +712,7 @@ class ContentEntitySourceUnitTest extends ContentEntityTestBase {
     $continuous_job_item->acceptTranslation();
 
     // Test that the translation for an english node is created and saved.
-    $node = entity_load('node', $node->id());
+    $node = Node::load($node->id());
     $translation = $node->getTranslation('de');
     $data = $continuous_job_item->getData();
     $this->assertEquals($translation->label(), $data['title'][0]['value']['#translation']['#text'], 'Translation for an english node has been saved correctly.');

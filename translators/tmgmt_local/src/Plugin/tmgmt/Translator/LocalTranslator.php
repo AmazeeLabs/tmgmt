@@ -8,6 +8,7 @@ use Drupal\tmgmt\ContinuousTranslatorInterface;
 use Drupal\tmgmt\JobInterface;
 use Drupal\tmgmt\TranslatorInterface;
 use Drupal\tmgmt\TranslatorPluginBase;
+use Drupal\tmgmt_local\Entity\LocalTask;
 use Drupal\tmgmt_local\LocalTaskInterface;
 
 /**
@@ -47,7 +48,7 @@ class LocalTranslator extends TranslatorPluginBase implements ContinuousTranslat
 
     // Create local task for this job.
     /** @var \Drupal\tmgmt_local\LocalTaskInterface $local_task */
-    $local_task = tmgmt_local_task_create(array(
+    $local_task = LocalTask::create(array(
       'uid' => $job->getOwnerId(),
       'tuid' => $tuid,
       'tjid' => $job->id(),

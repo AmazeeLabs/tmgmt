@@ -458,7 +458,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->clickLink($task->label());
     // Let's check the task status.
     /** @var \Drupal\tmgmt_local\Entity\LocalTask $task */
-    $task = entity_load('tmgmt_local_task', $task->id(), TRUE);
+    $task = \Drupal::entityTypeManager()->getStorage('tmgmt_local_task')->loadUnchanged($task->id());
     $this->assertTrue($task->isPending());
     /** @var \Drupal\tmgmt_local\Entity\LocalTaskItem $second_task_item */
     list($first_task_item, $second_task_item) = array_values($task->getItems());
@@ -502,7 +502,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
 
     drupal_static_reset('tmgmt_local_task_statistics_load');
     /** @var \Drupal\tmgmt_local\Entity\LocalTask $task */
-    $task = entity_load('tmgmt_local_task', $task->id(), TRUE);
+    $task = \Drupal::entityTypeManager()->getStorage('tmgmt_local_task')->loadUnchanged($task->id());
     $this->assertTrue($task->isPending());
 
     // Mark the data item as translated but don't save the task item as
@@ -516,7 +516,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     \Drupal::entityTypeManager()->getStorage('tmgmt_local_task_item')->resetCache();
     drupal_static_reset('tmgmt_local_task_statistics_load');
     /** @var \Drupal\tmgmt_local\Entity\LocalTask $task */
-    $task = entity_load('tmgmt_local_task', $task->id(), TRUE);
+    $task = \Drupal::entityTypeManager()->getStorage('tmgmt_local_task')->loadUnchanged($task->id());
     $this->assertTrue($task->isPending());
     list($first_task_item, $second_task_item) = array_values($task->getItems());
     $this->assertTrue($first_task_item->isClosed());
@@ -563,7 +563,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     $this->assertText(t('Completed'));
 
     \Drupal::entityTypeManager()->getStorage('tmgmt_local_task_item')->resetCache();
-    $task = tmgmt_local_task_load($task->id());
+    $task = LocalTask::load($task->id());
     $this->assertTrue($task->isClosed());
     list($first_task_item, $second_task_item) = array_values($task->getItems());
     $this->assertTrue($first_task_item->isClosed());
@@ -591,7 +591,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     // Delete the job, make sure that the corresponding task and task items were
     // deleted.
     $job->delete();
-    $this->assertFalse(tmgmt_local_task_item_load($task->id()));
+    $this->assertFalse(LocalTask::load($task->id()));
     $this->assertFalse($task->getItems());
   }
 
@@ -614,7 +614,7 @@ class LocalTranslatorTest extends LocalTranslatorTestBase {
     // Now enable the setting.
     $this->config('tmgmt_local.settings')->set('allow_all', TRUE)->save();
     /** @var Job $job */
-    $job = entity_load('tmgmt_job', $job->id(), TRUE);
+    $job = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
     $job->translator = $translator->id();
 
     $this->assertIdentical(NULL, $job->requestTranslation(), 'Translation request was successfull');

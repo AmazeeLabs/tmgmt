@@ -160,7 +160,7 @@ class ContentTmgmtEntitySourceUiTest extends TMGMTTestBase {
     $this->assertText($node_not_translated->getTitle());
     // Update the outdated flag of the translated node and test if it is
     // listed among sources with missing translation.
-    \Drupal::entityManager()->getStorage('node')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('node')->resetCache();
     $node = Node::load($node->id());
     $node->getTranslation('de')->content_translation_outdated->value = 1;
     $node->save();
@@ -456,11 +456,6 @@ class ContentTmgmtEntitySourceUiTest extends TMGMTTestBase {
     /** @var \Drupal\content_translation\ContentTranslationManagerInterface $content_translation_manager */
     $content_translation_manager = \Drupal::service('content_translation.manager');
     $content_translation_manager->setEnabled('comment', 'comment', TRUE);
-    drupal_static_reset();
-    \Drupal::entityManager()->clearCachedDefinitions();
-    \Drupal::service('router.builder')->rebuild();
-    \Drupal::service('entity.definition_update_manager')->applyUpdates();
-    $this->applySchemaUpdates();
 
     // Change comment_body field to be translatable.
     $comment_body = FieldConfig::loadByName('comment', 'comment', 'comment_body');

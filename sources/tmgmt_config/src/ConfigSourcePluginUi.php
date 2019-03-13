@@ -36,7 +36,7 @@ class ConfigSourcePluginUi extends SourcePluginUiBase {
       $label = t('Simple configuration');
     }
     else {
-      $entity_type = \Drupal::entityManager()->getDefinition($type);
+      $entity_type = \Drupal::entityTypeManager()->getDefinition($type);
 
       $label_key = $entity_type->getKey('label');
       $label = $entity_type->getLabel();
@@ -299,7 +299,7 @@ class ConfigSourcePluginUi extends SourcePluginUiBase {
 
     if (!empty($result)) {
       // Load the entities.
-      $entities = \Drupal::entityManager()->getStorage($entity_type_id)->loadMultiple($result);
+      $entities = \Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple($result);
 
       // @todo Optimize the code below (code duplication).
 

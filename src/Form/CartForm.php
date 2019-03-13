@@ -116,7 +116,7 @@ class CartForm extends FormBase {
   function submitRemoveSelected(array $form, FormStateInterface $form_state) {
     $job_item_ids = array_filter($form_state->getValue('items'));
     tmgmt_cart_get()->removeJobItems($job_item_ids);
-    entity_delete_multiple('tmgmt_job_item', $job_item_ids);
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->delete(JobItem::loadMultiple($job_item_ids));
     $this->messenger()->addStatus(t('Job items were removed from the cart.'));
   }
 
@@ -124,7 +124,7 @@ class CartForm extends FormBase {
    * Form submit callback to remove the selected items.
    */
   function submitEmptyCart(array $form, FormStateInterface $form_state) {
-    entity_delete_multiple('tmgmt_job_item', array_keys(tmgmt_cart_get()->getJobItemsFromCart()));
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job_item')->delete(tmgmt_cart_get()->getJobItemsFromCart());
     tmgmt_cart_get()->emptyCart();
     $this->messenger()->addStatus(t('All job items were removed from the cart.'));
   }

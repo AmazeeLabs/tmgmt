@@ -219,20 +219,24 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
    */
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
     parent::postDelete($storage, $entities);
+    $entity_type_manager = \Drupal::entityTypeManager();
+
     // Since we are deleting one or multiple job items here we also need to
     // delete the attached messages.
     $mids = \Drupal::entityQuery('tmgmt_message')
       ->condition('tjiid', array_keys($entities), 'IN')
       ->execute();
     if (!empty($mids)) {
-      entity_delete_multiple('tmgmt_message', $mids);
+      $messages = $entity_type_manager->getStorage('tmgmt_message')->loadMultiple($mids);
+      $entity_type_manager->getStorage('tmgmt_message')->delete($messages);
     }
 
     $trids = \Drupal::entityQuery('tmgmt_remote')
       ->condition('tjiid', array_keys($entities), 'IN')
       ->execute();
     if (!empty($trids)) {
-      entity_delete_multiple('tmgmt_remote', $trids);
+      $remotes = $entity_type_manager->getStorage('tmgmt_remote')->loadMultiple($trids);
+      $entity_type_manager->getStorage('tmgmt_remote')->delete($remotes);
     }
   }
 
@@ -487,7 +491,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
     if (!isset($message)) {
       $source_url = $this->getSourceUrl();
       try {
-        $translation = entity_load($this->getItemType(), $this->getItemId());
+        $translation = \Drupal::entityTypeManager()->getStorage($this->getItemType())->load($this->getItemId());
       }
       catch (PluginNotFoundException $e) {
         $translation = NULL;
@@ -916,7 +920,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
     }
     $results = $query->execute();
     if (!empty($results)) {
-      return entity_load_multiple('tmgmt_message', $results);
+      return Message::loadMultiple($results);
     }
     return array();
   }
@@ -930,7 +934,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       ->condition('tjid', $this->getJobId())
       ->execute();
     if ($ids) {
-      return entity_load_multiple('tmgmt_job_item', $ids);
+      return static::loadMultiple($ids);
     }
     return FALSE;
   }
@@ -965,7 +969,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       $data += $mapping_data;
     }
 
-    $remote_mapping = entity_create('tmgmt_remote', $data);
+    $remote_mapping = RemoteMapping::create($data);
 
     return $remote_mapping->save();
   }
@@ -979,7 +983,7 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
       ->execute();
 
     if (!empty($trids)) {
-      return entity_load_multiple('tmgmt_remote', $trids);
+      return RemoteMapping::loadMultiple($trids);
     }
 
     return array();

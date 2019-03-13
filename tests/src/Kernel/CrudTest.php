@@ -179,7 +179,7 @@ class CrudTest extends TMGMTKernelTestBase {
     // Test remote data.
     $item_mapping->addRemoteData('test_data', 'test_value');
     $item_mapping->save();
-    $item_mapping = entity_load('tmgmt_remote', $item_mapping->id());
+    $item_mapping = RemoteMapping::load($item_mapping->id());
     $this->assertEqual($item_mapping->getRemoteData('test_data'), 'test_value');
 
     // Add mapping to the other job item as well.
@@ -527,7 +527,7 @@ class CrudTest extends TMGMTKernelTestBase {
     $job_item1->save();
 
     // 3 pending and 7 translated data items each.
-    $job = entity_load('tmgmt_job', $job->id());
+    $job = Job::load($job->id());
     drupal_static_reset('tmgmt_job_statistics_load');
     $this->assertEqual(3, $job->getCountPending());
     $this->assertEqual(7, $job->getCountTranslated());

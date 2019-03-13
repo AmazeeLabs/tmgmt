@@ -2,6 +2,9 @@
 
 namespace Drupal\Tests\tmgmt_content\Functional;
 
+use Drupal\comment\Entity\Comment;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\Tests\tmgmt\Functional\TMGMTTestBase;
 use Drupal\tmgmt\Entity\JobItem;
 use Drupal\Tests\tmgmt\Functional\TmgmtEntityTestTrait;
@@ -58,28 +61,28 @@ class ContentTmgmtEntitySourceListTest extends TMGMTTestBase {
    */
   function testTermBundleFilter() {
 
-    $vocabulary1 = entity_create('taxonomy_vocabulary', array(
+    $vocabulary1 = Vocabulary::create([
       'vid' => 'vocab1',
       'name' => $this->randomMachineName(),
-    ));
+    ]);
     $vocabulary1->save();
 
-    $term1 = entity_create('taxonomy_term', array(
+    $term1 = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $vocabulary1->id(),
-    ));
+    ]);
     $term1->save();
 
-    $vocabulary2 = entity_create('taxonomy_vocabulary', array(
+    $vocabulary2 = Vocabulary::create([
       'vid' => 'vocab2',
       'name' => $this->randomMachineName(),
-    ));
+    ]);
     $vocabulary2->save();
 
-    $term2 = entity_create('taxonomy_term', array(
+    $term2 = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $vocabulary2->id(),
-    ));
+    ]);
     $term2->save();
 
     $content_translation_manager = \Drupal::service('content_translation.manager');
@@ -335,10 +338,6 @@ class ContentTmgmtEntitySourceListTest extends TMGMTTestBase {
     $this->addDefaultCommentField('node', 'article');
     $content_translation_manager = \Drupal::service('content_translation.manager');
     $content_translation_manager->setEnabled('comment', 'comment', TRUE);
-    drupal_static_reset();
-    \Drupal::entityManager()->clearCachedDefinitions();
-    \Drupal::service('router.builder')->rebuild();
-    \Drupal::service('entity.definition_update_manager')->applyUpdates();
     $values = array(
       'entity_type' => 'node',
       'entity_id' => $this->nodes['article']['en'][0]->id(),
@@ -347,7 +346,7 @@ class ContentTmgmtEntitySourceListTest extends TMGMTTestBase {
       'comment_body' => $this->randomMachineName(),
       'subject' => $this->randomMachineName(),
     );
-    $comment = entity_create('comment', $values);
+    $comment = Comment::create($values);
     $comment->save();
     // Do search for the comment.
     $edit = array();

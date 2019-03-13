@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
 use Drupal\Core\Url;
+use Drupal\tmgmt_local\Entity\LocalTask;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -94,7 +95,7 @@ class AssignMultiple extends FormBase {
 
     $how_many = 0;
     foreach ($form_state->get('tasks') as $task_id) {
-      $task = tmgmt_local_task_load($task_id);
+      $task = LocalTask::load($task_id);
       if ($task) {
         $task->assign($assignee);
         $task->save();

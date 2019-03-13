@@ -149,7 +149,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     );
     $this->drupalPostForm(NULL, $edit, t('Submit to provider'));
     $this->assertText(t('Test submit'));
-    $job = entity_load_unchanged('tmgmt_job', $job->id());
+    $job = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
     $this->assertTrue($job->isActive());
 
     // Another job.
@@ -168,7 +168,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     );
     $this->drupalPostForm(NULL, $edit, t('Submit to provider'));
     $this->assertText(t('This is not supported'));
-    $job = entity_load_unchanged('tmgmt_job', $job->id());
+    $job = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
     $this->assertTrue($job->isRejected());
 
     // Check displayed job messages.
@@ -259,7 +259,8 @@ class TMGMTUiTest extends TMGMTTestBase {
     );
     $this->drupalPostForm(NULL, $edit, t('Submit to provider'));
     $this->assertText(t('Service not reachable'));
-    $job = entity_load_unchanged('tmgmt_job', $job->id());
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
+    $job = Job::load($job->id());
     $this->assertTrue($job->isUnprocessed());
 
     // Verify that we are still on the form.
@@ -282,7 +283,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     $this->drupalPostForm(NULL, $edit, t('Submit to provider'));
     // @todo Update to correct failure message.
     $this->assertText(t('Fail'));
-    $job = entity_load_unchanged('tmgmt_job', $job->id());
+    $job = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
     $this->assertTrue($job->isUnprocessed());
 
     // Test default settings.
@@ -301,7 +302,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     // The action should now default to reject.
     $this->drupalPostForm(NULL, array(), t('Submit to provider'));
     $this->assertText(t('This is not supported.'));
-    $job4 = entity_load_unchanged('tmgmt_job', $job->id());
+    $job4 = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
     $this->assertTrue($job4->isRejected());
 
     $this->drupalGet('admin/tmgmt/jobs');
@@ -467,7 +468,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     $this->assertText('The user ordered aborting the Job through the UI.');
     $this->assertUrl('admin/tmgmt/jobs/' . $job->id());
     // Reload job and check its state.
-    \Drupal::entityManager()->getStorage('tmgmt_job')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
     $job = Job::load($job->id());
     $this->assertTrue($job->isAborted());
     foreach ($job->getItems() as $item) {
@@ -640,21 +641,22 @@ class TMGMTUiTest extends TMGMTTestBase {
     // [en, en] => [de]
     // [fr, fr] => [de]
 
-    $jobs = entity_load_multiple_by_properties('tmgmt_job', array('source_language' => 'fr', 'target_language' => 'en'));
+    $storage = \Drupal::entityTypeManager()->getStorage('tmgmt_job');
+    $jobs = $storage->loadByProperties(['source_language' => 'fr', 'target_language' => 'en']);
     $job = reset($jobs);
-    $this->assertEqual(count($job->getItems()), 2);
+    $this->assertEquals(2, count($job->getItems()));
 
-    $jobs = entity_load_multiple_by_properties('tmgmt_job', array('source_language' => 'de', 'target_language' => 'en'));
+    $jobs = $storage->loadByProperties(['source_language' => 'de', 'target_language' => 'en']);
     $job = reset($jobs);
-    $this->assertEqual(count($job->getItems()), 1);
+    $this->assertEquals(1, count($job->getItems()));
 
-    $jobs = entity_load_multiple_by_properties('tmgmt_job', array('source_language' => 'en', 'target_language' => 'de'));
+    $jobs = $storage->loadByProperties(['source_language' => 'en', 'target_language' => 'de']);
     $job = reset($jobs);
-    $this->assertEqual(count($job->getItems()), 2);
+    $this->assertEquals(2, count($job->getItems()));
 
-    $jobs = entity_load_multiple_by_properties('tmgmt_job', array('source_language' => 'fr', 'target_language' => 'de'));
+    $jobs = $storage->loadByProperties(['source_language' => 'fr', 'target_language' => 'de']);
     $job = reset($jobs);
-    $this->assertEqual(count($job->getItems()), 2);
+    $this->assertEquals(2, count($job->getItems()));
 
     $this->drupalGet('admin/tmgmt/cart');
     // Both fr and one de items must be gone.
@@ -772,7 +774,7 @@ class TMGMTUiTest extends TMGMTTestBase {
     $this->drupalPostForm(NULL, [], t('Confirm'));
 
     // Reload job and check its state and state of its item.
-    \Drupal::entityManager()->getStorage('tmgmt_job')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('tmgmt_job')->resetCache();
     $job = Job::load($job->id());
     $this->assertTrue($job->isFinished());
     $items = $job->getItems();

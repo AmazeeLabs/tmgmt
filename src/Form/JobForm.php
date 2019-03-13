@@ -601,7 +601,7 @@ class JobForm extends TmgmtFormBase {
     $translator = $job->getTranslator();
       // If requested custom job settings handling, copy values from original job.
       if ($translator->hasCustomSettingsHandling()) {
-        $original_job = entity_load_unchanged('tmgmt_job', $job->id());
+        $original_job = \Drupal::entityTypeManager()->getStorage('tmgmt_job')->loadUnchanged($job->id());
         $job->settings = $original_job->settings;
       }
     }

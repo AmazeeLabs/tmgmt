@@ -115,7 +115,7 @@ class JobItemCart {
    *   Job items in the cart.
    */
   public function getJobItemsFromCart() {
-    return entity_load_multiple('tmgmt_job_item', $this->cart);
+    return JobItem::loadMultiple($this->cart);
   }
 
   /**

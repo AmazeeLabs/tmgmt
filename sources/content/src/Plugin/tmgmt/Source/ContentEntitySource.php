@@ -32,10 +32,23 @@ use Drupal\tmgmt\Entity\Job;
 class ContentEntitySource extends SourcePluginBase implements SourcePreviewInterface, ContinuousSourceInterface {
 
   /**
+   * Returns the entity for the given job item.
+   *
+   * @param \Drupal\tmgmt\JobItemInterface $job_item
+   *   The job entity
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface
+   *   The entity.
+   */
+  protected function getEntity(JobItemInterface $job_item) {
+    return \Drupal::entityTypeManager()->getStorage($job_item->getItemType())->load($job_item->getItemId());
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getLabel(JobItemInterface $job_item) {
-    if ($entity = entity_load($job_item->getItemType(), $job_item->getItemId())) {
+    if ($entity = $this->getEntity($job_item)) {
       return $entity->label() ?: $entity->id();
     }
   }
@@ -69,7 +82,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * the Translation Management system.
    */
   public function getData(JobItemInterface $job_item) {
-    $entity = entity_load($job_item->getItemType(), $job_item->getItemId());
+    $entity = $this->getEntity($job_item);
     if (!$entity) {
       throw new TMGMTException(t('Unable to load entity %type with id %id', array('%type' => $job_item->getItemType(), '%id' => $job_item->getItemId())));
     }
@@ -254,7 +267,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    */
   public function saveTranslation(JobItemInterface $job_item, $target_langcode) {
     /* @var \Drupal\Core\Entity\ContentEntityInterface $entity */
-    $entity = entity_load($job_item->getItemType(), $job_item->getItemId());
+    $entity = $this->getEntity($job_item);
     if (!$entity) {
       $job_item->addMessage('The entity %id of type %type does not exist, the job can not be completed.', array(
         '%id' => $job_item->getItemId(),
@@ -272,7 +285,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * {@inheritdoc}
    */
   public function getItemTypes() {
-    $entity_types = \Drupal::entityManager()->getDefinitions();
+    $entity_types = \Drupal::entityTypeManager()->getDefinitions();
     $types = array();
     $content_translation_manager = \Drupal::service('content_translation.manager');
     foreach ($entity_types as $entity_type_name => $entity_type) {
@@ -292,15 +305,15 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * {@inheritdoc}
    */
   public function getItemTypeLabel($type) {
-    return \Drupal::entityManager()->getDefinition($type)->getLabel();
+    return \Drupal::entityTypeManager()->getDefinition($type)->getLabel();
   }
 
   /**
    * {@inheritdoc}
    */
   public function getType(JobItemInterface $job_item) {
-    if ($entity = entity_load($job_item->getItemType(), $job_item->getItemId())) {
-      $bundles = entity_get_bundles($job_item->getItemType());
+    if ($entity = $this->getEntity($job_item)) {
+      $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo($job_item->getItemType());
       $entity_type = $entity->getEntityType();
       $bundle = $entity->bundle();
       // Display entity type and label if we have one and the bundle isn't
@@ -317,7 +330,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * {@inheritdoc}
    */
   public function getSourceLangCode(JobItemInterface $job_item) {
-    $entity = entity_load($job_item->getItemType(), $job_item->getItemId());
+    $entity = $this->getEntity($job_item);
     return $entity->getUntranslated()->language()->getId();
   }
 
@@ -325,7 +338,7 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    * {@inheritdoc}
    */
   public function getExistingLangCodes(JobItemInterface $job_item) {
-    if ($entity = entity_load($job_item->getItemType(), $job_item->getItemId())) {
+    if ($entity = $this->getEntity($job_item)) {
       return array_keys($entity->getTranslationLanguages());
     }
 
@@ -449,8 +462,8 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    */
   public function shouldCreateContinuousItem(Job $job, $plugin, $item_type, $item_id) {
     $continuous_settings = $job->getContinuousSettings();
-    $entity_manager = \Drupal::entityTypeManager();
-    $entity = $entity_manager->getStorage($item_type)->load($item_id);
+    $entity_type_manager = \Drupal::entityTypeManager();
+    $entity = $entity_type_manager->getStorage($item_type)->load($item_id);
     $translation_manager = \Drupal::service('content_translation.manager');
     $translation = $entity->hasTranslation($job->getTargetLangcode()) ? $entity->getTranslation($job->getTargetLangcode()) : NULL;
     $metadata = isset($translation) ? $translation_manager->getTranslationMetadata($translation) : NULL;
