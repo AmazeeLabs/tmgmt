@@ -40,6 +40,8 @@ class ContentEntityMetatagTest extends ContentEntityTestBase {
       'bundle' => $this->entityTypeId,
       'label' => 'Meta tags',
     ))->save();
+
+    $this->installConfig(['metatag']);
   }
 
   /**
