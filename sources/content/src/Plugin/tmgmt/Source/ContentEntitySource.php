@@ -142,34 +142,36 @@ class ContentEntitySource extends SourcePluginBase implements SourcePreviewInter
    *   Translatable data.
    */
   public function extractTranslatableData(ContentEntityInterface $entity) {
-
-    // @todo Expand this list or find a better solution to exclude fields like
-    //   content_translation_source.
-
     $field_definitions = $entity->getFieldDefinitions();
     $exclude_field_types = ['language'];
+    $exclude_field_names = ['moderation_state'];
 
     // Exclude field types from translation.
-    $translatable_fields = array_filter($field_definitions, function (FieldDefinitionInterface $field_definition) use ($exclude_field_types) {
+    $translatable_fields = array_filter($field_definitions, function (FieldDefinitionInterface $field_definition) use ($exclude_field_types, $exclude_field_names) {
 
-        // Field is not translatable.
-        if (!$field_definition->isTranslatable()) {
+      // Field is not translatable.
+      if (!$field_definition->isTranslatable()) {
+        return FALSE;
+      }
+
+      // Field type matches field types to exclude.
+      if (in_array($field_definition->getType(), $exclude_field_types)) {
+        return FALSE;
+      }
+
+      // Field name matches field names to exclude.
+      if (in_array($field_definition->getName(), $exclude_field_names)) {
+        return FALSE;
+      }
+
+      // User marked the field to be excluded.
+      if ($field_definition instanceof ThirdPartySettingsInterface) {
+        $is_excluded = $field_definition->getThirdPartySetting('tmgmt_content', 'excluded', FALSE);
+        if ($is_excluded) {
           return FALSE;
         }
-
-        // Field type matches field types to exclude.
-        if (in_array($field_definition->getType(), $exclude_field_types)) {
-          return FALSE;
-        }
-
-        // User marked the field to be excluded.
-        if ($field_definition instanceof ThirdPartySettingsInterface) {
-          $is_excluded = $field_definition->getThirdPartySetting('tmgmt_content', 'excluded', FALSE);
-          if ($is_excluded) {
-            return FALSE;
-          }
-        }
-        return TRUE;
+      }
+      return TRUE;
     });
 
     \Drupal::moduleHandler()->alter('tmgmt_translatable_fields', $entity, $translatable_fields);
