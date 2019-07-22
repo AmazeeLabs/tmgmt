@@ -388,7 +388,41 @@ class ContentEntitySourcePluginUi extends SourcePluginUiBase {
     $id_key = $entity_type->getKey('id');
     $query = \Drupal::database()->select($entity_type->getBaseTable(), 'e');
     $query->addTag('tmgmt_entity_get_translatable_entities');
-    $query->addField('e', $id_key);
+
+    $id_key_set = FALSE;
+
+    if (\Drupal::moduleHandler()->moduleExists('workspaces')) {
+      /** @var \Drupal\workspaces\WorkspaceManagerInterface $workspaces_manager */
+      $workspaces_manager = \Drupal::service('workspaces.manager');
+      if ($workspaces_manager->isEntityTypeSupported($entity_type)) {
+        // On workspaces other than the live one we need to filter out all the
+        // entities that are not associated with the current workspace.
+        $active_workspace = $workspaces_manager->getActiveWorkspace();
+        $revision_key = $entity_type->getKey('revision');
+        $revision_table = $entity_type->getRevisionTable();
+        $query->addMetaData('entity_type', $entity_type->id());
+        $query->addMetaData('active_workspace_id', $active_workspace->id());
+        $query->addMetaData('simple_query', FALSE);
+
+        // Join on the workspace association table.
+        $query->leftJoin('workspace_association', 'workspace_association', "%alias.target_entity_type_id = '{$entity_type_id}' AND %alias.target_entity_id = e.$id_key AND %alias.workspace = '{$active_workspace->id()}'");
+        $query->innerJoin($revision_table, 'revision_table', "COALESCE(workspace_association.target_entity_revision_id, e.$revision_key) = %alias.$revision_key AND (%alias.workspace = '{$active_workspace->id()}' OR %alias.workspace IS NULL)");
+
+        // Add the id and revision fields as expressions.
+        $query->addExpression("e.$id_key", $id_key);
+        $query->addExpression("COALESCE(workspace_association.target_entity_revision_id, e.$revision_key)", $revision_key);
+        $query->groupBy('workspace_association.target_entity_revision_id');
+        $query->groupBy("e.$id_key");
+        $query->groupBy("e.$revision_key");
+        $query->addTag('workspace_sensitive');
+
+        $id_key_set = TRUE;
+      }
+    }
+
+    if (!$id_key_set) {
+      $query->addField('e', $id_key);
+    }
 
     $langcode_table_alias = 'e';
     if ($data_table = $entity_type->getDataTable()) {

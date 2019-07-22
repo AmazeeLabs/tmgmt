@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tmgmt\Entity\Job;
 use Drupal\Component\Serialization\Yaml;
 use Drupal\tmgmt\JobItemInterface;
@@ -131,7 +132,6 @@ function tmgmt_update_8009() {
     $config->save(TRUE);
   }
 }
-
 
 /**
  * Update the job messages view to use a different pager id.
