@@ -4,12 +4,14 @@ namespace Drupal\tmgmt\Entity;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tmgmt\JobInterface;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\TMGMTException;
@@ -38,10 +40,17 @@ use Drupal\user\UserInterface;
  *     "views_data" = "Drupal\tmgmt\Entity\ViewsData\JobViewsData",
  *   },
  *   base_table = "tmgmt_job",
+ *   revision_table = "tmgmt_job_revision",
  *   entity_keys = {
  *     "id" = "tjid",
+ *     "revision" = "revision_id",
  *     "label" = "label",
- *     "uuid" = "uuid"
+ *     "uuid" = "uuid",
+ *   },
+ *   revision_metadata_keys = {
+ *     "revision_user" = "revision_user",
+ *     "revision_created" = "revision_created",
+ *     "revision_log_message" = "revision_log"
  *   },
  *   links = {
  *     "canonical" = "/admin/tmgmt/jobs/{tmgmt_job}",
@@ -54,7 +63,7 @@ use Drupal\user\UserInterface;
  *
  * @ingroup tmgmt_job
  */
-class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterface {
+class Job extends ContentEntityBase implements EntityOwnerInterface, EntityPublishedInterface, JobInterface {
 
   /**
    * {@inheritdoc}
@@ -82,6 +91,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     $fields['label'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Label'))
       ->setDescription(t('The label of this job.'))
+      ->setRevisionable(TRUE)
       ->setDefaultValue('')
       ->setSettings(array(
         'max_length' => 255,
@@ -119,9 +129,11 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
       ->setSettings(array(
         'max_length' => 255,
       ));
+
     $fields['state'] = BaseFieldDefinition::create('list_integer')
       ->setLabel(t('Job state'))
       ->setDescription(t('The job state.'))
+      ->setRevisionable(TRUE)
       ->setSetting('allowed_values', Job::getStates())
       ->setDefaultValue(Job::STATE_UNPROCESSED);
 
@@ -131,7 +143,8 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
 
     $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
-      ->setDescription(t('The time that the job was last edited.'));
+      ->setDescription(t('The time that the job was last edited.'))
+      ->setRevisionable(TRUE);
 
     $fields['job_type'] = BaseFieldDefinition::create('list_string')
       ->setLabel(t('Job type'))
@@ -143,6 +156,51 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
       ->setLabel(t('Continuous settings'))
       ->setDescription(t('Continuous sources configuration.'))
       ->setDefaultValue(array());
+
+    $fields['revision_id'] = BaseFieldDefinition::create('integer')
+      ->setName('revision_id')
+      ->setTargetEntityTypeId('tmgmt_job')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision ID'))
+      ->setReadOnly(TRUE)
+      ->setSetting('unsigned', TRUE);
+
+    $fields['revision_user'] = BaseFieldDefinition::create('entity_reference')
+      ->setName('revision_user')
+      ->setTargetEntityTypeId('tmgmt_job')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision user'))
+      ->setDescription(new TranslatableMarkup('The user ID of the author of the current revision.'))
+      ->setSetting('target_type', 'user')
+      ->setRevisionable(TRUE);
+
+    $fields['revision_created'] = BaseFieldDefinition::create('created')
+      ->setName('revision_created')
+      ->setTargetEntityTypeId('tmgmt_job')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision create time'))
+      ->setDescription(new TranslatableMarkup('The time that the current revision was created.'))
+      ->setRevisionable(TRUE);
+
+    $fields['revision_log_message'] = BaseFieldDefinition::create('string_long')
+      ->setName('revision_log_message')
+      ->setTargetEntityTypeId('tmgmt_job')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision log message'))
+      ->setDescription(new TranslatableMarkup('Briefly describe the changes you have made.'))
+      ->setRevisionable(TRUE)
+      ->setDefaultValue('');
+
+    $field_storage_definitions['revision_default'] = BaseFieldDefinition::create('boolean')
+      ->setName('revision_default')
+      ->setTargetEntityTypeId('tmgmt_job')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Default revision'))
+      ->setDescription(new TranslatableMarkup('A flag indicating whether this was a default revision when it was saved.'))
+      ->setStorageRequired(TRUE)
+      ->setInternal(TRUE)
+      ->setTranslatable(FALSE)
+      ->setRevisionable(TRUE);
 
     return $fields;
   }
@@ -762,7 +820,7 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
       $this->state = Job::STATE_CONTINUOUS;
     }
     // Activate job item if the previous job state was not active.
-    if ($this->isActive() && !$this->original->isActive()) {
+    if ($this->original && ($this->isActive() || !$this->original->isActive())) {
       foreach ($this->getItems() as $item) {
         // The job was submitted, activate any inactive job item.
         if ($item->isInactive()) {
@@ -1025,6 +1083,9 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
    * {@inheritdoc}
    */
   public function getConflictingItemIds() {
+
+    // TODO: Add a revision id condition.
+
     $conflicting_item_ids = array();
     foreach ($this->getItems() as $item) {
       // Count existing job items that are have the same languages, same source,
@@ -1047,5 +1108,22 @@ class Job extends ContentEntityBase implements EntityOwnerInterface, JobInterfac
     }
     return $conflicting_item_ids;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function isPublished() {
+    return TRUE;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setPublished($published = NULL) { }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setUnpublished() { }
 
 }

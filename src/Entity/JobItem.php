@@ -9,15 +9,16 @@ use Drupal\Component\Utility\SortArray;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\Exception\UndefinedLinkTemplateException;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Language\Language;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tmgmt\JobItemInterface;
 use Drupal\tmgmt\TMGMTException;
 use Drupal\Core\Render\Element;
-use Drupal\tmgmt\Entity\Job;
 
 /**
  * Entity class for the tmgmt_job_item entity.
@@ -38,9 +39,11 @@ use Drupal\tmgmt\Entity\Job;
  *     "views_data" = "Drupal\tmgmt\Entity\ViewsData\JobItemViewsData"
  *   },
  *   base_table = "tmgmt_job_item",
+ *   revision_table = "tmgmt_job_item_revision",
  *   entity_keys = {
  *     "id" = "tjiid",
- *     "uuid" = "uuid"
+ *     "uuid" = "uuid",
+ *     "revision" = "revision_id"
  *   },
  *   links = {
  *     "canonical" = "/admin/tmgmt/items/{tmgmt_job_item}",
@@ -56,7 +59,7 @@ use Drupal\tmgmt\Entity\Job;
  *
  * @ingroup tmgmt_job
  */
-class JobItem extends ContentEntityBase implements JobItemInterface {
+class JobItem extends ContentEntityBase implements JobItemInterface, EntityPublishedInterface {
 
   /**
    * Holds the unserialized source data.
@@ -123,31 +126,38 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
     $fields['state'] = BaseFieldDefinition::create('list_integer')
       ->setLabel(t('Job item state'))
       ->setDescription(t('The job item state'))
+      ->setRevisionable(TRUE)
       ->setSetting('allowed_values', $states)
       ->setDefaultValue(static::STATE_INACTIVE);
 
     $fields['translator_state'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Translator job item state'));
+      ->setLabel(t('Translator job item state'))
+      ->setRevisionable(TRUE);
 
     $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
-      ->setDescription(t('The time that the job was last edited.'));
+      ->setDescription(t('The time that the job was last edited.'))
+      ->setRevisionable(TRUE);
 
     $fields['count_pending'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Pending count'))
-      ->setSetting('unsigned', TRUE);
+      ->setSetting('unsigned', TRUE)
+      ->setRevisionable(TRUE);
 
     $fields['count_translated'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Translated count'))
-      ->setSetting('unsigned', TRUE);
+      ->setSetting('unsigned', TRUE)
+      ->setRevisionable(TRUE);
 
     $fields['count_reviewed'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Reviewed count'))
-      ->setSetting('unsigned', TRUE);
+      ->setSetting('unsigned', TRUE)
+      ->setRevisionable(TRUE);
 
     $fields['count_accepted'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Accepted count'))
-      ->setSetting('unsigned', TRUE);
+      ->setSetting('unsigned', TRUE)
+      ->setRevisionable(TRUE);
 
     $fields['word_count'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Word count'))
@@ -156,6 +166,51 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
     $fields['tags_count'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Tags count'))
       ->setSetting('unsigned', TRUE);
+
+    $fields['revision_id'] = BaseFieldDefinition::create('integer')
+      ->setName('revision_id')
+      ->setTargetEntityTypeId('tmgmt_job_item')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision ID'))
+      ->setReadOnly(TRUE)
+      ->setSetting('unsigned', TRUE);
+
+    $fields['revision_user'] = BaseFieldDefinition::create('entity_reference')
+      ->setName('revision_user')
+      ->setTargetEntityTypeId('tmgmt_job_item')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision user'))
+      ->setDescription(new TranslatableMarkup('The user ID of the author of the current revision.'))
+      ->setSetting('target_type', 'user')
+      ->setRevisionable(TRUE);
+
+    $fields['revision_created'] = BaseFieldDefinition::create('created')
+      ->setName('revision_created')
+      ->setTargetEntityTypeId('tmgmt_job_item')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision create time'))
+      ->setDescription(new TranslatableMarkup('The time that the current revision was created.'))
+      ->setRevisionable(TRUE);
+
+    $fields['revision_log_message'] = BaseFieldDefinition::create('string_long')
+      ->setName('revision_log_message')
+      ->setTargetEntityTypeId('tmgmt_job_item')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Revision log message'))
+      ->setDescription(new TranslatableMarkup('Briefly describe the changes you have made.'))
+      ->setRevisionable(TRUE)
+      ->setDefaultValue('');
+
+    $fields['revision_default'] = BaseFieldDefinition::create('boolean')
+      ->setName('revision_default')
+      ->setTargetEntityTypeId('tmgmt_job_item')
+      ->setTargetBundle(NULL)
+      ->setLabel(new TranslatableMarkup('Default revision'))
+      ->setDescription(new TranslatableMarkup('A flag indicating whether this was a default revision when it was saved.'))
+      ->setStorageRequired(TRUE)
+      ->setInternal(TRUE)
+      ->setTranslatable(FALSE)
+      ->setRevisionable(TRUE);
 
     return $fields;
   }
@@ -1202,5 +1257,22 @@ class JobItem extends ContentEntityBase implements JobItemInterface {
 
     return static::$stateDefinitions;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function isPublished() {
+    return TRUE;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setPublished($published = NULL) { }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setUnpublished() { }
 
 }
