@@ -140,6 +140,7 @@ class JobCheckoutManager {
    *
    * @ingroup tmgmt_job
    *
+   *
    * @see \Drupal\tmgmt\JobCheckoutManager::checkoutAndRedirect()
    */
   public function checkoutMultiple(array $jobs, $skip_request_translation = FALSE) {
