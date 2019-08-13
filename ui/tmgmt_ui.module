@@ -100,7 +100,7 @@ function tmgmt_ui_menu_alter(&$items) {
   $default_path = NULL;
   // Look for the sources overview local task with the lowest weight.
   foreach ($items as $path => $item) {
-    $item += array('weight' => 0);
+    $item = array_merge($item, array('weight' => 0));
     if (strpos($path, 'admin/tmgmt/sources') !== FALSE) {
       if ($weight === NULL || $weight > $item['weight']) {
         $weight = $item['weight'];
